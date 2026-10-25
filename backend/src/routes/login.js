@@ -6,6 +6,8 @@ import { requireAuth } from '../middlewares/requireAuth.js';
 
 const router = Router();
 
+// Rotte del login, montate sotto /api/auth da routes/index.js.
+// Quelle con requireAuth richiedono un utente loggato.
 router.post('/login', validateLogin, login);
 router.post('/logout', requireAuth, logout);
 router.get('/me', requireAuth, me);

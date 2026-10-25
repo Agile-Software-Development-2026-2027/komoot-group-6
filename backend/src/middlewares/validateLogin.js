@@ -1,5 +1,6 @@
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Controlla i dati del login, l'email deve avere un formato valido e la password deve esserci.
 export function validateLogin(req, res, next) {
   const { email, password } = req.body ?? {};
 

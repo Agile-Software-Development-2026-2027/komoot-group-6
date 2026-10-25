@@ -1,6 +1,6 @@
 import { supabase } from '../config/supabase.js';
 
-
+// Prepara l'utente da mandare al frontend con gli stessi campi della registrazione
 function toPublicUser(user) {
   return {
     id: user.id,
@@ -10,6 +10,7 @@ function toPublicUser(user) {
   };
 }
 
+// Tiene solo i dati della sessione che servono al frontend.
 function toPublicSession(session) {
   return {
     access_token: session.access_token,
@@ -18,6 +19,7 @@ function toPublicSession(session) {
   };
 }
 
+// Fa controllare email e password. Se sono giuste restituisce l'utente, altrimenti un errore.
 export async function login(req, res) {
   const { email, password } = req.body;
 
@@ -42,10 +44,15 @@ export async function login(req, res) {
   });
 }
 
+
+// Restituisce l'utente a cui appartiene il token. Il controllo del token
+// lo ha già fatto requireAuth, che gira prima e mette l'utente in req.user.
 export async function me(req, res) {
   return res.json({ user: toPublicUser(req.user) });
 }
 
+
+// L'access token scade dopo circa un'ora: con il refresh token se ne ottiene uno nuovo, senza che l'utente debba rifare il login.
 export async function refresh(req, res) {
   const { refresh_token: refreshToken } = req.body;
 
@@ -61,7 +68,7 @@ export async function refresh(req, res) {
   });
 }
 
-
+// Chiamiamo direttamente l'API di Supabase con il token dell'utente, che così viene revocato e non funziona più.
 export async function logout(req, res) {
   const response = await fetch(`${process.env.SUPABASE_URL}/auth/v1/logout`, {
     method: 'POST',
@@ -71,55 +78,10 @@ export async function logout(req, res) {
     },
   });
 
-  
+  // 401 vuol dire che il token era già scaduto o revocato.
   if (!response.ok && response.status !== 401) {
     return res.status(502).json({ error: 'Could not log out. Please try again.' });
   }
 
   return res.status(204).end();
-}
-
-export async function forgotPassword(req, res) {
-  const { email } = req.body;
-
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.FRONTEND_URL}/auth/reset-password`,
-  });
-
-  if (error) {
-    console.error(error);
-  }
-
-  
-  return res.json({
-    message: 'If the email is registered, you will receive a link to reset your password.',
-  });
-}
-
-
-export async function resetPassword(req, res) {
-  const { access_token: accessToken, password } = req.body;
-
-  const response = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
-    method: 'PUT',
-    headers: {
-      apikey: process.env.SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ password }),
-  });
-
-  if (!response.ok) {
-    if (response.status === 401 || response.status === 403) {
-      return res.status(401).json({ error: 'The reset link has expired. Request a new one.' });
-    }
-    const body = await response.json().catch(() => null);
-    if (body?.error_code === 'weak_password') {
-      return res.status(400).json({ error: body.msg });
-    }
-    return res.status(422).json({ error: body?.msg || 'Could not update the password' });
-  }
-
-  return res.json({ message: 'Password updated. You can now log in.' });
 }

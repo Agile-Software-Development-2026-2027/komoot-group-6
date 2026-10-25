@@ -1,3 +1,4 @@
+// Controlla che nella richiesta ci sia il refresh token.
 export function validateRefresh(req, res, next) {
   const { refresh_token: refreshToken } = req.body ?? {};
 
