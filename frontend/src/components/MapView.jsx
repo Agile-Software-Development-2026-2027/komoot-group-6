@@ -1,0 +1,64 @@
+import { useEffect, useRef } from 'react';
+import {
+  Map as LibreMap,
+  NavigationControl,
+  setWorkerUrl,
+} from 'maplibre-gl';
+
+import workerUrl from
+  'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
+
+import 'maplibre-gl/dist/maplibre-gl.css';
+
+import {
+  DEFAULT_MAP_SETTINGS,
+  MAPTILER_API_KEY,
+} from '../config/map.config.js';
+
+setWorkerUrl(workerUrl);
+
+export default function MapView() {
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!MAPTILER_API_KEY || !containerRef.current) return;
+
+    const map = new LibreMap({
+      ...DEFAULT_MAP_SETTINGS,
+      container: containerRef.current,
+
+      // Spostamento e zoom.
+      dragPan: true,
+      scrollZoom: true,
+      touchZoomRotate: true,
+    });
+
+    // Pulsanti +, − e bussola.
+    map.addControl(new NavigationControl(), 'top-right');
+
+    // Libera la mappa quando si cambia pagina.
+    return () => {
+      map.remove();
+    };
+  }, []);
+
+  if (!MAPTILER_API_KEY) {
+    return (
+      <p>
+        Inserisci VITE_MAPTILER_API_KEY nel file .env
+        e riavvia il frontend.
+      </p>
+    );
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      aria-label="Mappa della zona Unical e Cosenza"
+      style={{
+        width: '100%',
+        height: '100dvh',
+      }}
+    />
+  );
+}
