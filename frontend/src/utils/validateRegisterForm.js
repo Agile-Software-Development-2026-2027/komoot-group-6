@@ -1,10 +1,9 @@
-// Same rules as the backend (middlewares/validateRegister.js): keep them in sync!
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,30}$/;
 export const PASSWORD_MIN_LENGTH = 8;
 
-// Checks the form values and returns one message per invalid field.
-// An empty object means that the form is valid.
+// Verifica i valori del modulo e restituisce un messaggio per ogni campo non valido.
+// Un oggetto vuoto indica che il modulo è valido.
 export function validateRegisterForm(values) {
   const errors = {};
   const email = values.email.trim();
@@ -22,12 +21,12 @@ export function validateRegisterForm(values) {
     errors.password = `The password must be at least ${PASSWORD_MIN_LENGTH} characters long`;
   }
 
-  // Checked only in the browser: the backend never receives confirmPassword
+  // Verificato solo nel browser: il backend non riceve mai confirmPassword.
   if (values.confirmPassword !== values.password) {
     errors.confirmPassword = 'The passwords do not match';
   }
 
-  // The username is optional, but if present it must follow the rules
+  // Il nome utente è facoltativo, ma se presente deve rispettare le regole.
   if (username && !USERNAME_RE.test(username)) {
     errors.username = '3-30 characters: letters, numbers or underscore';
   }

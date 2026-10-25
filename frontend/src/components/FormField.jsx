@@ -1,5 +1,3 @@
-// Reusable form field: label + input + hint or error message.
-// The login form can use it too.
 export default function FormField({
   label,
   name,
@@ -22,7 +20,7 @@ export default function FormField({
         value={value}
         onChange={onChange}
         autoComplete={autoComplete}
-        // Screen readers announce the field as invalid and read the message
+        // Gli screen reader segnalano il campo come non valido e leggono il messaggio.
         aria-invalid={Boolean(error)}
         aria-describedby={error || hint ? messageId : undefined}
       />

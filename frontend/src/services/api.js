@@ -1,8 +1,7 @@
-// Base URL of the backend API, read from frontend/.env (VITE_API_URL)
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Error thrown when a request to the backend fails.
-// It keeps the HTTP status, so pages can react differently to 400, 409, etc.
+// Errore generato quando una richiesta al backend non va a buon fine.
+// Mantiene lo stato HTTP, consentendo alle pagine di reagire in modo diverso a codici come 400, 409, ecc.
 export class ApiError extends Error {
   constructor(message, status) {
     super(message);
@@ -11,8 +10,8 @@ export class ApiError extends Error {
   }
 }
 
-// Sends a request to the backend and returns the parsed JSON body.
-// Throws an ApiError for error statuses and when the server cannot be reached.
+// Invia una richiesta al backend e restituisce il corpo JSON analizzato.
+// Genera un ApiError in caso di stati di errore o quando non è possibile raggiungere il server.
 export async function apiRequest(path, { method = 'GET', body, token } = {}) {
   const headers = {};
   if (body !== undefined) headers['Content-Type'] = 'application/json';
@@ -26,15 +25,15 @@ export async function apiRequest(path, { method = 'GET', body, token } = {}) {
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch {
-    // fetch fails this way when the backend is off or the browser blocks the call (CORS)
+    // in questo caso fetch non va a buon fine se il backend è spento o se il browser blocca la chiamata.
     throw new ApiError('Cannot reach the server. Please try again later.', 0);
   }
 
-  // Some responses have no body (e.g. 204 from logout)
+  // Alcune risposte sono prive di corpo (ad es. 204 in seguito a un logout).
   const data = response.status === 204 ? null : await response.json().catch(() => null);
 
   if (!response.ok) {
-    // The backend always answers errors as { error: '...' }
+    // Il backend risponde sempre agli errori nel formato { error: '...' }
     throw new ApiError(data?.error ?? 'Something went wrong. Please try again.', response.status);
   }
 

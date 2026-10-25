@@ -2,10 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './AuthPages.css';
 
-// After the confirmation link, Supabase sends the user here and puts the
-// result in the part of the URL after "#":
-//   success: #access_token=...&refresh_token=...&type=signup
-//   error:   #error=access_denied&error_code=otp_expired&error_description=...
+
 function readConfirmationResult(hash) {
   const params = new URLSearchParams(hash.replace(/^#/, ''));
 
@@ -22,11 +19,11 @@ export default function ConfirmEmailPage() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // The URL is read only once, when the page opens
+  // L'URL viene letto una sola volta, all'apertura della pagina.
   const [result] = useState(() => readConfirmationResult(location.hash));
 
   useEffect(() => {
-    // Remove the tokens from the address bar and from the browser history
+    // Rimuovi i token dalla barra degli indirizzi e dalla cronologia del browser.
     if (location.hash) {
       navigate(location.pathname, { replace: true });
     }

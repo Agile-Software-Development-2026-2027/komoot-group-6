@@ -1,9 +1,7 @@
-/* Global styles and colors used by the whole app */
 :root {
-  /* Petrol green palette */
   --color-primary: #0f5257;
-  --color-primary-hover: #1b7076; /* lighter on hover */
-  --color-primary-light: #e0eeef; /* focus ring and soft backgrounds */
+  --color-primary-hover: #1b7076; 
+  --color-primary-light: #e0eeef; 
 
   --color-text: #17292b;
   --color-muted: #587073;
@@ -29,14 +27,12 @@
 body {
   margin: 0;
   min-height: 100vh;
-  /* Two very soft color spots on the page background */
   background:
     radial-gradient(circle at 0% 0%, #d7e9ea 0%, transparent 45%),
     radial-gradient(circle at 100% 100%, #dcebe6 0%, transparent 40%),
     var(--color-background);
 }
 
-/* Users who ask the system for less motion get no animations */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
