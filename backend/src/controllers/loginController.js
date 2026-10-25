@@ -1,6 +1,7 @@
 import { supabase } from '../config/supabase.js';
 
-
+// Prepara l'utente da mandare al frontend: gli stessi campi della registrazione
+// (id, email) più username e nome visualizzato, salvati al momento dell'iscrizione.
 function toPublicUser(user) {
   return {
     id: user.id,
@@ -10,6 +11,7 @@ function toPublicUser(user) {
   };
 }
 
+// Tiene solo i dati della sessione che servono al frontend.
 function toPublicSession(session) {
   return {
     access_token: session.access_token,
@@ -18,6 +20,9 @@ function toPublicSession(session) {
   };
 }
 
+// POST /api/auth/login
+// Fa controllare email e password a Supabase. Se sono giuste restituisce
+// l'utente e i token della sessione; altrimenti un errore con lo status adatto.
 export async function login(req, res) {
   const { email, password } = req.body;
 
@@ -42,10 +47,16 @@ export async function login(req, res) {
   });
 }
 
+// GET /api/auth/me
+// Restituisce l'utente a cui appartiene il token. Il controllo del token
+// lo ha già fatto requireAuth, che gira prima e mette l'utente in req.user.
 export async function me(req, res) {
   return res.json({ user: toPublicUser(req.user) });
 }
 
+// POST /api/auth/refresh
+// L'access token scade dopo circa un'ora: con il refresh token se ne ottiene
+// uno nuovo, senza che l'utente debba rifare il login.
 export async function refresh(req, res) {
   const { refresh_token: refreshToken } = req.body;
 
@@ -61,7 +72,11 @@ export async function refresh(req, res) {
   });
 }
 
-
+// POST /api/auth/logout
+// Il client Supabase del backend non tiene sessioni in memoria (persistSession: false),
+// quindi supabase.auth.signOut() non saprebbe quale sessione chiudere.
+// Per questo chiamiamo direttamente l'API di Supabase con il token dell'utente,
+// che così viene revocato e non funziona più.
 export async function logout(req, res) {
   const response = await fetch(`${process.env.SUPABASE_URL}/auth/v1/logout`, {
     method: 'POST',
@@ -71,7 +86,7 @@ export async function logout(req, res) {
     },
   });
 
-  
+  // 401 vuol dire che il token era già scaduto o revocato: l'utente è comunque fuori.
   if (!response.ok && response.status !== 401) {
     return res.status(502).json({ error: 'Could not log out. Please try again.' });
   }
@@ -79,6 +94,9 @@ export async function logout(req, res) {
   return res.status(204).end();
 }
 
+// POST /api/auth/forgot-password
+// Chiede a Supabase di mandare all'utente l'email con il link per reimpostare
+// la password. Il link riporta alla pagina /auth/reset-password del frontend.
 export async function forgotPassword(req, res) {
   const { email } = req.body;
 
@@ -90,13 +108,16 @@ export async function forgotPassword(req, res) {
     console.error(error);
   }
 
-  
+  // Risponde sempre allo stesso modo, che l'email sia registrata o no:
+  // altrimenti chiunque potrebbe usare questa rotta per scoprire quali email esistono.
   return res.json({
     message: 'If the email is registered, you will receive a link to reset your password.',
   });
 }
 
-
+// POST /api/auth/reset-password
+// Imposta la nuova password. Il frontend prende l'access_token dal link
+// arrivato per email e lo manda qui insieme alla password nuova.
 export async function resetPassword(req, res) {
   const { access_token: accessToken, password } = req.body;
 
@@ -111,10 +132,12 @@ export async function resetPassword(req, res) {
   });
 
   if (!response.ok) {
+    // 401 o 403 vuol dire che il link è scaduto o è già stato usato.
     if (response.status === 401 || response.status === 403) {
       return res.status(401).json({ error: 'The reset link has expired. Request a new one.' });
     }
     const body = await response.json().catch(() => null);
+    // Supabase può rifiutare una password troppo debole.
     if (body?.error_code === 'weak_password') {
       return res.status(400).json({ error: body.msg });
     }

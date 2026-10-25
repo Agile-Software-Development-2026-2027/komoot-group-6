@@ -1,3 +1,5 @@
+// Controlla i dati per impostare la nuova password: il token del link
+// ricevuto per email e una password di almeno 8 caratteri.
 export function validateResetPassword(req, res, next) {
   const { access_token: accessToken, password } = req.body ?? {};
 
