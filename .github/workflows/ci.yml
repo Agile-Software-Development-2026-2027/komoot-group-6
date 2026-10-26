@@ -19,5 +19,33 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      # Add here the steps that build and test your project.
-      # Until then this job does nothing and always passes.
+
+      # Installs the pnpm version written in "packageManager" (package.json)
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: backend/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: |
+            backend/pnpm-lock.yaml
+            frontend/pnpm-lock.yaml
+
+      # --frozen-lockfile: fails if pnpm-lock.yaml does not match package.json
+      - name: Install backend dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: backend
+
+      - name: Run backend tests
+        run: pnpm test
+        working-directory: backend
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: frontend
+
+      - name: Build frontend
+        run: pnpm build
+        working-directory: frontend
