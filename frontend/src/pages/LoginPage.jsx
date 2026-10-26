@@ -25,8 +25,8 @@ export default function LoginPage() {
   // true mentre la richiesta è in corso: disattiva il pulsante
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // La pagina che l'utente voleva aprire prima di essere mandato qui. Se non c'è, dopo il login va al profilo.
-  const destination = location.state?.from?.pathname || '/profile';
+  // La pagina che l'utente voleva aprire prima di essere mandato qui. Se non c'è, dopo il login va alla home.
+  const destination = location.state?.from?.pathname || '/';
 
   // Un solo gestore per tutti i campi: l'attributo "name" dice quale è cambiato
   function handleChange(event) {

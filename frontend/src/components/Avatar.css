@@ -1,0 +1,22 @@
+.avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  border-radius: 50%;
+}
+
+.avatar--md {
+  width: 56px;
+  height: 56px;
+  font-size: 1.2rem;
+}
+
+.avatar--lg {
+  width: 72px;
+  height: 72px;
+  font-size: 1.6rem;
+}
