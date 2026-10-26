@@ -30,7 +30,7 @@ vi.mock(
 
 afterEach(cleanup);
 
-test('mostra il contenitore della mappa', () => {
+test('Mostra il contenitore della mappa', () => {
  render(<MapView />);
 
  expect(screen.getByLabelText('Map')).toBeInTheDocument();
