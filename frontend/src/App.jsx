@@ -4,7 +4,7 @@ import ConfirmEmailPage from './pages/ConfirmEmailPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
-import MapView from './components/MapView.jsx';
+import MapView from './components/MapView/MapView.jsx';
 
 export default function App() {
   return (

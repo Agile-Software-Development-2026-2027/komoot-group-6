@@ -13,7 +13,9 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import {
   DEFAULT_MAP_SETTINGS,
   MAPTILER_API_KEY,
-} from '../config/map.config.js';
+} from '../../config/map.config.js';
+
+import styles from './MapView.module.css';
 
 setWorkerUrl(workerUrl);
 
@@ -34,7 +36,7 @@ export default function MapView() {
     });
 
     // Pulsanti +, − e bussola.
-    map.addControl(new NavigationControl(), 'top-right');
+    map.addControl(new NavigationControl(), 'bottom-right');
 
     // Libera la mappa quando si cambia pagina.
     return () => {
@@ -45,8 +47,7 @@ export default function MapView() {
   if (!MAPTILER_API_KEY) {
     return (
       <p>
-        Inserisci VITE_MAPTILER_API_KEY nel file .env
-        e riavvia il frontend.
+        Errore nel caricamento della mappa.
       </p>
     );
   }
@@ -54,11 +55,8 @@ export default function MapView() {
   return (
     <div
       ref={containerRef}
-      aria-label="Mappa della zona Unical e Cosenza"
-      style={{
-        width: '100%',
-        height: '100dvh',
-      }}
+      className={styles.map}
+      aria-label="Map"
     />
   );
 }
