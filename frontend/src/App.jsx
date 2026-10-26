@@ -5,7 +5,7 @@ import LoginPage from './pages/LoginPage.jsx';
 import HomePage from './pages/HomePage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
-
+import MapView from './components/MapView/MapView.jsx';
 
 export default function App() {
   return (
@@ -20,6 +20,7 @@ export default function App() {
       </Route>
       {/* Qualsiasi URL sconosciuto rimanda a "/" */}
       <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/map" element={<MapView />} />
     </Routes>
   );
 }
