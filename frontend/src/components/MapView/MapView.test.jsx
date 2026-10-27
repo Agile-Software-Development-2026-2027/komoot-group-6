@@ -18,6 +18,7 @@ vi.mock('maplibre-gl', () => ({
     remove() {}
   },
   NavigationControl: class {},
+  GeolocateControl: class {},
   setWorkerUrl: vi.fn(),
 }));
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import {
+  GeolocateControl,
   Map as LibreMap,
   NavigationControl,
   setWorkerUrl,
@@ -38,6 +39,15 @@ export default function MapView() {
     // Pulsanti +, − e bussola.
     map.addControl(new NavigationControl(), 'bottom-right');
 
+    const geolocate = new GeolocateControl({
+      positionOptions: {
+        enableHighAccuracy: true,
+      },
+      trackUserLocation: true,
+      showUserLocation: true,
+    });
+    map.addControl(geolocate, 'bottom-right');
+    
     // Libera la mappa quando si cambia pagina.
     return () => {
       map.remove();
