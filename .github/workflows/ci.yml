@@ -49,3 +49,7 @@ jobs:
       - name: Build frontend
         run: pnpm build
         working-directory: frontend
+
+      - name: Esegui test frontend
+        run: npx vitest run
+        working-directory: frontend
