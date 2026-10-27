@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage.jsx';
 import HomePage from './pages/HomePage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import MapView from './components/MapView/MapView.jsx';
 
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/auth/confirm" element={<ConfirmEmailPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/map" element={<MapView />} />
       {/* Pagine che richiedono l'accesso */}
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<HomePage />} />

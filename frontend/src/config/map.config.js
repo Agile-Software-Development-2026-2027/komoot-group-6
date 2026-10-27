@@ -7,7 +7,10 @@ export const MAPTILER_OUTDOOR_STYLE = `https://api.maptiler.com/maps/outdoor-v2/
 
 export const DEFAULT_MAP_SETTINGS = {
     style: MAPTILER_OUTDOOR_STYLE,
-    center: [12.496367, 41.902783],
+    center: [16.2280, 39.3561],
+
     zoom: 12,
+    pitch: 0,
+    maxPitch: 0
 };
 
