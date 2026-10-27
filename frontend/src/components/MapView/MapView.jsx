@@ -47,7 +47,10 @@ export default function MapView() {
       showUserLocation: true,
     });
     map.addControl(geolocate, 'bottom-right');
-    
+
+    map.on('load', () => { 
+      geolocate.trigger(); // pos all avvio
+    });
     // Libera la mappa quando si cambia pagina.
     return () => {
       map.remove();
