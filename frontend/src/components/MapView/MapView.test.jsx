@@ -16,8 +16,30 @@ vi.mock('maplibre-gl', () => ({
     on() {}
     off() {}
     remove() {}
+        getCenter() {
+      return {
+        lng: 16.25,
+        lat: 39.35,
+        toArray: () => [16.25, 39.35],
+      };
+    }
+    getZoom() {
+      return 12;
+    }
+
+    getBearing() {
+      return 0;
+    }
+
+    getPitch() {
+      return 0;
+    }
+
+    // Mock map navigation
+    flyTo() {}
   },
   NavigationControl: class {},
+  ScaleControl: class {},
   GeolocateControl: class {
     trigger() {}
   },
