@@ -4,3 +4,104 @@
   height: 100vh;
   height: 100dvh;
 }
+
+.mapWrapper {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Shared control theme */
+.map :global(.maplibregl-ctrl-group) {
+  background: #ffffff;
+  border: 1px solid #14532d;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(0, 50, 20, 0.18);
+  overflow: hidden;
+}
+
+/* Control buttons */
+.map :global(.maplibregl-ctrl-group button) {
+  width: 44px;
+  height: 44px;
+  background-color: #ffffff;
+  color: #14532d;
+}
+
+/* Hover */
+.map :global(.maplibregl-ctrl-group button:hover) {
+  background-color: #dcfce7;
+}
+
+/* Zoom button icons */
+.map :global(.maplibregl-ctrl-zoom-in .maplibregl-ctrl-icon),
+.map :global(.maplibregl-ctrl-zoom-out .maplibregl-ctrl-icon) {
+  filter: invert(23%) sepia(43%)
+          saturate(879%) hue-rotate(91deg);
+}
+
+/* Compass */
+.map :global(.maplibregl-ctrl-compass) {
+  border-radius: 50%;
+}
+
+/* Compass icon */
+.map :global(.maplibregl-ctrl-compass .maplibregl-ctrl-icon) {
+  filter: invert(23%) sepia(43%)
+          saturate(879%) hue-rotate(91deg);
+}
+
+/* Geolocation */
+.map :global(.maplibregl-ctrl-geolocate .maplibregl-ctrl-icon) {
+  filter: invert(23%) sepia(43%)
+          saturate(879%) hue-rotate(91deg);
+}
+
+/* Scale bar */
+.map :global(.maplibregl-ctrl-scale) {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #14532d;
+  color: #14532d;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+/* Re-center button */
+.recenterButton {
+  position: absolute;
+  right: 10px;
+  bottom: 250px;
+  z-index: 5;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 46px;
+  height: 46px;
+
+  background: white;
+  color: #14532d;
+  border: 1px solid #14532d;
+  border-radius: 50%;
+
+  box-shadow: 0 4px 14px rgba(0, 50, 20, 0.18);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.recenterButton:hover {
+  background: #dcfce7;
+  transform: scale(1.05);
+}
+
+.recenterButton:focus-visible {
+  outline: 3px solid #22c55e;
+  outline-offset: 2px;
+}
