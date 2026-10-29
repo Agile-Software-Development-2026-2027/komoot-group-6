@@ -42,11 +42,7 @@ export const HIDDEN_BASE_LAYERS = [
     'Longdistance trail outline',
 ];
 
-//volendo in futuro si può cambiare lo stile di default della mappa outdoor con un altro stile disponibile in MAP_BASE_STYLES (da aggiungere)
-export const MAPTILER_OUTDOOR_STYLE = MAP_BASE_STYLES[0].url;
-
 export const DEFAULT_MAP_SETTINGS = {
-    style: MAPTILER_OUTDOOR_STYLE,
     center: [16.2280, 39.3561],
 
     zoom: 12,
