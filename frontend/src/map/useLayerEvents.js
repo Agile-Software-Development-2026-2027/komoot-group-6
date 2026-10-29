@@ -14,6 +14,11 @@ export function useLayerEvents(layerId, { onClick } = {}, mapInstance) {
   useEffect(() => {
     if (!map || !layerId) return undefined;
 
+    const resetCursor = () => {
+      const canvas = map.getCanvas?.();
+      if (canvas) canvas.style.cursor = '';
+    };
+
     const handleClick = (e) => {
       const feature = e.features?.[0];
       if (feature && onClickRef.current) {
@@ -27,23 +32,34 @@ export function useLayerEvents(layerId, { onClick } = {}, mapInstance) {
     };
 
     const handleMouseLeave = () => {
-      const canvas = map.getCanvas?.();
-      if (canvas) canvas.style.cursor = '';
+      resetCursor();
     };
 
-    // ascolto eventi sul layer
-    map.on('click', layerId, handleClick);
-    map.on('mouseenter', layerId, handleMouseEnter);
-    map.on('mouseleave', layerId, handleMouseLeave);
+    // registrazione e risincronizzazione listener sul layer
+    const syncListeners = () => {
+      resetCursor();
 
-    // pulizia listener e cursore
-    return () => {
       map.off('click', layerId, handleClick);
       map.off('mouseenter', layerId, handleMouseEnter);
       map.off('mouseleave', layerId, handleMouseLeave);
 
-      const canvas = map.getCanvas?.();
-      if (canvas) canvas.style.cursor = '';
+      map.on('click', layerId, handleClick);
+      map.on('mouseenter', layerId, handleMouseEnter);
+      map.on('mouseleave', layerId, handleMouseLeave);
+    };
+
+    syncListeners();
+
+    // riaggancio al cambio stile della mappa
+    map.on('style.load', syncListeners);
+
+    // pulizia finale listener e cursore
+    return () => {
+      map.off('style.load', syncListeners);
+      map.off('click', layerId, handleClick);
+      map.off('mouseenter', layerId, handleMouseEnter);
+      map.off('mouseleave', layerId, handleMouseLeave);
+      resetCursor();
     };
   }, [map, layerId]);
 }
