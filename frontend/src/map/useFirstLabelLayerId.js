@@ -26,7 +26,6 @@ export function useFirstLabelLayerId() {
 
   useEffect(() => {
     if (!map) {
-      setFirstLabelLayerId(undefined);
       return undefined;
     }
 
