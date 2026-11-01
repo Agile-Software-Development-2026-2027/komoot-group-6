@@ -15,9 +15,24 @@ export default function TrackLayer({ data, id = 'track' }) {
   const sourceId = `${id}-source`;
   const layerId = `${id}-layer`;
 
+  const layerPaint = {
+    'line-color': '#E63946',
+    'line-width': 4,
+  };
+
+  const layerLayout = {
+    'line-cap': 'round',
+    'line-join': 'round',
+  };
+
   return (
     <Source id={sourceId} type="geojson" data={data}>
-      <Layer id={layerId} type="line" />
+      <Layer
+        id={layerId}
+        type="line"
+        paint={layerPaint}
+        layout={layerLayout}
+      />
     </Source>
   );
 }
