@@ -1,19 +1,22 @@
-const mockTrailData = [
-    [38.112, 15.632, 200],
-    [38.115, 15.635, 350]
-]
-
-export function normalizeCoordinates(trailData: number[][]) : number[][] {
-    const cleanData = trailData.map((out) =>{
-
-        const [lat, lng, ele] = out;
-        
-        return [lng, lat, ele]
-    });
-
-    return cleanData;
-}
-
-const cleanTrailData = normalizeCoordinates(mockTrailData);
-
-console.log(cleanTrailData)
+const mockData = [
+            [
+                15.986344,
+                39.632684,
+                719.917901
+            ],
+            [
+                15.986412,
+                39.632875,
+                719.917901
+            ],
+            [
+                15.986441,
+                39.632971,
+                719.917901
+            ],
+            [
+                15.986133,
+                39.633097,
+                719.917901
+            ]
+];
