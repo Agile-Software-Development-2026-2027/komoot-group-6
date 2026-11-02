@@ -1,25 +1,6 @@
 import length from '@turf/length';
 import { lineString } from '@turf/helpers';
 
-// const mockData = {
-//   type: "FeatureCollection",
-//   features: [
-//     {
-//       type: "Feature",
-//       geometry: {
-//         type: "LineString",
-//         coordinates: [
-//           [16.228, 39.3561, 210],
-//           [16.2295, 39.3570, 224],
-//           [16.2300, 39.3600, 230]
-//         ]
-//       },
-//       properties: { name: "Sentiero di prova" }
-//     }
-//   ]
-// };
-
-
 function calculateElevationStats(coordinates: number[][]) {
   let elevationGain = 0;
   let elevationLoss = 0;
@@ -56,13 +37,11 @@ function calculateElevationStats(coordinates: number[][]) {
   return { elevationGain, elevationLoss, maxEle, minEle };
 }
 
-
-//
 export function calculateTrailStats(geoJsonData: any) {
   const coordinates = geoJsonData?.features?.[0]?.geometry?.coordinates;
   
   if (!coordinates || coordinates.length === 0) {
-    throw new Error("Impossibile estrarre le coordinate dal GeoJSON");
+    throw new Error("Unable to extract coordinates from GeoJSON");
   }
 
   const routeLine = lineString(coordinates);
