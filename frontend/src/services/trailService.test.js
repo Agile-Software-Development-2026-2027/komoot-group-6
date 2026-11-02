@@ -2,27 +2,35 @@ import { expect, test, vi } from 'vitest';
 import { ApiError } from './api.js';
 import { getNearbyTrails, saveTrail } from './trailService.js';
 
+// Risposta del backend: una FeatureCollection con il punto di partenza come geometria
+function nearbyResponse(...features) {
+  return { type: 'FeatureCollection', features };
+}
+
 test('getNearbyTrails searches around the point with the radius in meters', async () => {
-  const authFetch = vi.fn().mockResolvedValue({
-    trails: [
-      {
+  const authFetch = vi.fn().mockResolvedValue(
+    nearbyResponse({
+      type: 'Feature',
+      id: 't1',
+      geometry: { type: 'Point', coordinates: [16.21, 39.37] },
+      properties: {
         id: 't1',
         name: 'Crati',
-        difficulty: 'easy',
+        difficulty: 'T',
         lengthM: 8400,
-        elevationGainM: 320,
+        ascentM: 320,
         distanceM: 850,
-        start: [16.21, 39.37, 210],
-        extra: 'x',
+        startPoint: [16.21, 39.37],
+        trailType: 'hiking',
       },
-    ],
-  });
+    })
+  );
 
   const trails = await getNearbyTrails(authFetch, { lat: 39.356, lng: 16.228, radiusKm: 2.5 });
 
   expect(authFetch).toHaveBeenCalledWith('/trails/nearby?lat=39.356&lng=16.228&radius=2500');
-  // Solo i campi usati dalle card: start diventa [lng, lat], senza foto imageUrl è null,
-  // saved diventa sempre un booleano
+  // Solo i campi usati dalle card: start viene dalla geometria, ascentM diventa elevationGainM,
+  // la difficoltà CAI diventa easy/moderate/hard, senza foto imageUrl è null, saved è sempre un booleano
   expect(trails).toEqual([
     {
       id: 't1',
@@ -38,10 +46,26 @@ test('getNearbyTrails searches around the point with the radius in meters', asyn
   ]);
 });
 
+test('getNearbyTrails converts the CAI difficulty to the levels of the filters', async () => {
+  const levels = ['T', 'E', 'EE', 'EEA', 'X', undefined];
+  const authFetch = vi.fn().mockResolvedValue(
+    nearbyResponse(...levels.map((difficulty, i) => ({ properties: { id: `t${i}`, difficulty } })))
+  );
+
+  const trails = await getNearbyTrails(authFetch, { lat: 0, lng: 0, radiusKm: 1 });
+
+  // Un livello sconosciuto resta com'è, uno mancante diventa null
+  expect(trails.map((trail) => trail.difficulty)).toEqual(['easy', 'moderate', 'hard', 'hard', 'X', null]);
+});
+
 test('getNearbyTrails sets start to null when the start point is missing or invalid', async () => {
-  const authFetch = vi.fn().mockResolvedValue({
-    trails: [{ id: 't1' }, { id: 't2', start: ['16.2', 39.3] }, { id: 't3', start: [16.2] }],
-  });
+  const authFetch = vi.fn().mockResolvedValue(
+    nearbyResponse(
+      { properties: { id: 't1' } },
+      { geometry: { type: 'Point', coordinates: ['16.2', 39.3] }, properties: { id: 't2' } },
+      { geometry: { type: 'Point', coordinates: [16.2] }, properties: { id: 't3' } }
+    )
+  );
 
   const trails = await getNearbyTrails(authFetch, { lat: 0, lng: 0, radiusKm: 1 });
 

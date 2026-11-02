@@ -1,4 +1,5 @@
-// Livelli di difficoltà: value è come arriva dal backend, label è il testo mostrato.
+// Livelli di difficoltà usati da card e filtri: value è il livello, label è il testo mostrato.
+// Il backend usa la scala CAI (T, E, EE, EEA): la converte trailService.js.
 export const DIFFICULTIES = [
   { value: 'easy', label: 'Easy' },
   { value: 'moderate', label: 'Intermediate' },

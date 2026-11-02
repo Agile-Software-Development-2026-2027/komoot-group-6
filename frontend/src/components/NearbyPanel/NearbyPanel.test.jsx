@@ -35,6 +35,19 @@ const TRAILS = [
   { id: 't2', name: 'Monte Cocuzzo', difficulty: 'hard', lengthM: 14200, elevationGainM: 1150, distanceM: 6300, start: [16.3, 39.4] },
 ];
 
+// Come risponde il backend: una FeatureCollection, con la difficoltà nella scala CAI
+const CAI = { easy: 'T', moderate: 'E', hard: 'EE' };
+function nearbyResponse(trails) {
+  return {
+    type: 'FeatureCollection',
+    features: trails.map(({ start, difficulty, elevationGainM, ...props }) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: start },
+      properties: { ...props, difficulty: CAI[difficulty], ascentM: elevationGainM },
+    })),
+  };
+}
+
 // Mappa finta: ha centro e zoom e permette di simulare la fine di uno spostamento (moveend).
 // moveTo è l'utente che sposta la mappa; jumpTo e flyTo passano a moveend i dati dell'evento, come MapLibre.
 function createFakeMap(center) {
@@ -72,7 +85,7 @@ async function waitForSearch() {
 beforeEach(() => {
   vi.useFakeTimers();
   mock.map = createFakeMap({ lng: 16.2281, lat: 39.3562 });
-  mock.authFetch = vi.fn().mockResolvedValue({ trails: TRAILS });
+  mock.authFetch = vi.fn().mockResolvedValue(nearbyResponse(TRAILS));
 });
 
 afterEach(() => {
