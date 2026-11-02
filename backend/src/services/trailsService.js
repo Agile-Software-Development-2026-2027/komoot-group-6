@@ -68,3 +68,29 @@ export async function getTrailById(id) {
   const [row] = data ?? [];
   return row ? toTrailDetailFeature(row) : null;
 }
+
+// Added for nearby trails search, see validateNearbyQuery() in validateTrailQuery.js
+// One trail with its route, or null if it does not exist
+//
+// A row of nearby_trails -> a start-point Feature (as in the lists), plus
+// distanceM: meters from the search position to the closest point of the trail.
+export function toNearbyFeature(row) {
+  const feature = toTrailFeature(row);
+  return {
+    ...feature,
+    properties: { ...feature.properties, distanceM: Math.round(row.distance_m) },
+  };
+}
+
+// Trails passing within `radius` meters of (lat, lng), closest first.
+// The search runs in PostGIS (ST_DWithin), in the SQL function nearby_trails.
+export async function getNearbyTrails({ lat, lng, radius, limit }) {
+  const { data, error } = await supabase.rpc('nearby_trails', {
+    origin_lat: lat,
+    origin_lng: lng,
+    radius_m: radius,
+    max_results: limit,
+  });
+  failIfError(error, 'search the nearby trails');
+  return { type: 'FeatureCollection', features: (data ?? []).map(toNearbyFeature) };
+}

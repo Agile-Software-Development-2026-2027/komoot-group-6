@@ -1,4 +1,4 @@
-import { getTrailsInBounds, getTrailById } from '../services/trailsService.js';
+import { getTrailsInBounds, getTrailById, getNearbyTrails } from '../services/trailsService.js'; //added for nearby trails search
 
 // GET /api/trails?bbox=...
 // Trails starting inside the area (already checked by validateBbox, in req.bbox)
@@ -15,4 +15,11 @@ export async function getTrail(req, res) {
     return res.status(404).json({ error: 'Trail not found' });
   }
   return res.json(trail);
+}
+// GET /api/trails/nearby?lat=...&lng=...&radius=...&limit=...
+// Trails passing near the position, closest first
+// (query already checked by validateNearbyQuery, in req.nearbyQuery)
+export async function nearbyTrails(req, res) {
+  const trails = await getNearbyTrails(req.nearbyQuery);
+  return res.json(trails);
 }
