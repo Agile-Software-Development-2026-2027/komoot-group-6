@@ -17,6 +17,7 @@ export default function TrackLayer({ data, id = 'track' }) {
 
   const sourceId = `${id}-source`;
   const layerId = `${id}-layer`;
+  const hitLayerId = `${id}-hit`;
 
   const layerPaint = {
     'line-color': '#E63946',
@@ -35,6 +36,13 @@ export default function TrackLayer({ data, id = 'track' }) {
         type="line"
         beforeId={beforeId}
         paint={layerPaint}
+        layout={layerLayout}
+      />
+      {/* Linea invisibile e più larga: rende il percorso facile da cliccare anche col dito */}
+      <Layer
+        id={hitLayerId}
+        type="line"
+        paint={{ 'line-color': '#000000', 'line-width': 20, 'line-opacity': 0 }}
         layout={layerLayout}
       />
     </Source>
