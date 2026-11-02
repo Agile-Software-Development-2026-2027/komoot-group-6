@@ -77,6 +77,3 @@ export function calculateTrailStats(geoJsonData: any) {
     minAltitude: Number(elevationStats.minEle.toFixed(2))
   };
 }
-
-
-calculateTrailStats(mockData);
