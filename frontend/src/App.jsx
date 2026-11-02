@@ -5,7 +5,6 @@ import LoginPage from './pages/LoginPage.jsx';
 import HomePage from './pages/HomePage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
-import MapPage from './pages/MapPage.jsx';
 
 
 export default function App() {
@@ -18,7 +17,7 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/map" element={<MapPage />} />
+        <Route path="/map" element={<Navigate to="/" replace />} />
       </Route>
       {/* Qualsiasi URL sconosciuto rimanda a "/" */}
       <Route path="*" element={<Navigate to="/" replace />} />
