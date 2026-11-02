@@ -1,0 +1,71 @@
+.track-popup .maplibregl-popup-content {
+  padding: 12px 14px;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.18);
+  /* Riquadri molto bassi: il contenuto scorre invece di uscire dalla mappa */
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.track-popup h2 {
+  margin: 0 36px 2px 0;
+  font-size: 1rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.track-popup-description {
+  margin: 0 0 8px;
+  font-size: 0.8125rem;
+}
+
+.track-popup-subtitle {
+  margin: 0 0 8px;
+  text-transform: capitalize;
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+}
+
+/* Pulsante X: area di tocco 44x44 px */
+.track-popup .maplibregl-popup-close-button {
+  top: 0;
+  right: 0;
+  width: 44px;
+  height: 44px;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--color-primary);
+  border-radius: 0 var(--radius) 0 0;
+}
+
+.track-popup .maplibregl-popup-close-button:hover {
+  background: var(--color-primary-light);
+}
+
+.track-popup .maplibregl-popup-close-button:focus-visible {
+  outline: 3px solid var(--color-primary-light);
+  outline-offset: -3px;
+}
+
+/* Dati numerici su due colonne: il popup resta basso */
+.track-popup-grid {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+}
+
+.track-popup-grid dt {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.track-popup-grid dd {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
