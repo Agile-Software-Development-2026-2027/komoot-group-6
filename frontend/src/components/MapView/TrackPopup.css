@@ -16,8 +16,14 @@
   overflow-wrap: anywhere;
 }
 
+.track-popup-description {
+  margin: 0 0 8px;
+  font-size: 0.8125rem;
+}
+
 .track-popup-subtitle {
   margin: 0 0 8px;
+  text-transform: capitalize;
   font-size: 0.8125rem;
   color: var(--color-muted);
 }

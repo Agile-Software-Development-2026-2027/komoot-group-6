@@ -41,60 +41,73 @@ afterEach(() => {
   rects.popup = { left: 100, top: 100, right: 300, bottom: 250 };
 });
 
-const stats = {
+// Proprietà di un sentiero come le restituisce GET /api/trails
+const trail = {
+  id: 'f3c1d2a0-0000-4000-8000-000000000001',
   name: 'Test trail',
-  activity: 'hike',
-  startTime: '2025-08-17T10:00:00Z',
-  distance: 12345,
-  duration: 90 * 60 * 1000,
-  ascent: 400,
-  descent: 380,
-  minAltitude: 100,
-  maxAltitude: 900,
+  description: 'A nice loop.',
+  trailType: 'trail_running',
+  difficulty: 'E',
+  lengthM: 12345,
+  ascentM: 400,
+  descentM: 380,
+  maxElevationM: 900,
+  estDurationMin: 90,
+  startPoint: [16.17, 39.27],
 };
 const lngLat = { lng: 16.17, lat: 39.27 };
 
 describe('TrackPopup', () => {
-  it('renders nothing without stats or position', () => {
-    expect(render(<TrackPopup stats={null} lngLat={lngLat} onClose={() => {}} />).container.firstChild).toBeNull();
+  it('renders nothing without trail or position', () => {
+    expect(render(<TrackPopup trail={null} lngLat={lngLat} onClose={() => {}} />).container.firstChild).toBeNull();
     cleanup();
-    expect(render(<TrackPopup stats={stats} lngLat={null} onClose={() => {}} />).container.firstChild).toBeNull();
+    expect(render(<TrackPopup trail={trail} lngLat={null} onClose={() => {}} />).container.firstChild).toBeNull();
   });
 
-  it('places the popup at the clicked point, above it, and shows the details', () => {
-    render(<TrackPopup stats={stats} lngLat={lngLat} onClose={() => {}} />);
+  it('places the popup at the start point, above it, and shows the details', () => {
+    render(<TrackPopup trail={trail} lngLat={lngLat} onClose={() => {}} />);
 
     expect(popupProps).toHaveBeenCalledWith(
       expect.objectContaining({ longitude: 16.17, latitude: 39.27, anchor: 'bottom' })
     );
     expect(screen.getByText('Test trail')).toBeTruthy();
+    expect(screen.getByText('A nice loop.')).toBeTruthy();
+    expect(screen.getByText('trail running')).toBeTruthy();
     expect(screen.getByText('12.35 km')).toBeTruthy();
     expect(screen.getByText('1 h 30 min')).toBeTruthy();
     expect(screen.getByText('400 m')).toBeTruthy();
+    expect(screen.getByText('E')).toBeTruthy();
   });
 
-  it('hides the details the file has no data for', () => {
-    render(<TrackPopup stats={{ ...stats, duration: null, ascent: null, descent: null }} lngLat={lngLat} onClose={() => {}} />);
-    expect(screen.queryByText('Total time')).toBeNull();
+  it('hides the details the trail has no data for', () => {
+    render(
+      <TrackPopup
+        trail={{ ...trail, description: null, estDurationMin: null, ascentM: null, descentM: null }}
+        lngLat={lngLat}
+        onClose={() => {}}
+      />
+    );
+    expect(screen.queryByText('Est. time')).toBeNull();
     expect(screen.queryByText('Ascent')).toBeNull();
+    expect(screen.queryByText('A nice loop.')).toBeNull();
     expect(screen.getByText('Distance')).toBeTruthy();
   });
 
   it('does not move the map when the popup is fully visible', () => {
-    render(<TrackPopup stats={stats} lngLat={lngLat} onClose={() => {}} />);
+    render(<TrackPopup trail={trail} lngLat={lngLat} onClose={() => {}} />);
     expect(panBy).not.toHaveBeenCalled();
   });
 
   it('pans the map when the popup sticks out of the map', () => {
     // esce di 50 px in alto: con il margine di 12 px la mappa deve scorrere di 62 px
     rects.popup = { left: 100, top: -50, right: 300, bottom: 100 };
-    render(<TrackPopup stats={stats} lngLat={lngLat} onClose={() => {}} />);
+    render(<TrackPopup trail={trail} lngLat={lngLat} onClose={() => {}} />);
     expect(panBy).toHaveBeenCalledWith([0, -62], { duration: 300 });
   });
 
   it('closes with Esc', () => {
     const onClose = vi.fn();
-    render(<TrackPopup stats={stats} lngLat={lngLat} onClose={onClose} />);
+    render(<TrackPopup trail={trail} lngLat={lngLat} onClose={onClose} />);
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
