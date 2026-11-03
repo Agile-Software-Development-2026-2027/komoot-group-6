@@ -1,40 +1,38 @@
-import { afterEach, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { StrictMode } from 'react';
 
 import UserLocationControl from './UserLocationControl.jsx';
 
-//basically FOR NOW there are 5 tests, if you add some update this comment
-// 1 Adds the button in the bottom-right, with the options from before
+// FOR NOW there are 6 tests, if you add some update this comment
+// 1 Renders the button in the bottom-right, with the options from before
 // 2 Asks for the location immediately if the map is already loaded
 // 3 Otherwise asks for it when the map finishes loading
-// 4 With StrictMode there is only one control, the new one, and the old one doesn't start
-// 5 When it disappears it removes the button and stops waiting for the load
-const mock = vi.hoisted(() => ({ map: null, controls: [] }));
+// 4 With StrictMode it asks for the location only once
+// 5 When it disappears it stops waiting for the load
+// 6 Without a map it does nothing
+// 
+const mock = vi.hoisted(() => ({ map: null, control: null, props: null }));
 
-// Mock di GeolocateControl: ricorda le opzioni e la funzione trigger.
-vi.mock('maplibre-gl', () => ({
-  GeolocateControl: class {
-    constructor(options) {
-      this.options = options;
-      this.trigger = vi.fn();
-      mock.controls.push(this);
-    }
-  },
-}));
+// Mock of react-map-gl: useMap returns the fake map,
+// GeolocateControl records its props and exposes a fake control through the ref
+vi.mock('react-map-gl/maplibre', async () => {
+  const { forwardRef, useImperativeHandle } = await import('react');
+  return {
+    useMap: () => ({ current: mock.map && { getMap: () => mock.map } }),
+    GeolocateControl: forwardRef(function FakeGeolocateControl(props, ref) {
+      useImperativeHandle(ref, () => mock.control, []);
+      mock.props = props;
+      return null;
+    }),
+  };
+});
 
-vi.mock('react-map-gl/maplibre', () => ({
-  useMap: () => ({ current: mock.map && { getMap: () => mock.map } }),
-}));
-
-// Crea una mappa finta con le funzioni necessarie per i test.
+// Creates a fake map with the functions needed by the tests.
 function createFakeMap({ loaded }) {
   const map = {
     isLoaded: loaded,
     onLoad: null,
-    added: [],
-    addControl: vi.fn((control, position) => map.added.push({ control, position })),
-    removeControl: vi.fn((control) => { map.added = map.added.filter((a) => a.control !== control); }),
     loaded: () => map.isLoaded,
     once: vi.fn((type, handler) => { if (type === 'load') map.onLoad = handler; }),
     off: vi.fn((type, handler) => { if (type === 'load' && map.onLoad === handler) map.onLoad = null; }),
@@ -42,19 +40,23 @@ function createFakeMap({ loaded }) {
   return map;
 }
 
+beforeEach(() => {
+  mock.control = { trigger: vi.fn() };
+});
+
 afterEach(() => {
   cleanup();
   mock.map = null;
-  mock.controls = [];
+  mock.control = null;
+  mock.props = null;
 });
 
-test('adds the button in the bottom-right, with the options from before', () => {
+test('renders the button in the bottom-right, with the options from before', () => {
   mock.map = createFakeMap({ loaded: true });
   render(<UserLocationControl />);
 
-  expect(mock.map.added).toHaveLength(1);
-  expect(mock.map.added[0].position).toBe('bottom-right');
-  expect(mock.controls[0].options).toEqual({
+  expect(mock.props).toMatchObject({
+    position: 'bottom-right',
     positionOptions: { enableHighAccuracy: true },
     trackUserLocation: true,
     showUserLocation: true,
@@ -65,39 +67,41 @@ test('asks for the location immediately if the map is already loaded', () => {
   mock.map = createFakeMap({ loaded: true });
   render(<UserLocationControl />);
 
-  expect(mock.controls[0].trigger).toHaveBeenCalledTimes(1);
+  expect(mock.control.trigger).toHaveBeenCalledTimes(1);
 });
 
 test('otherwise asks for it when the map finishes loading', () => {
   mock.map = createFakeMap({ loaded: false });
   render(<UserLocationControl />);
-  expect(mock.controls[0].trigger).not.toHaveBeenCalled();
+  expect(mock.control.trigger).not.toHaveBeenCalled();
 
   mock.map.onLoad();
 
-  expect(mock.controls[0].trigger).toHaveBeenCalledTimes(1);
+  expect(mock.control.trigger).toHaveBeenCalledTimes(1);
 });
 
-test('with StrictMode there is only one control, the new one, and the old one doesn\'t start', () => {
+test('with StrictMode it asks for the location only once', () => {
   mock.map = createFakeMap({ loaded: false });
   render(<StrictMode><UserLocationControl /></StrictMode>);
 
-  // Simulate the map loading, which would normally trigger the old control if it were still there.
-  expect(mock.controls).toHaveLength(2);
-  expect(mock.map.added).toHaveLength(1);
-  expect(mock.map.added[0].control).toBe(mock.controls[1]);
-
+  // StrictMode runs the effect twice: the first load listener must be gone
   mock.map.onLoad();
-  expect(mock.controls[0].trigger).not.toHaveBeenCalled();
-  expect(mock.controls[1].trigger).toHaveBeenCalledTimes(1);
+
+  expect(mock.control.trigger).toHaveBeenCalledTimes(1);
 });
 
-test('when it disappears it removes the button and stops waiting for the load', () => {
+test('when it disappears it stops waiting for the load', () => {
   mock.map = createFakeMap({ loaded: false });
   const { unmount } = render(<UserLocationControl />);
 
   unmount();
 
-  expect(mock.map.added).toHaveLength(0);
   expect(mock.map.onLoad).toBeNull();
+  expect(mock.control.trigger).not.toHaveBeenCalled();
+});
+
+test('without a map it does nothing', () => {
+  render(<UserLocationControl />);
+
+  expect(mock.control.trigger).not.toHaveBeenCalled();
 });
