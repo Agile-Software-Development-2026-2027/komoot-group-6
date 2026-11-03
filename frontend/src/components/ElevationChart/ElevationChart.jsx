@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import styles from './ElevationChart.module.css';
 
@@ -5,9 +6,15 @@ const tooltipValue = (value) => [`${Number(value).toFixed(1)} m`, 'Elevation'];
 const tooltipDistance = (value) => `${Number(value).toFixed(2)} km`;
 
 /** Accepts [{distance: number (km), elevation: number (m)}]. Parent controls placement. */
-export default function ElevationProfile({ data = [] }) {
-  const valid = Array.isArray(data) ? data.filter((p) =>
-    Number.isFinite(p?.distance) && Number.isFinite(p?.elevation)) : [];
+export default function ElevationProfile({ data = [], onHover }) {
+  const valid = useMemo(() => Array.isArray(data) ? data.filter((p) =>
+    Number.isFinite(p?.distance) && Number.isFinite(p?.elevation)) : [], [data]);
+
+  const handleMouseMove = (state) => {
+    const index = state?.activeTooltipIndex;
+    const point = state?.isTooltipActive && index != null ? valid[Number(index)] : null;
+    onHover?.(point ?? null);
+  };
 
   return (
     <section className={styles.profile} aria-label="Elevation profile">
@@ -17,7 +24,8 @@ export default function ElevationProfile({ data = [] }) {
       ) : (
         <div className={styles.chart} role="img" aria-label="Elevation in meters by distance in kilometers">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={valid} margin={{ top: 12, right: 16, left: 0, bottom: 18 }}>
+            <AreaChart data={valid} margin={{ top: 12, right: 16, left: 0, bottom: 18 }}
+              onMouseMove={handleMouseMove} onMouseLeave={() => onHover?.(null)}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="distance" type="number" domain={['dataMin', 'dataMax']}
                 tickFormatter={(n) => Number(n).toFixed(1)}

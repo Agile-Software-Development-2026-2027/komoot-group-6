@@ -1,13 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useMap } from 'react-map-gl/maplibre';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Marker, useMap } from 'react-map-gl/maplibre';
 import MapView from '../components/MapView/MapView.jsx';
 import TrackLayer from '../components/MapView/TrackLayer.jsx';
 import TrackPopup from '../components/MapView/TrackPopup.jsx';
 import TrailStartsLayer from '../components/MapView/TrailStartsLayer.jsx';
 import NearbyPanel from '../components/NearbyPanel/NearbyPanel.jsx';
 import SideMenu from '../components/SideMenu.jsx';
+import ElevationProfile from '../components/ElevationChart/ElevationChart.jsx';
 import { useLayerEvents } from '../map/useLayerEvents.js';
 import { getTrail, getTrailsInBounds } from '../services/trailsService.js';
+import { buildElevationProfile } from '../utils/trailStats.js';
 import './HomePage.css';
 
 // Attesa dopo l'ultimo spostamento della mappa prima di chiedere i sentieri dell'area
@@ -102,6 +104,8 @@ export default function HomePage() {
   // Il popup si apre quando la mappa ha finito di inquadrare il percorso
   const [popupOpen, setPopupOpen] = useState(false);
   const selectedIdRef = useRef(null);
+  const [hoveredPoint, setHoveredPoint] = useState(null);
+  const elevationData = useMemo(() => buildElevationProfile(route), [route]);
 
   const handleSelect = useCallback(
     (feature) => {
@@ -113,6 +117,7 @@ export default function HomePage() {
       selectedIdRef.current = id;
       setSelected({ id, lngLat: { lng, lat }, properties: trail.properties });
       setRoute(null);
+      setHoveredPoint(null);
       setPopupOpen(false);
 
       getTrail(id)
@@ -131,6 +136,7 @@ export default function HomePage() {
     selectedIdRef.current = null;
     setSelected(null);
     setRoute(null);
+    setHoveredPoint(null);
     setPopupOpen(false);
   }, []);
 
@@ -146,6 +152,15 @@ export default function HomePage() {
           <TrailStartsLayer data={trails} />
           {trails && <TrailClick onSelect={handleSelect} />}
           <TrackLayer data={route} />
+          {hoveredPoint && (
+            <Marker
+              longitude={hoveredPoint.coordinates[0]}
+              latitude={hoveredPoint.coordinates[1]}
+              anchor="center"
+              color="#16803c"
+              style={{ pointerEvents: 'none' }}
+            />
+          )}
           <FitToTrack data={route} onDone={handleFitted} />
           <TrackPopup
             trail={popupOpen ? selected?.properties : null}
@@ -156,6 +171,13 @@ export default function HomePage() {
           <NearbyPanel />
         </MapView>
       </section>
+      {route && (
+        <ElevationProfile
+          key={selected?.id}
+          data={elevationData}
+          onHover={setHoveredPoint}
+        />
+      )}
     </main>
   );
 }

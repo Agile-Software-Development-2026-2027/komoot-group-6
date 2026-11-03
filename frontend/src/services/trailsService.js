@@ -1,6 +1,13 @@
 import { trailImageUrl } from '../utils/trailImages.js';
 import { ApiError, apiRequest } from './api.js';
 
+// Solo in sviluppo e su richiesta esplicita: GPX originali per provare grafico e mappa.
+// Senza VITE_USE_LOCAL_GPX=true il servizio continua a usare il backend.
+async function getLocalTrails() {
+  const { default: collection } = await import('../data/gpxTrails.json');
+  return collection.features;
+}
+
 // Chiamate al backend che riguardano i sentieri.
 // getTrailsInBounds e getTrail: i sentieri sono dati pubblici, gli endpoint non richiedono il login,
 // quindi niente token. getNearbyTrails e saveTrail ricevono invece authFetch da useAuth(),
@@ -8,13 +15,34 @@ import { ApiError, apiRequest } from './api.js';
 
 // Sentieri che partono dentro l'area [minLng, minLat, maxLng, maxLat].
 // Restituisce una FeatureCollection di punti (i punti di partenza).
-export function getTrailsInBounds(bbox) {
-  return apiRequest(`/trails?bbox=${bbox.join(',')}`);
+export async function getTrailsInBounds(bbox) {
+  if (!import.meta.env.DEV || import.meta.env.VITE_USE_LOCAL_GPX !== 'true') {
+    return apiRequest(`/trails?bbox=${bbox.join(',')}`);
+  }
+
+  const [minLng, minLat, maxLng, maxLat] = bbox;
+  const trails = await getLocalTrails();
+  const features = trails
+    .filter(({ properties: { startPoint: [lng, lat] } }) =>
+      lng >= minLng && lng <= maxLng && lat >= minLat && lat <= maxLat)
+    .map((trail) => ({
+      ...trail,
+      geometry: { type: 'Point', coordinates: trail.properties.startPoint },
+    }));
+
+  return structuredClone({ type: 'FeatureCollection', features });
 }
 
 // Un sentiero con il percorso completo: una Feature la cui geometria è il percorso.
-export function getTrail(id) {
-  return apiRequest(`/trails/${encodeURIComponent(id)}`);
+export async function getTrail(id) {
+  if (!import.meta.env.DEV || import.meta.env.VITE_USE_LOCAL_GPX !== 'true') {
+    return apiRequest(`/trails/${encodeURIComponent(id)}`);
+  }
+
+  const trails = await getLocalTrails();
+  const trail = trails.find((feature) => feature.properties.id === id);
+  if (!trail) throw new ApiError('Trail not found', 404);
+  return structuredClone(trail);
 }
 
 // Il backend usa la scala CAI (T, E, EE, EEA); card e filtri usano easy / moderate / hard.

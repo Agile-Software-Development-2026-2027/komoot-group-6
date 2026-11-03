@@ -40,6 +40,45 @@ function calculateElevationStats(coordinates) {
   return { elevationGain, elevationLoss, maxEle, minEle };
 }
 
+// Punti del profilo: distanza progressiva (km), quota originale (m) e coordinate per la mappa.
+export function buildElevationProfile(geoJsonData) {
+  const geometry = geoJsonData?.type === 'FeatureCollection'
+    ? geoJsonData.features?.[0]?.geometry
+    : geoJsonData?.type === 'Feature' ? geoJsonData.geometry : geoJsonData;
+  const segments = geometry?.type === 'LineString'
+    ? [geometry.coordinates]
+    : geometry?.type === 'MultiLineString' ? geometry.coordinates : [];
+
+  const profile = [];
+  let distance = 0;
+
+  for (const segment of segments) {
+    let previous = null;
+
+    for (const coordinates of segment) {
+      const [longitude, latitude, elevation] = coordinates ?? [];
+      if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) {
+        previous = null;
+        continue;
+      }
+
+      if (previous) {
+        distance += length(
+          { type: 'LineString', coordinates: [previous, coordinates] },
+          { units: 'kilometers' }
+        );
+      }
+      previous = coordinates;
+
+      if (Number.isFinite(elevation)) {
+        profile.push({ distance, elevation, coordinates });
+      }
+    }
+  }
+
+  return profile;
+}
+
 export function calculateTrailStats(geoJsonData) {
   if (!geoJsonData) throw new Error("Unable to extract coordinates");
 
