@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import length from '@turf/length';
 import { buildElevationProfile, calculateTrailStats } from './trailStats';
 
 describe('Trail Statistics Utility', () => {
@@ -74,6 +75,35 @@ describe('Trail Statistics Utility', () => {
 });
 
 describe('Elevation profile points for chart-to-map synchronization', () => {
+  it('rounds only the profile values to meters and decimeters, retaining the original GPS coordinate', () => {
+    const coordinates = [Object.freeze([16, 39, 1234.56789]), Object.freeze([16.001, 39.001, 1200.12345])];
+    const route = { type: 'LineString', coordinates };
+    const profile = buildElevationProfile(route);
+    const expectedDistance = Math.round(length(route, { units: 'kilometers' }) * 1000) / 1000;
+
+    expect(profile[0]).toEqual({ distance: 0, elevation: 1234.6, coordinates: coordinates[0] });
+    expect(profile[1].distance).toBe(expectedDistance);
+    expect(profile[1].elevation).toBe(1200.1);
+    expect(profile[0].coordinates).toBe(coordinates[0]);
+    expect(profile[1].coordinates).toBe(coordinates[1]);
+    expect(coordinates[0][2]).toBe(1234.56789);
+    expect(coordinates[1][2]).toBe(1200.12345);
+  });
+
+  it('accumulates 10,000 sub-meter segments without rounding each increment or dropping profile points', () => {
+    const coordinates = Array.from({ length: 10001 }, (_, i) => [16 + i * 0.000001, 39, 1234.56789]);
+    const route = { type: 'LineString', coordinates };
+    const profile = buildElevationProfile(route);
+    const expectedDistance = Math.round(length(route, { units: 'kilometers' }) * 1000) / 1000;
+
+    expect(profile).toHaveLength(coordinates.length);
+    expect(profile[1].distance).toBe(0);
+    expect(profile.at(-1).distance).toBe(expectedDistance);
+    expect(profile.at(-1).distance).toBeGreaterThan(0.8);
+    expect(profile.every((point, i) => point.coordinates === coordinates[i])).toBe(true);
+    expect(profile.every((point, i) => i === 0 || point.distance >= profile[i - 1].distance)).toBe(true);
+  });
+
   it('keeps each original coordinate and zero elevation with progressive distances in kilometers', () => {
     const coordinates = [[16, 39, 0], [16.01, 39.01, 100], [16.02, 39.02, 120]];
     const route = { type: 'Feature', geometry: { type: 'LineString', coordinates }, properties: {} };
