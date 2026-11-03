@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@turf/distance": "7.4.0",
     "@turf/helpers": "^7.4.0",
     "@turf/length": "^7.4.0",
     "maplibre-gl": "^6.16.0",

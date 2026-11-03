@@ -1,4 +1,7 @@
 import length from '@turf/length';
+import turfDistance from '@turf/distance';
+
+const DISTANCE_OPTIONS = { units: 'kilometers' };
 
 //Filter for GPS jitter
 const ELEV_THRESHOLD = 5;
@@ -38,6 +41,46 @@ function calculateElevationStats(coordinates) {
     }
   }
   return { elevationGain, elevationLoss, maxEle, minEle };
+}
+
+// Valori del grafico arrotondati; somma delle distanze e coordinate originali mantengono la precisione.
+export function buildElevationProfile(geoJsonData) {
+  const geometry = geoJsonData?.type === 'FeatureCollection'
+    ? geoJsonData.features?.[0]?.geometry
+    : geoJsonData?.type === 'Feature' ? geoJsonData.geometry : geoJsonData;
+  const segments = geometry?.type === 'LineString'
+    ? [geometry.coordinates]
+    : geometry?.type === 'MultiLineString' ? geometry.coordinates : [];
+
+  const profile = [];
+  let distance = 0;
+
+  for (const segment of segments) {
+    let previous = null;
+
+    for (const coordinates of segment) {
+      const [longitude, latitude, elevation] = coordinates ?? [];
+      if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) {
+        previous = null;
+        continue;
+      }
+
+      if (previous) {
+        distance += turfDistance(previous, coordinates, DISTANCE_OPTIONS);
+      }
+      previous = coordinates;
+
+      if (Number.isFinite(elevation)) {
+        profile.push({
+          distance: Math.round(distance * 1000) / 1000,
+          elevation: Math.round(elevation * 10) / 10,
+          coordinates,
+        });
+      }
+    }
+  }
+
+  return profile;
 }
 
 export function calculateTrailStats(geoJsonData) {

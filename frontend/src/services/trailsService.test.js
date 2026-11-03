@@ -1,6 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from './api.js';
 import { getNearbyTrails, getTrail, getTrailsInBounds, saveTrail } from './trailsService.js';
+import { buildElevationProfile, calculateTrailStats } from '../utils/trailStats.js';
 
 // Cartella delle immagini finta: c'è solo l'immagine dell'"Anello del Campus UniCal"
 vi.mock('../utils/trailImages.js', () => ({
@@ -14,8 +15,13 @@ function mockFetch(body, { ok = true, status = 200 } = {}) {
   return fetchMock;
 }
 
+beforeEach(() => {
+  vi.stubEnv('VITE_USE_LOCAL_GPX', undefined);
+});
+
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe('trailsService', () => {
@@ -154,5 +160,71 @@ describe('saveTrail', () => {
 
     const serverDown = vi.fn().mockRejectedValue(new ApiError('Cannot reach the server.', 0));
     await expect(saveTrail(serverDown, 't1')).rejects.toThrow('Cannot reach the server.');
+  });
+});
+
+describe('original GPX data explicitly enabled for local development', () => {
+  beforeEach(() => {
+    vi.stubEnv('DEV', true);
+    vi.stubEnv('VITE_USE_LOCAL_GPX', 'true');
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  it('returns nine API-compatible start points and all 31,662 original profile points without HTTP requests', async () => {
+    const collection = await getTrailsInBounds([-180, -90, 180, 90]);
+    expect(collection.type).toBe('FeatureCollection');
+    expect(collection.features).toHaveLength(9);
+    expect(new Set(collection.features.map((feature) => feature.id)).size).toBe(9);
+
+    let pointCount = 0;
+    for (const start of collection.features) {
+      expect(start.geometry).toEqual({ type: 'Point', coordinates: start.properties.startPoint });
+      expect(start.geometry.coordinates).toHaveLength(2);
+      expect(start.properties.id).toBe(start.id);
+      const detail = await getTrail(start.id);
+      const profile = buildElevationProfile(detail);
+      const stats = calculateTrailStats(detail);
+      expect(detail.geometry.type).toBe('LineString');
+      expect(detail.properties).toEqual(start.properties);
+      expect(profile).toHaveLength(detail.geometry.coordinates.length);
+      expect(profile.every((point, i) => point.coordinates === detail.geometry.coordinates[i])).toBe(true);
+      expect(detail.properties.lengthM).toBe(Math.round(stats.distanceKm * 1000));
+      expect(detail.properties.ascentM).toBe(Math.round(stats.elevationGain));
+      pointCount += profile.length;
+    }
+    expect(pointCount).toBe(31662);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('filters the visible area and loads the exact Cozzo Cervello XYZ track', async () => {
+    const { features } = await getTrailsInBounds([16.08, 39.42, 16.09, 39.43]);
+    expect(features.map((feature) => feature.properties.name)).toEqual(['Cozzo Cervello']);
+    const detail = await getTrail(features[0].id);
+    expect(detail.geometry.coordinates).toHaveLength(789);
+    expect(detail.geometry.coordinates[0]).toEqual([16.084846, 39.427135, 1179.565814]);
+    expect((await getTrailsInBounds([10, 40, 11, 41])).features).toEqual([]);
+  });
+
+  it('preserves the GPX whose original elevations are all zero', async () => {
+    const { features } = await getTrailsInBounds([-180, -90, 180, 90]);
+    const start = features.find((feature) => feature.properties.name === 'Piccole Dolomiti - Frascineto');
+    const profile = buildElevationProfile(await getTrail(start.id));
+    expect(profile).toHaveLength(16486);
+    expect(profile.every((point) => point.elevation === 0)).toBe(true);
+  });
+
+  it('reports an unknown local ID without falling back to the database', async () => {
+    await expect(getTrail('unknown')).rejects.toMatchObject({ message: 'Trail not found', status: 404 });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('uses the API in production even when the local GPX flag is true', async () => {
+    vi.stubEnv('DEV', false);
+    const collection = { type: 'FeatureCollection', features: [] };
+    const fetchMock = mockFetch(collection);
+    expect(await getTrailsInBounds([16, 39, 17, 40])).toEqual(collection);
+    expect(fetchMock.mock.calls[0][0]).toMatch(/\/trails\?bbox=16,39,17,40$/);
+    await getTrail('db-trail');
+    expect(fetchMock.mock.calls[1][0]).toMatch(/\/trails\/db-trail$/);
   });
 });
