@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Marker, useMap } from 'react-map-gl/maplibre';
 import { useAuth } from '../../context/useAuth.js';
-import { getNearbyTrails, saveTrail } from '../../services/trailService.js';
+import { getNearbyTrails, saveTrail } from '../../services/trailsService.js';
 import { DIFFICULTIES } from './difficulty.js';
 import { ChevronIcon, MapPinIcon } from './icons.jsx';
 import TrailCard from './TrailCard.jsx';

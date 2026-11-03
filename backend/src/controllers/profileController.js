@@ -8,7 +8,7 @@ const INSERT_ERRORS = {
 };
 
 // POST /api/profile/saved-trails
-// Salva un sentiero nel profilo dell'utente loggato (tabella saved_trails, vedi sql/saved_trails.sql).
+// Salva un sentiero nel profilo dell'utente loggato (tabella saved_trails, vedi database/saved_trails.sql).
 // requireAuth ha già messo l'utente in req.user e il token in req.token.
 export async function saveTrail(req, res) {
   const { trailId } = req.body;
