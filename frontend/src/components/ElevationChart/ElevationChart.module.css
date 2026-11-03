@@ -1,0 +1,15 @@
+.profile {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 16px;
+  border-radius: 14px;
+  background: #fff;
+  color: #163b2a;
+}
+.heading { margin: 0 0 12px; font-size: 1.1rem; }
+.chart { width: 100%; min-width: 0; height: clamp(190px, 28vh, 280px); }
+@media (max-width: 640px) {
+  .profile { padding: 12px; border-radius: 14px 14px 0 0; }
+  .chart { height: 200px; }
+}
