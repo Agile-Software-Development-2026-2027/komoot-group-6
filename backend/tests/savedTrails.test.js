@@ -1,0 +1,87 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import request from 'supertest';
+
+vi.mock('../src/config/supabase.js', () => ({
+  supabase: { auth: { getUser: vi.fn() } },
+  supabaseAsUser: vi.fn(),
+}));
+
+import app from '../src/app.js';
+import { supabase, supabaseAsUser } from '../src/config/supabase.js';
+
+const TRAIL_ID = '7d3c0b8e-2f7a-4c1e-9a55-0b6f1c2d3e4f';
+
+// Finto client Supabase: supabaseAsUser(token).from('saved_trails').insert(riga)
+const insert = vi.fn();
+const from = vi.fn(() => ({ insert }));
+
+// Manda la richiesta come utente loggato
+function save(body) {
+  return request(app)
+    .post('/api/profile/saved-trails')
+    .set('Authorization', 'Bearer access-123')
+    .send(body);
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  // Di default il token è valido e l'insert va a buon fine
+  supabase.auth.getUser.mockResolvedValue({
+    data: { user: { id: 'abc-123', email: 'mario@esempio.it' } },
+    error: null,
+  });
+  supabaseAsUser.mockReturnValue({ from });
+  insert.mockResolvedValue({ error: null });
+});
+
+describe('POST /api/profile/saved-trails', () => {
+  it('salva il sentiero per l\'utente del token (201)', async () => {
+    const res = await save({ trailId: TRAIL_ID });
+
+    expect(res.status).toBe(201);
+    expect(res.body).toEqual({ trailId: TRAIL_ID });
+    // La query parte con il token dell'utente, così valgono le policy RLS
+    expect(supabaseAsUser).toHaveBeenCalledWith('access-123');
+    expect(from).toHaveBeenCalledWith('saved_trails');
+    expect(insert).toHaveBeenCalledWith({ user_id: 'abc-123', trail_id: TRAIL_ID });
+  });
+
+  it('risponde 401 senza token e non scrive nulla', async () => {
+    const res = await request(app).post('/api/profile/saved-trails').send({ trailId: TRAIL_ID });
+
+    expect(res.status).toBe(401);
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it('risponde 400 se trailId manca o non è una stringa', async () => {
+    for (const body of [{}, { trailId: '  ' }, { trailId: 42 }]) {
+      const res = await save(body);
+      expect(res.status).toBe(400);
+    }
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['23505', 409, 'Trail already saved'],
+    ['23503', 404, 'Trail not found'],
+    ['22P02', 400, 'Invalid trail id'],
+  ])('traduce l\'errore Postgres %s in %i', async (code, status, message) => {
+    insert.mockResolvedValue({ error: { code, message: 'db error' } });
+
+    const res = await save({ trailId: TRAIL_ID });
+
+    expect(res.status).toBe(status);
+    expect(res.body.error).toBe(message);
+  });
+
+  it('risponde 500 per un errore inatteso del database', async () => {
+    insert.mockResolvedValue({ error: { code: '42501', message: 'permission denied' } });
+    // errorHandler stampa l'errore: qui lo silenziamo
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const res = await save({ trailId: TRAIL_ID });
+
+    expect(res.status).toBe(500);
+    consoleError.mockRestore();
+  });
+});

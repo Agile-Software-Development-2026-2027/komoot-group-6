@@ -4,6 +4,7 @@ import MapView from '../components/MapView/MapView.jsx';
 import TrackLayer from '../components/MapView/TrackLayer.jsx';
 import TrackPopup from '../components/MapView/TrackPopup.jsx';
 import TrailStartsLayer from '../components/MapView/TrailStartsLayer.jsx';
+import NearbyPanel from '../components/NearbyPanel/NearbyPanel.jsx';
 import SideMenu from '../components/SideMenu.jsx';
 import { useLayerEvents } from '../map/useLayerEvents.js';
 import { getTrail, getTrailsInBounds } from '../services/trailsService.js';
@@ -151,6 +152,8 @@ export default function HomePage() {
             lngLat={selected?.lngLat}
             onClose={handleClose}
           />
+          {/* Sentieri vicini al centro della mappa, con filtri e salvataggio nel profilo */}
+          <NearbyPanel />
         </MapView>
       </section>
     </main>
