@@ -2,6 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from './api.js';
 import { getNearbyTrails, getTrail, getTrailsInBounds, saveTrail } from './trailsService.js';
 
+// Cartella delle immagini finta: c'è solo l'immagine dell'"Anello del Campus UniCal"
+vi.mock('../utils/trailImages.js', () => ({
+  trailImageUrl: (name) => (name === 'Anello del Campus UniCal' ? '/assets/anello.jpg' : null),
+}));
+
 // apiRequest usa fetch: lo si simula per vedere l'indirizzo richiesto
 function mockFetch(body, { ok = true, status = 200 } = {}) {
   const fetchMock = vi.fn().mockResolvedValue({ ok, status, json: async () => body });
@@ -112,6 +117,19 @@ describe('getNearbyTrails', () => {
     const trails = await getNearbyTrails(authFetch, { lat: 0, lng: 0, radiusKm: 1 });
 
     expect(trails.map((trail) => trail.start)).toEqual([null, null, null]);
+  });
+
+  it('takes the image from the folder using the trail name', async () => {
+    const authFetch = vi.fn().mockResolvedValue(
+      nearbyResponse(
+        { properties: { id: 't1', name: 'Anello del Campus UniCal' } },
+        { properties: { id: 't2', name: 'Monte Curcio da Camigliatello' } }
+      )
+    );
+
+    const trails = await getNearbyTrails(authFetch, { lat: 0, lng: 0, radiusKm: 1 });
+
+    expect(trails.map((trail) => trail.imageUrl)).toEqual(['/assets/anello.jpg', null]);
   });
 
   it('returns an empty list when the response has no trails', async () => {
