@@ -1,4 +1,3 @@
-import { trailImageUrl } from '../utils/trailImages.js';
 import { ApiError, apiRequest } from './api.js';
 
 // Chiamate al backend che riguardano i sentieri.
@@ -38,8 +37,7 @@ function toTrail(feature) {
     elevationGainM: props.ascentM,
     distanceM: props.distanceM,
     start: toLngLat(feature?.geometry?.coordinates),
-    // Immagine della cartella src/assets/trails/ con il nome del sentiero, null se non c'è
-    imageUrl: trailImageUrl(props.name),
+    imageUrl: props.imageUrl ?? null,
     saved: Boolean(props.saved),
   };
 }
