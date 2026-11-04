@@ -3,7 +3,7 @@ import { Marker, useMap } from 'react-map-gl/maplibre';
 import { useAuth } from '../../context/useAuth.js';
 import { getNearbyTrails, saveTrail } from '../../services/trailsService.js';
 import { DIFFICULTIES } from './difficulty.js';
-import { ChevronIcon, MapPinIcon } from './icons.jsx';
+import { CloseIcon, MapPinIcon } from './icons.jsx';
 import TrailCard from './TrailCard.jsx';
 import styles from './NearbyPanel.module.css';
 
@@ -52,7 +52,7 @@ function statusMessage(search, shownCount) {
 
 // Lista "Trails nearby" a sinistra della mappa: cerca i sentieri entro il raggio scelto attorno
 // al centro della mappa, li filtra per difficoltà e permette di salvarli nel profilo.
-export default function NearbyPanel() {
+export default function NearbyPanel({ isOpen = true, onClose }) {
   const { current } = useMap();
   const { authFetch } = useAuth();
   const map = current?.getMap();
@@ -61,7 +61,6 @@ export default function NearbyPanel() {
   const [radiusKm, setRadiusKm] = useState(DEFAULT_RADIUS_KM);
   // Difficoltà selezionate; nessuna selezionata = tutte
   const [difficulties, setDifficulties] = useState([]);
-  const [isOpen, setIsOpen] = useState(true);
   // Risultato dell'ultima ricerca, con il raggio usato per farla
   const [search, setSearch] = useState({ status: 'loading', trails: [], radiusKm, error: null });
   // Aumenta quando si preme "Try again", così la ricerca riparte
@@ -98,8 +97,7 @@ export default function NearbyPanel() {
 
   // Cerca i sentieri quando cambiano centro o raggio
   useEffect(() => {
-    if (!center) return undefined;
-    // Diventa true se nel frattempo parte una ricerca più recente: il risultato vecchio si scarta
+    if (!isOpen || !center) return undefined;
     let outdated = false;
 
     const timer = setTimeout(async () => {
@@ -116,7 +114,7 @@ export default function NearbyPanel() {
       outdated = true;
       clearTimeout(timer);
     };
-  }, [authFetch, center, radiusKm, retryCount]);
+  }, [authFetch, center, radiusKm, retryCount, isOpen]);
 
   // Click su un sentiero: la mappa vola al suo punto di partenza, dove compare il segnaposto
   function showOnMap(trail) {
@@ -125,7 +123,7 @@ export default function NearbyPanel() {
     if (map) flyToTrail(map, trail);
 
     // Su schermi stretti la lista copre metà mappa: la chiudiamo per far vedere il posto
-    if (window.matchMedia?.(NARROW_SCREEN)?.matches) setIsOpen(false);
+    if (window.matchMedia?.(NARROW_SCREEN)?.matches) onClose?.();
   }
 
   function toggleDifficulty(value) {
@@ -150,25 +148,24 @@ export default function NearbyPanel() {
         </Marker>
       )}
 
-      <section className={`${styles.panel} ${isOpen ? '' : styles.collapsed}`} aria-labelledby="nearby-title">
-        <div className={styles.header}>
-          <h2 id="nearby-title">Trails nearby</h2>
-          <p role="status" className={`${styles.status} ${search.status === 'error' ? styles.statusError : ''}`}>
-            {statusMessage(search, shownTrails.length)}
-          </p>
-          <button
-            type="button"
-            className={styles.toggle}
-            aria-expanded={isOpen}
-            aria-controls="nearby-content"
-            aria-label={isOpen ? 'Hide trail list' : 'Show trail list'}
-            onClick={() => setIsOpen((open) => !open)}
-          >
-            <ChevronIcon up={isOpen} />
-          </button>
-        </div>
+            {isOpen && (
+        <section className={styles.panel} aria-labelledby="nearby-title">
+          <div className={styles.header}>
+            <h2 id="nearby-title">Trails nearby</h2>
+            <p role="status" className={`${styles.status} ${search.status === 'error' ? styles.statusError : ''}`}>
+              {statusMessage(search, shownTrails.length)}
+            </p>
+            <button
+              type="button"
+              className={styles.toggle}
+              aria-label="Close trail list"
+              onClick={onClose}
+            >
+              <CloseIcon />
+            </button>
+          </div>
 
-        <div id="nearby-content" className={styles.content} hidden={!isOpen}>
+          <div className={styles.content}>
           <div className={styles.filters}>
             <div className={styles.radius}>
               <label htmlFor="nearby-radius">Search radius</label>
@@ -233,8 +230,9 @@ export default function NearbyPanel() {
               ))}
             </ul>
           </div>
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
     </>
   );
 }

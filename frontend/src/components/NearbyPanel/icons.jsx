@@ -67,11 +67,23 @@ export function MapPinIcon({ className }) {
   );
 }
 
-// Freccia del pulsante che apre e chiude la lista
-export function ChevronIcon({ up }) {
+// Icon of the "Trails nearby" button in the map toolbar
+export function TrailsIcon() {
   return (
-    <svg {...LINE} width="20" height="20">
-      <path d={up ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'} />
+    <svg {...LINE} width="22" height="22">
+      <circle cx="6" cy="19" r="2" />
+      <circle cx="18" cy="5" r="2" />
+      <path d="M8 19h7a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h7" />
     </svg>
   );
 }
+
+// Cross of the button that closes the panel
+export function CloseIcon() {
+  return (
+    <svg {...LINE} width="20" height="20">
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
+
