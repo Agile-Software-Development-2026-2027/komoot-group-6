@@ -1,7 +1,7 @@
 /* Lista "Trails nearby": colonna bianca sul lato sinistro della mappa */
 .panel {
   position: absolute;
-  top: 12px;
+  top: 72px;
   /* in basso lascia libera la scala della mappa */
   bottom: 48px;
   left: 12px;
@@ -14,11 +14,6 @@
   background: var(--color-surface);
   border-radius: 16px;
   box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
-}
-
-/* Lista chiusa: resta solo l'intestazione */
-.collapsed {
-  bottom: auto;
 }
 
 /* Intestazione: titolo, frase di stato e freccia per chiudere/aprire */
@@ -74,10 +69,6 @@
   flex: 1;
   flex-direction: column;
   min-height: 0;
-}
-
-.content[hidden] {
-  display: none;
 }
 
 .filters {
@@ -413,8 +404,8 @@
    (così il centro della mappa, dove si cerca, resta visibile) e le card diventano righe compatte */
 @media (max-width: 720px) {
   .panel {
-    top: 8px;
-    right: 8px;
+    top: 68px;
+    right: 66px;
     bottom: auto;
     left: 8px;
     width: auto;

@@ -12,9 +12,10 @@ import NearbyPanel from './NearbyPanel.jsx';
 // 4 Il filtro difficoltà (a scelta multipla) lavora sui risultati, senza nuove richieste
 // 5 Se la ricerca fallisce mostra l'errore e "Try again" la ripete
 // 6 Il segnalibro salva il sentiero nel profilo
-// 7 La freccia chiude e riapre la lista
+// 7 The arrow hides and shows the list, but the number of trails remains visible
 // 8 Cliccando un sentiero la mappa vola lì, compare il segnaposto e la lista non cambia
 // 9 Se la prima posizione GPS arriva dopo il click, la mappa torna sul sentiero (una volta sola)
+// 10 With closed panel, the search still works and the number of trails is shown
 
 const mock = vi.hoisted(() => ({ map: null, authFetch: null }));
 
@@ -203,20 +204,22 @@ test('the bookmark saves the trail to the profile', async () => {
   expect(screen.getByRole('button', { name: 'Saved Sentiero del Crati' })).toBeDisabled();
 });
 
-test('the arrow hides and shows the list', async () => {
-  render(<NearbyPanel />);
+test('the close button calls onClose', async () => {
+  const onClose = vi.fn();
+  render(<NearbyPanel isOpen onClose={onClose} />);
   await waitForSearch();
 
-  fireEvent.click(screen.getByRole('button', { name: 'Hide trail list' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Close trail list' }));
 
-  expect(screen.getByRole('button', { name: 'Show trail list' })).toHaveAttribute('aria-expanded', 'false');
-  expect(screen.queryByRole('slider')).not.toBeInTheDocument();
-  expect(screen.queryAllByRole('article')).toHaveLength(0);
-  // Il numero di sentieri resta visibile anche a lista chiusa
-  expect(screen.getByRole('status')).toHaveTextContent('2 trails within 25 km');
+  expect(onClose).toHaveBeenCalledTimes(1);
+});
 
-  fireEvent.click(screen.getByRole('button', { name: 'Show trail list' }));
-  expect(screen.getAllByRole('article')).toHaveLength(2);
+test('when closed it shows nothing and does not search', async () => {
+  render(<NearbyPanel isOpen={false} />);
+  await waitForSearch();
+
+  expect(screen.queryByRole('heading', { name: 'Trails nearby' })).not.toBeInTheDocument();
+  expect(mock.authFetch).not.toHaveBeenCalled();
 });
 
 test('clicking a trail flies the map there, shows the pin and keeps the list', async () => {

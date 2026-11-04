@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Marker, useMap } from 'react-map-gl/maplibre';
 import MapView from '../components/MapView/MapView.jsx';
+import MapToolbar, { ToolbarButton } from '../components/MapView/MapToolbar.jsx';
 import TrackLayer from '../components/MapView/TrackLayer.jsx';
 import TrackPopup from '../components/MapView/TrackPopup.jsx';
 import TrailStartsLayer from '../components/MapView/TrailStartsLayer.jsx';
 import NearbyPanel from '../components/NearbyPanel/NearbyPanel.jsx';
 import SideMenu from '../components/SideMenu.jsx';
 import ElevationProfile from '../components/ElevationChart/ElevationChart.jsx';
+import { CloseIcon, TrailsIcon } from '../components/NearbyPanel/icons.jsx';
 import { useLayerEvents } from '../map/useLayerEvents.js';
 import { getTrail, getTrailsInBounds } from '../services/trailsService.js';
 import { buildElevationProfile } from '../utils/trailStats.js';
@@ -91,7 +93,7 @@ function TrailClick({ onSelect }) {
   return null;
 }
 
-// Homepage: menu laterale e mappa in un riquadro.
+// Map fullscreen view with toolbar, nearby trails panel and elevation profile chart.
 // I componenti che disegnano sulla mappa (sentieri, pannelli, popup)
 // vanno aggiunti come children di <MapView>.
 export default function HomePage() {
@@ -106,6 +108,10 @@ export default function HomePage() {
   const selectedIdRef = useRef(null);
   const [hoveredPoint, setHoveredPoint] = useState(null);
   const elevationData = useMemo(() => buildElevationProfile(route), [route]);
+    // Panel opened from the map toolbar: only one at a time (null = none)
+  const [openPanel, setOpenPanel] = useState(null);
+  // The user can hide the elevation chart; it comes back when another trail is selected
+  const [elevationOpen, setElevationOpen] = useState(true);
 
   const handleSelect = useCallback(
     (feature) => {
@@ -118,6 +124,7 @@ export default function HomePage() {
       setSelected({ id, lngLat: { lng, lat }, properties: trail.properties });
       setRoute(null);
       setHoveredPoint(null);
+      setElevationOpen(true);
       setPopupOpen(false);
 
       getTrail(id)
@@ -141,6 +148,19 @@ export default function HomePage() {
   }, []);
 
   const handleFitted = useCallback(() => setPopupOpen(true), []);
+  
+  // A second click on the same button closes its panel
+  const togglePanel = useCallback(
+    (name) => setOpenPanel((current) => (current === name ? null : name)),
+    []
+  );
+  const closePanel = useCallback(() => setOpenPanel(null), []);
+
+  // Closing the chart also removes its marker from the map
+  const hideElevation = useCallback(() => {
+    setElevationOpen(false);
+    setHoveredPoint(null);
+  }, []);
 
   return (
     <main className="home">
@@ -167,17 +187,46 @@ export default function HomePage() {
             lngLat={selected?.lngLat}
             onClose={handleClose}
           />
+          <MapToolbar>
+            <ToolbarButton
+              label="Trails nearby"
+              icon={<TrailsIcon />}
+              isActive={openPanel === 'nearby'}
+              onClick={() => togglePanel('nearby')}
+            />
+            {/* Next buttons go here: leaderboard, filters... each with its own openPanel name */}
+          </MapToolbar>
           {/* Sentieri vicini al centro della mappa, con filtri e salvataggio nel profilo */}
-          <NearbyPanel />
+          <NearbyPanel isOpen={openPanel === 'nearby'} onClose={closePanel} />
         </MapView>
       </section>
-      {route && (
-        <ElevationProfile
-          key={selected?.id}
-          data={elevationData}
-          onHover={setHoveredPoint}
-        />
-      )}
+      {route && (elevationOpen ? (
+        // Elevation chart floating over the bottom of the full-screen map
+        <div className="home-elevation">
+          <button
+            type="button"
+            className="home-elevation-close"
+            aria-label="Hide elevation profile"
+            onClick={hideElevation}
+          >
+            <CloseIcon />
+          </button>
+          <ElevationProfile
+            key={selected?.id}
+            data={elevationData}
+            onHover={setHoveredPoint}
+          />
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="home-elevation-show"
+          aria-label="Show elevation profile"
+          onClick={() => setElevationOpen(true)}
+        >
+          Elevation profile
+        </button>
+      ))}
     </main>
   );
 }
