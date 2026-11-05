@@ -8,6 +8,7 @@ export default function FormField({
   hint,
   info,
   autoComplete,
+  ...inputProps
 }) {
   const messageId = `${name}-message`;
   const infoId = `${name}-info`;
@@ -52,8 +53,10 @@ export default function FormField({
         value={value}
         onChange={onChange}
         autoComplete={autoComplete}
+        {...inputProps}
         aria-invalid={Boolean(error)}
         aria-describedby={describedBy || undefined}
+
       />
 
       {error ? (

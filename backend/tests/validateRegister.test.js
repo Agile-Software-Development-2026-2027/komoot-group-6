@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { validateRegister, PASSWORD_MAX_LENGTH } from '../src/middlewares/validateRegister.js';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
+import { validateRegister, birthDateError, PASSWORD_MAX_LENGTH } from '../src/middlewares/validateRegister.js';
 
 function createRes() {
   const res = {};
@@ -7,6 +7,7 @@ function createRes() {
   res.json = vi.fn().mockReturnValue(res);
   return res;
 }
+
 
 function run(body) {
   const req = { body };
@@ -16,8 +17,12 @@ function run(body) {
   return { res, next };
 }
 
-// A valid body: every test changes only the field it checks
-const VALID = { email: 'mario@esempio.it', password: 'password123!', username: 'mario_rossi' };
+const VALID = {
+  email: 'mario@esempio.it',
+  password: 'password123!',
+  username: 'mario_rossi',
+  birthDate: '2001-05-14',
+};
 
 
 function expectRejected({ res, next }, message) {
@@ -25,6 +30,15 @@ function expectRejected({ res, next }, message) {
   expect(res.json).toHaveBeenCalledWith({ error: expect.stringMatching(message) });
   expect(next).not.toHaveBeenCalled();
 }
+
+// "Today" is always 5 November 2026 in these tests, so the ages never change
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date(2026, 10, 5, 12, 0)); // months start from 0: 10 = November
+});
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe('validateRegister', () => {
   it('calls next() when the data is valid', () => {
@@ -50,7 +64,7 @@ describe('validateRegister', () => {
 
   it('responds 400 when the password is too long', () => {
     const tooLong = '!'.repeat(PASSWORD_MAX_LENGTH + 1);
-        expectRejected(run({ ...VALID, password: tooLong }), new RegExp(`at most ${PASSWORD_MAX_LENGTH}`));
+    expectRejected(run({ ...VALID, password: tooLong }), new RegExp(`at most ${PASSWORD_MAX_LENGTH}`));
   });
 
   it('accepts a password of exactly the maximum length', () => {
@@ -84,5 +98,37 @@ describe('validateRegister', () => {
 
   it('responds 400 when the body is missing', () => {
     expectRejected(run(undefined), /email/i);
+  });
+});
+
+describe('birth date', () => {
+  it('responds 400 when the birth date is missing', () => {
+    expectRejected(run({ ...VALID, birthDate: undefined }), /birth date is required/);
+    expectRejected(run({ ...VALID, birthDate: '' }), /birth date is required/);
+  });
+
+  it('rejects other formats and dates that do not exist', () => {
+    expect(birthDateError('14/05/2001')).toMatch(/YYYY-MM-DD/);
+    expect(birthDateError('2001-5-14')).toMatch(/YYYY-MM-DD/);
+    expect(birthDateError('2001-02-30')).toBe('Invalid birth date');
+    expect(birthDateError('2001-13-01')).toBe('Invalid birth date');
+  });
+
+  it('accepts a leap day', () => {
+    expect(birthDateError('2004-02-29')).toBeNull();
+  });
+
+  it('rejects a date in the future', () => {
+    expect(birthDateError('2026-11-06')).toMatch(/future/);
+  });
+
+  it('requires at least 14 years', () => {
+    expect(birthDateError('2012-11-05')).toBeNull();
+    expectRejected(run({ ...VALID, birthDate: '2012-11-06' }), /at least 14/);
+  });
+
+  it('rejects ages over 120 (typing mistakes)', () => {
+    expect(birthDateError('1906-11-05')).toBeNull();
+    expect(birthDateError('1095-05-14')).toBe('Invalid birth date');
   });
 });

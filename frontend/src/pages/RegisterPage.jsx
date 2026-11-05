@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import FormField from '../components/FormField.jsx';
 import { registerUser } from '../services/authService.js';
-import { validateRegisterForm, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../utils/validateRegisterForm.js';
+import {birthDateLimits,MIN_AGE,PASSWORD_MAX_LENGTH,PASSWORD_MIN_LENGTH,validateRegisterForm,} from '../utils/validateRegisterForm.js';
 import './AuthPages.css';
 
 
@@ -12,6 +12,7 @@ const EMPTY_FORM = {
   confirmPassword: '',
   username: '',
   displayName: '',
+  birthDate: '',
 };
 
 export default function RegisterPage() {
@@ -115,15 +116,31 @@ export default function RegisterPage() {
           error={errors.confirmPassword}
           autoComplete="new-password"
         />
-        <FormField
-          label="Username"
-          name="username"
-          value={values.username}
-          onChange={handleChange}
-          error={errors.username}
-          info="3-30 characters: letters, numbers or underscore"
-          autoComplete="username"
-        />
+                {/* Two fields side by side, so the form does not get longer */}
+        <div className="field-row">
+          <FormField
+            label="Username"
+            name="username"
+            value={values.username}
+            onChange={handleChange}
+            error={errors.username}
+            info="3-30 characters: letters, numbers or underscore"
+            autoComplete="username"
+          />
+          <FormField
+            label="Date of birth"
+            name="birthDate"
+            type="date" // the browser shows its own calendar (date picker)
+            value={values.birthDate}
+            onChange={handleChange}
+            error={errors.birthDate}
+            info={`You must be at least ${MIN_AGE} years old`}
+            autoComplete="bday"
+            // Days outside these limits are greyed out in the calendar
+            min={birthDateLimits().min}
+            max={birthDateLimits().max}
+          />
+        </div>
         <FormField
           label="Display name (optional)"
           name="displayName"

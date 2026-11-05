@@ -36,4 +36,9 @@ describe('FormField', () => {
     expect(input.getAttribute('aria-describedby')).toBe('password-message password-info');
     expect(screen.getByText('Password is required').id).toBe('password-message');
   });
+    it('passes extra props (e.g. min and max of a date) to the input', () => {
+    const input = renderField({ type: 'date', min: '1906-11-05', max: '2012-11-05' });
+    expect(input.getAttribute('min')).toBe('1906-11-05');
+    expect(input.getAttribute('max')).toBe('2012-11-05');
+  });
 });
