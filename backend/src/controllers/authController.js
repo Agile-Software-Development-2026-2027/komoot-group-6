@@ -2,13 +2,12 @@ import { supabase } from '../config/supabase.js';
 
 export async function register(req, res) {
   
-  const { email, password, username, displayName } = req.body;
-
+  const { email, password, username, displayName, birthDate } = req.body;
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { username, display_name: displayName },
+      data: { username, display_name: displayName, birth_date: birthDate},
       emailRedirectTo: `${process.env.FRONTEND_URL}/auth/confirm`,
     },
   });

@@ -2,16 +2,17 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import FormField from '../components/FormField.jsx';
 import { registerUser } from '../services/authService.js';
-import { validateRegisterForm, PASSWORD_MIN_LENGTH } from '../utils/validateRegisterForm.js';
+import {birthDateLimits,MIN_AGE,PASSWORD_MAX_LENGTH,PASSWORD_MIN_LENGTH,validateRegisterForm,} from '../utils/validateRegisterForm.js';
 import './AuthPages.css';
 
-// Initial (empty) values of the form fields
+
 const EMPTY_FORM = {
   email: '',
   password: '',
   confirmPassword: '',
   username: '',
   displayName: '',
+  birthDate: '',
 };
 
 export default function RegisterPage() {
@@ -26,16 +27,16 @@ export default function RegisterPage() {
   // Filled in after a successful registration: shows the success message
   const [registeredEmail, setRegisteredEmail] = useState('');
 
-  // One handler for every input: the "name" attribute tells which field changed
+
   function handleChange(event) {
     const { name, value } = event.target;
     setValues((prev) => ({ ...prev, [name]: value }));
-    // Remove the error of that field while the user is fixing it
+  
     setErrors((prev) => ({ ...prev, [name]: undefined }));
   }
 
   async function handleSubmit(event) {
-    // A form reloads the page by default: we handle the submit ourselves
+    
     event.preventDefault();
     setServerError('');
 
@@ -51,15 +52,15 @@ export default function RegisterPage() {
       setRegisteredEmail(values.email.trim());
       setValues(EMPTY_FORM);
     } catch (error) {
-      // e.g. 409 (email or username already in use), 0 (server unreachable)
+    
       setServerError(error.message);
     } finally {
-      // Runs both after success and after an error
+    
       setIsSubmitting(false);
     }
   }
 
-  // After a successful registration we show a message instead of the form
+  
   if (registeredEmail) {
     return (
       <main className="auth-page">
@@ -103,7 +104,7 @@ export default function RegisterPage() {
           value={values.password}
           onChange={handleChange}
           error={errors.password}
-          hint={`At least ${PASSWORD_MIN_LENGTH} characters`}
+          info={`${PASSWORD_MIN_LENGTH}-${PASSWORD_MAX_LENGTH} characters, with at least one special character (e.g. ! ? # @)`}
           autoComplete="new-password"
         />
         <FormField
@@ -115,15 +116,31 @@ export default function RegisterPage() {
           error={errors.confirmPassword}
           autoComplete="new-password"
         />
-        <FormField
-          label="Username (optional)"
-          name="username"
-          value={values.username}
-          onChange={handleChange}
-          error={errors.username}
-          hint="If you leave it empty, we create one for you"
-          autoComplete="username"
-        />
+                {/* Two fields side by side, so the form does not get longer */}
+        <div className="field-row">
+          <FormField
+            label="Username"
+            name="username"
+            value={values.username}
+            onChange={handleChange}
+            error={errors.username}
+            info="3-30 characters: letters, numbers or underscore"
+            autoComplete="username"
+          />
+          <FormField
+            label="Date of birth"
+            name="birthDate"
+            type="date" // the browser shows its own calendar (date picker)
+            value={values.birthDate}
+            onChange={handleChange}
+            error={errors.birthDate}
+            info={`You must be at least ${MIN_AGE} years old`}
+            autoComplete="bday"
+            // Days outside these limits are greyed out in the calendar
+            min={birthDateLimits().min}
+            max={birthDateLimits().max}
+          />
+        </div>
         <FormField
           label="Display name (optional)"
           name="displayName"
