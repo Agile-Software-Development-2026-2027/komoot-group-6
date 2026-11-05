@@ -32,7 +32,7 @@ describe('validateRegisterForm', () => {
 
   it('rejects a password longer than the maximum', () => {
     const tooLong = '!'.repeat(PASSWORD_MAX_LENGTH + 1);
-    expect(validateRegisterForm(withPassword(tooLong)).password).toMatch(/at most 72/);
+        expect(validateRegisterForm(withPassword(tooLong)).password).toMatch(`at most ${PASSWORD_MAX_LENGTH}`);
   });
 
   it('requires at least one special character in the password', () => {

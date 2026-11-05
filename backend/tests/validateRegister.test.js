@@ -50,7 +50,7 @@ describe('validateRegister', () => {
 
   it('responds 400 when the password is too long', () => {
     const tooLong = '!'.repeat(PASSWORD_MAX_LENGTH + 1);
-    expectRejected(run({ ...VALID, password: tooLong }), /at most 72/);
+        expectRejected(run({ ...VALID, password: tooLong }), new RegExp(`at most ${PASSWORD_MAX_LENGTH}`));
   });
 
   it('accepts a password of exactly the maximum length', () => {

@@ -5,7 +5,7 @@ const USERNAME_RE = /^[a-zA-Z0-9_]{3,30}$/;
 const SPECIAL_CHAR_RE = /[^\p{L}\p{N}\s]/u;
 
 export const PASSWORD_MIN_LENGTH = 8;
-export const PASSWORD_MAX_LENGTH = 72;
+export const PASSWORD_MAX_LENGTH = 20;
 
 export function validateRegister(req, res, next) {
   

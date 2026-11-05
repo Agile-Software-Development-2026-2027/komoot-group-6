@@ -26,16 +26,16 @@ export default function RegisterPage() {
   // Filled in after a successful registration: shows the success message
   const [registeredEmail, setRegisteredEmail] = useState('');
 
-  // One handler for every input: the "name" attribute tells which field changed
+
   function handleChange(event) {
     const { name, value } = event.target;
     setValues((prev) => ({ ...prev, [name]: value }));
-    // Remove the error of that field while the user is fixing it
+  
     setErrors((prev) => ({ ...prev, [name]: undefined }));
   }
 
   async function handleSubmit(event) {
-    // A form reloads the page by default: we handle the submit ourselves
+    
     event.preventDefault();
     setServerError('');
 
@@ -51,15 +51,15 @@ export default function RegisterPage() {
       setRegisteredEmail(values.email.trim());
       setValues(EMPTY_FORM);
     } catch (error) {
-      // e.g. 409 (email or username already in use), 0 (server unreachable)
+    
       setServerError(error.message);
     } finally {
-      // Runs both after success and after an error
+    
       setIsSubmitting(false);
     }
   }
 
-  // After a successful registration we show a message instead of the form
+  
   if (registeredEmail) {
     return (
       <main className="auth-page">
@@ -103,7 +103,7 @@ export default function RegisterPage() {
           value={values.password}
           onChange={handleChange}
           error={errors.password}
-          hint={`${PASSWORD_MIN_LENGTH}-${PASSWORD_MAX_LENGTH} characters, with at least one special character (e.g. ! ? # @)`}
+          info={`${PASSWORD_MIN_LENGTH}-${PASSWORD_MAX_LENGTH} characters, with at least one special character (e.g. ! ? # @)`}
           autoComplete="new-password"
         />
         <FormField
@@ -121,7 +121,7 @@ export default function RegisterPage() {
           value={values.username}
           onChange={handleChange}
           error={errors.username}
-          hint="3-30 characters: letters, numbers or underscore"
+          info="3-30 characters: letters, numbers or underscore"
           autoComplete="username"
         />
         <FormField
