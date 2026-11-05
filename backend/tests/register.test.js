@@ -10,7 +10,7 @@ import { supabase } from '../src/config/supabase.js';
 
 const validBody = {
   email: 'mario@esempio.it',
-  password: 'password123',
+  password: 'password123!',
   username: 'mario_rossi',
   displayName: 'Mario',
 };

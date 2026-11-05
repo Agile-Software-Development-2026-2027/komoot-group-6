@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import FormField from '../components/FormField.jsx';
 import { registerUser } from '../services/authService.js';
-import { validateRegisterForm, PASSWORD_MIN_LENGTH } from '../utils/validateRegisterForm.js';
+import { validateRegisterForm, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../utils/validateRegisterForm.js';
 import './AuthPages.css';
 
-// Initial (empty) values of the form fields
+
 const EMPTY_FORM = {
   email: '',
   password: '',
@@ -103,7 +103,7 @@ export default function RegisterPage() {
           value={values.password}
           onChange={handleChange}
           error={errors.password}
-          hint={`At least ${PASSWORD_MIN_LENGTH} characters`}
+          hint={`${PASSWORD_MIN_LENGTH}-${PASSWORD_MAX_LENGTH} characters, with at least one special character (e.g. ! ? # @)`}
           autoComplete="new-password"
         />
         <FormField
@@ -116,12 +116,12 @@ export default function RegisterPage() {
           autoComplete="new-password"
         />
         <FormField
-          label="Username (optional)"
+          label="Username"
           name="username"
           value={values.username}
           onChange={handleChange}
           error={errors.username}
-          hint="If you leave it empty, we create one for you"
+          hint="3-30 characters: letters, numbers or underscore"
           autoComplete="username"
         />
         <FormField

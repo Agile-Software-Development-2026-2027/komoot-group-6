@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { validateRegister } from '../src/middlewares/validateRegister.js';
+import { validateRegister, PASSWORD_MAX_LENGTH } from '../src/middlewares/validateRegister.js';
 
 function createRes() {
   const res = {};
@@ -16,43 +16,73 @@ function run(body) {
   return { res, next };
 }
 
+// A valid body: every test changes only the field it checks
+const VALID = { email: 'mario@esempio.it', password: 'password123!', username: 'mario_rossi' };
+
+
+function expectRejected({ res, next }, message) {
+  expect(res.status).toHaveBeenCalledWith(400);
+  expect(res.json).toHaveBeenCalledWith({ error: expect.stringMatching(message) });
+  expect(next).not.toHaveBeenCalled();
+}
+
 describe('validateRegister', () => {
-  it('chiama next() se i dati sono validi', () => {
-    const { res, next } = run({ email: 'mario@esempio.it', password: 'password123' });
+  it('calls next() when the data is valid', () => {
+    const { res, next } = run(VALID);
     expect(next).toHaveBeenCalledOnce();
     expect(res.status).not.toHaveBeenCalled();
   });
 
-  it('accetta una registrazione senza username', () => {
-    const { next } = run({ email: 'mario@esempio.it', password: 'password123' });
+  it('accepts a display name and any special character', () => {
+    for (const password of ['password123!', 'pass word#1', 'Àccentato-99', 'abc.defgh']) {
+      const { next } = run({ ...VALID, password, displayName: 'Mario' });
+      expect(next).toHaveBeenCalledOnce();
+    }
+  });
+
+  it('responds 400 when the email is not valid', () => {
+    expectRejected(run({ ...VALID, email: 'ciao' }), /email/i);
+  });
+
+  it('responds 400 when the password is too short', () => {
+    expectRejected(run({ ...VALID, password: 'ab!' }), /at least 8/);
+  });
+
+  it('responds 400 when the password is too long', () => {
+    const tooLong = '!'.repeat(PASSWORD_MAX_LENGTH + 1);
+    expectRejected(run({ ...VALID, password: tooLong }), /at most 72/);
+  });
+
+  it('accepts a password of exactly the maximum length', () => {
+    const { next } = run({ ...VALID, password: 'a!'.repeat(PASSWORD_MAX_LENGTH / 2) });
     expect(next).toHaveBeenCalledOnce();
   });
 
-  it('risponde 400 se l\'email non è valida', () => {
-    const { res, next } = run({ email: 'ciao', password: 'password123' });
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(next).not.toHaveBeenCalled();
+  it('responds 400 when the password has no special character', () => {
+    // letters, numbers and spaces are not special characters
+    for (const password of ['password123', 'pass word 123', 'Àccentato99']) {
+      expectRejected(run({ ...VALID, password }), /special character/);
+    }
   });
 
-  it('risponde 400 se la password è troppo corta', () => {
-    const { res, next } = run({ email: 'mario@esempio.it', password: 'abc' });
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(next).not.toHaveBeenCalled();
+  it('responds 400 when the username is missing or empty', () => {
+    for (const username of [undefined, '', '   ']) {
+      expectRejected(run({ ...VALID, username }), /username is required/);
+    }
   });
 
-  it('risponde 400 se lo username non è valido', () => {
-    const { res, next } = run({
-      email: 'mario@esempio.it',
-      password: 'password123',
-      username: 'a!',
-    });
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(next).not.toHaveBeenCalled();
+  it('responds 400 when the username is not valid', () => {
+    for (const username of ['ab', 'mario!', 'a'.repeat(31)]) {
+      expectRejected(run({ ...VALID, username }), /3–30 characters/);
+    }
   });
 
-  it('risponde 400 se il body manca', () => {
-    const { res, next } = run(undefined);
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(next).not.toHaveBeenCalled();
+  it('responds 400 when a field is not a string', () => {
+    expectRejected(run({ ...VALID, password: 12345678 }), /password/);
+    expectRejected(run({ ...VALID, username: 42 }), /username/);
+  });
+
+  it('responds 400 when the body is missing', () => {
+    expectRejected(run(undefined), /email/i);
   });
 });
