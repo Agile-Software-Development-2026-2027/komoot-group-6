@@ -63,7 +63,7 @@ export default function LoginPage() {
 
   return (
     <main className="auth-page">
-      {}
+      {/* noValidate: mostriamo i nostri messaggi al posto di quelli del browser */}
       <form className="auth-card" onSubmit={handleSubmit} noValidate>
         <h1>Log in</h1>
 
@@ -71,7 +71,7 @@ export default function LoginPage() {
           <p className="form-error" role="alert">{serverError}</p>
         )}
 
-        {}
+        {/* Mostrato quando l'utente è stato disconnesso perché la sessione era scaduta */}
         {sessionExpired && !serverError && (
           <p className="form-info" role="status">Your session has expired. Please log in again.</p>
         )}

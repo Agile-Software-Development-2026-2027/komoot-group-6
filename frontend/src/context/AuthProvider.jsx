@@ -53,6 +53,7 @@ function writeLastActivity(time) {
     if (time) localStorage.setItem(ACTIVITY_KEY, String(time));
     else localStorage.removeItem(ACTIVITY_KEY);
   } catch {
+    // localStorage non disponibile: il momento resta solo in lastActivityRef
   }
 }
 
