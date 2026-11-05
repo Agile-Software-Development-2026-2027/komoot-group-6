@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from './api.js';
-import { getNearbyTrails, getTrail, getTrailsInBounds, saveTrail } from './trailsService.js';
+import { completeTrail, getCompletedTrails, getNearbyTrails, getTrail, getTrailsInBounds, saveTrail } from './trailsService.js';
 import { buildElevationProfile, calculateTrailStats } from '../utils/trailStats.js';
 
 // Cartella delle immagini finta: c'è solo l'immagine dell'"Anello del Campus UniCal"
@@ -160,6 +160,34 @@ describe('saveTrail', () => {
 
     const serverDown = vi.fn().mockRejectedValue(new ApiError('Cannot reach the server.', 0));
     await expect(saveTrail(serverDown, 't1')).rejects.toThrow('Cannot reach the server.');
+  });
+});
+
+describe('completeTrail and getCompletedTrails', () => {
+  it('sends the completed trail id to the profile', async () => {
+    const authFetch = vi.fn().mockResolvedValue({ trailId: 't1' });
+
+    await completeTrail(authFetch, 't1');
+
+    expect(authFetch).toHaveBeenCalledWith('/profile/completed-trails', { method: 'POST', body: { trailId: 't1' } });
+  });
+
+  it('treats an already completed trail (409) as success, but not other errors', async () => {
+    const alreadyCompleted = vi.fn().mockRejectedValue(new ApiError('Trail already completed', 409));
+    await expect(completeTrail(alreadyCompleted, 't1')).resolves.toBeUndefined();
+
+    const serverDown = vi.fn().mockRejectedValue(new ApiError('Cannot reach the server.', 0));
+    await expect(completeTrail(serverDown, 't1')).rejects.toThrow('Cannot reach the server.');
+  });
+
+  it('fetches the list of completed trails from the profile', async () => {
+    const mockList = [{ trail_id: 't1', completed_at: '2026-11-05T20:00:00Z' }];
+    const authFetch = vi.fn().mockResolvedValue(mockList);
+
+    const result = await getCompletedTrails(authFetch);
+
+    expect(authFetch).toHaveBeenCalledWith('/profile/completed-trails');
+    expect(result).toEqual(mockList);
   });
 });
 

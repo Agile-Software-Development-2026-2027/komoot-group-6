@@ -81,6 +81,44 @@ test('a trail that is already saved starts as Saved', () => {
   expect(screen.getByRole('button', { name: 'Saved Sentiero del Crati' })).toBeDisabled();
 });
 
+test('marking a hike as completed: Mark as completed → Completing... → Completed', async () => {
+  let finishComplete;
+  const onComplete = vi.fn(() => new Promise((resolve) => { finishComplete = resolve; }));
+  render(<TrailCard trail={TRAIL} onSave={vi.fn()} onComplete={onComplete} />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Mark as completed Sentiero del Crati' }));
+
+  expect(onComplete).toHaveBeenCalledWith('t1');
+  expect(screen.getByRole('button', { name: 'Completing... Sentiero del Crati' })).toBeDisabled();
+
+  await act(async () => finishComplete());
+
+  expect(screen.getByRole('button', { name: 'Completed Sentiero del Crati' })).toBeDisabled();
+});
+
+test('shows an error when completing fails and lets the user retry', async () => {
+  const onComplete = vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce();
+  render(<TrailCard trail={TRAIL} onSave={vi.fn()} onComplete={onComplete} />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Mark as completed Sentiero del Crati' }));
+  await act(async () => {});
+
+  expect(screen.getByRole('alert')).toHaveTextContent('Could not mark the hike as completed. Try again.');
+
+  fireEvent.click(screen.getByRole('button', { name: 'Mark as completed Sentiero del Crati' }));
+  await act(async () => {});
+
+  expect(onComplete).toHaveBeenCalledTimes(2);
+  expect(screen.getByRole('button', { name: 'Completed Sentiero del Crati' })).toBeDisabled();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+});
+
+test('a trail that is already completed starts as Completed', () => {
+  render(<TrailCard trail={TRAIL} isCompleted onSave={vi.fn()} onComplete={vi.fn()} />);
+
+  expect(screen.getByRole('button', { name: 'Completed Sentiero del Crati' })).toBeDisabled();
+});
+
 test('clicking the name asks to show the trail on the map', () => {
   const onSelect = vi.fn();
   render(<TrailCard trail={{ ...TRAIL, start: [16.2, 39.3] }} onSave={vi.fn()} onSelect={onSelect} isSelected />);

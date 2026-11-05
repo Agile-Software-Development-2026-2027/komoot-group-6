@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Marker, useMap } from 'react-map-gl/maplibre';
 import { useAuth } from '../../context/useAuth.js';
-import { getNearbyTrails, saveTrail } from '../../services/trailsService.js';
+import { completeTrail, getCompletedTrails, getNearbyTrails, saveTrail } from '../../services/trailsService.js';
 import { DIFFICULTIES } from './difficulty.js';
 import { CloseIcon, MapPinIcon } from './icons.jsx';
 import TrailCard from './TrailCard.jsx';
@@ -54,7 +54,7 @@ function statusMessage(search, shownCount) {
 // al centro della mappa, li filtra per difficoltà e permette di salvarli nel profilo.
 export default function NearbyPanel({ isOpen = true, onClose }) {
   const { current } = useMap();
-  const { authFetch } = useAuth();
+  const { authFetch, user } = useAuth();
   const map = current?.getMap();
 
   const [center, setCenter] = useState(() => (map ? readCenter(map) : null));
@@ -69,6 +69,31 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
   const [selectedTrail, setSelectedTrail] = useState(null);
   // Ultima scelta e quando è stata fatta
   const selectionRef = useRef(null);
+  // ID dei sentieri completati dall'utente (SCRUM-51)
+  const [completedTrailIds, setCompletedTrailIds] = useState(() => new Set());
+
+  // Carica i sentieri completati per mantenerne lo stato persistente al reload (SCRUM-51)
+  useEffect(() => {
+    if (!user) return undefined;
+
+    let cancelled = false;
+    getCompletedTrails(authFetch)
+      .then((data) => {
+        if (!cancelled && Array.isArray(data)) {
+          setCompletedTrailIds(new Set(data.map((item) => item.trail_id)));
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authFetch, user]);
+
+  const handleCompleteTrail = async (trailId) => {
+    await completeTrail(authFetch, trailId);
+    setCompletedTrailIds((prev) => new Set([...prev, trailId]));
+  };
 
   // Quando la mappa si ferma aggiorna il centro della ricerca
   useEffect(() => {
@@ -222,6 +247,8 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
                 <li key={trail.id}>
                   <TrailCard
                     trail={trail}
+                    isCompleted={Boolean(user && completedTrailIds.has(trail.id))}
+                    onComplete={handleCompleteTrail}
                     onSave={(trailId) => saveTrail(authFetch, trailId)}
                     onSelect={showOnMap}
                     isSelected={trail.id === selectedTrail?.id}
