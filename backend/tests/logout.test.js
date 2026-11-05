@@ -29,7 +29,7 @@ describe('POST /api/auth/logout', () => {
 
     expect(res.status).toBe(204);
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://test.supabase.co/auth/v1/logout',
+      'https://test.supabase.co/auth/v1/logout?scope=local',
       expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({

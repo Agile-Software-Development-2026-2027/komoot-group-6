@@ -12,17 +12,17 @@ const EMPTY_FORM = {
 };
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, sessionExpired } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   // Quello che l'utente ha scritto in ogni campo
   const [values, setValues] = useState(EMPTY_FORM);
-  // Messaggi sotto i campi (dal controllo nel browser)
+  // Messaggi sotto i campi
   const [errors, setErrors] = useState({});
-  // Messaggio in cima al modulo (dal backend)
+  // Messaggio in cima al modulo 
   const [serverError, setServerError] = useState('');
-  // true mentre la richiesta è in corso: disattiva il pulsante
+  // true mentre la richiesta è in corso
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // La pagina che l'utente voleva aprire prima di essere mandato qui. Se non c'è, dopo il login va alla home.
@@ -63,12 +63,17 @@ export default function LoginPage() {
 
   return (
     <main className="auth-page">
-      {/* noValidate: mostriamo i nostri messaggi al posto di quelli del browser */}
+      {}
       <form className="auth-card" onSubmit={handleSubmit} noValidate>
         <h1>Log in</h1>
 
         {serverError && (
           <p className="form-error" role="alert">{serverError}</p>
+        )}
+
+        {}
+        {sessionExpired && !serverError && (
+          <p className="form-info" role="status">Your session has expired. Please log in again.</p>
         )}
 
         <FormField

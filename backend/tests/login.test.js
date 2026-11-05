@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 
 vi.mock('../src/config/supabase.js', () => ({
@@ -13,8 +13,15 @@ const validBody = {
   password: 'password123',
 };
 
+const NOW = 1_800_000_000;
+
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.spyOn(Date, 'now').mockReturnValue(NOW * 1000);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 describe('POST /api/auth/login', () => {
@@ -44,6 +51,8 @@ describe('POST /api/auth/login', () => {
       access_token: 'access-123',
       refresh_token: 'refresh-123',
       expires_at: 1900000000,
+      // 8 ore dopo il login
+      session_expires_at: NOW + 8 * 60 * 60,
     });
     expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith(validBody);
   });

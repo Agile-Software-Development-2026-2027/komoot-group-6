@@ -112,12 +112,17 @@
 }
 
 
-.form-error {
+.form-error,
+.form-info {
   padding: 8px 10px;
   font-size: 0.9rem;
   border-radius: 10px;
   background: var(--color-error-bg);
   animation: fade-in 0.2s ease-out;
+}
+
+.form-info {
+  background: var(--color-primary-light);
 }
 
 @keyframes fade-in {
