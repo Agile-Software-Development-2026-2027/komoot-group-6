@@ -95,6 +95,7 @@ export function CommentIcon() {
     </svg>
   );
 }
+
 // Heart of the like button: empty (outline only) or filled, always in the color of the text around it
 export function HeartIcon({ filled = false }) {
   return (

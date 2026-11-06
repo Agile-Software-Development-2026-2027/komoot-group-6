@@ -37,9 +37,10 @@ create policy "Users remove their trail likes"
 -- Summary of the likes of a trail: a single row with
 --   like_count:  how many users liked the trail in total
 --   liked_by_me: true if the user making the request is one of them
+-- No row at all if the trail does not exist: the backend then answers 404.
 -- "security definer": the function counts the rows of all users, which RLS
 -- would otherwise hide; it only returns the number, never the user ids.
--- Without "group by", count(*) always returns one row (0, false when there are no likes).
+-- Starting from trails with a left join, a trail without likes still gets its row (0, false).
 create or replace function public.trail_likes_summary(p_trail_id uuid)
 returns table (like_count integer, liked_by_me boolean)
 language sql
@@ -48,10 +49,12 @@ security definer
 set search_path = public
 as $$
   select
-    count(*)::integer,
+    count(l.user_id)::integer,
     coalesce(bool_or(l.user_id = (select auth.uid())), false)
-  from public.trail_likes as l
-  where l.trail_id = p_trail_id;
+  from public.trails as t
+  left join public.trail_likes as l on l.trail_id = t.id
+  where t.id = p_trail_id
+  group by t.id;
 $$;
 
 -- Only logged-in users can call it (the trail page requires login).

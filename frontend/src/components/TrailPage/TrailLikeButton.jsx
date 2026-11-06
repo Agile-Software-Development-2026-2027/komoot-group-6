@@ -3,12 +3,12 @@ import { useAuth } from '../../context/useAuth.js';
 import { getTrailLikes, likeTrail, unlikeTrail } from '../../services/trailsService.js';
 import { formatLikes, likesText } from '../../utils/formatLikes.js';
 import { HeartIcon } from './icons.jsx';
-import styles from './TrailPage.module.css';
+import styles from './TrailLikeButton.module.css';
 
 // How many milliseconds the error message stays visible
 const ERROR_MESSAGE_MS = 3000;
 
-// Like button of the trail, over the cover photo .
+// Like button of the trail, over the cover photo.
 // Shows the heart (filled if the user has already liked the trail) and the total likes.
 // A click updates heart and number right away, without waiting for the backend.
 // when the answer arrives, the backend total is used.

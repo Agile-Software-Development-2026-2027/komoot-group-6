@@ -54,13 +54,13 @@ describe('GET /api/trails/:id/likes', () => {
     expect(rpc).toHaveBeenCalledWith('trail_likes_summary', { p_trail_id: TRAIL_ID });
   });
 
-  it('returns 0 when the database sends no rows', async () => {
-    rpc.mockResolvedValue({ data: null, error: null });
+  it('responds 404 when the trail does not exist (the function returns no row)', async () => {
+    rpc.mockResolvedValue({ data: [], error: null });
 
     const res = await send('get');
 
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({ trailId: TRAIL_ID, count: 0, liked: false });
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe('Trail not found');
   });
 
   it('responds 401 without a token and reads nothing', async () => {
@@ -157,6 +157,15 @@ describe('DELETE /api/trails/:id/likes', () => {
     expect(from).toHaveBeenCalledWith('trail_likes');
     expect(firstEq).toHaveBeenCalledWith('user_id', 'abc-123');
     expect(secondEq).toHaveBeenCalledWith('trail_id', TRAIL_ID);
+  });
+
+  it('responds 404 when the trail does not exist, like POST', async () => {
+    rpc.mockResolvedValue({ data: [], error: null });
+
+    const res = await send('delete');
+
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe('Trail not found');
   });
 
   it('responds 401 without a token and deletes nothing', async () => {
