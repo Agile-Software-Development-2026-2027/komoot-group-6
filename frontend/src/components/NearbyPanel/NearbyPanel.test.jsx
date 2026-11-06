@@ -16,8 +16,9 @@ import NearbyPanel from './NearbyPanel.jsx';
 // 8 Cliccando un sentiero la mappa vola lì, compare il segnaposto e la lista non cambia
 // 9 Se la prima posizione GPS arriva dopo il click, la mappa torna sul sentiero (una volta sola)
 // 10 With closed panel, the search still works and the number of trails is shown
+// 11 Con l'utente loggato i sentieri già salvati nel profilo hanno il segnalibro pieno
 
-const mock = vi.hoisted(() => ({ map: null, authFetch: null }));
+const mock = vi.hoisted(() => ({ map: null, authFetch: null, user: null }));
 
 vi.mock('react-map-gl/maplibre', () => ({
   useMap: () => ({ current: { getMap: () => mock.map } }),
@@ -28,7 +29,7 @@ vi.mock('react-map-gl/maplibre', () => ({
 }));
 
 vi.mock('../../context/useAuth.js', () => ({
-  useAuth: () => ({ authFetch: mock.authFetch }),
+  useAuth: () => ({ authFetch: mock.authFetch, user: mock.user }),
 }));
 
 const TRAILS = [
@@ -87,6 +88,8 @@ beforeEach(() => {
   vi.useFakeTimers();
   mock.map = createFakeMap({ lng: 16.2281, lat: 39.3562 });
   mock.authFetch = vi.fn().mockResolvedValue(nearbyResponse(TRAILS));
+  // Di default nessun utente: i salvati e i completati non vengono caricati
+  mock.user = null;
 });
 
 afterEach(() => {
@@ -201,7 +204,25 @@ test('the bookmark saves the trail to the profile', async () => {
     method: 'POST',
     body: { trailId: 't1' },
   });
-  expect(screen.getByRole('button', { name: 'Saved Sentiero del Crati' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Saved Sentiero del Crati' })).toBeInTheDocument();
+  expect(screen.getByText('Trail saved')).toBeInTheDocument();
+});
+
+test('with a logged-in user, trails already saved in the profile show the full bookmark', async () => {
+  mock.user = { id: 'u1' };
+  // Il backend finto risponde in base all'indirizzo
+  mock.authFetch = vi.fn((path) => {
+    if (path === '/profile/saved-trails') return Promise.resolve([{ trail_id: 't2', created_at: '2026-11-06T10:00:00Z' }]);
+    if (path === '/profile/completed-trails') return Promise.resolve([]);
+    return Promise.resolve(nearbyResponse(TRAILS));
+  });
+
+  render(<NearbyPanel />);
+  await waitForSearch();
+
+  expect(mock.authFetch).toHaveBeenCalledWith('/profile/saved-trails');
+  expect(screen.getByRole('button', { name: 'Save Sentiero del Crati' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Saved Monte Cocuzzo' })).toBeInTheDocument();
 });
 
 test('the close button calls onClose', async () => {
