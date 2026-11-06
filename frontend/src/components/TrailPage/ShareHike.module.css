@@ -1,12 +1,3 @@
-/* Top row of the trail page: "Back to map" on the left, "Share your hike" on the right */
-.topBar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
 .shareButton {
   display: inline-flex;
   align-items: center;

@@ -1,28 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import {
-  averageSpeedKmh,
   formatCompletedDate,
-  formatSpeed,
   projectRoute,
   recapFileName,
   recapStats,
   shareLinks,
   shareText,
+  trailUrl,
 } from './shareRecap.js';
 
 const TRAIL = { name: 'Anello del Lago Arvo', lengthM: 14500, ascentM: 250 };
 
-describe('averageSpeedKmh / formatSpeed', () => {
-  it('computes the average speed from length and duration', () => {
-    expect(averageSpeedKmh(14500, 240)).toBeCloseTo(3.625);
-    expect(formatSpeed(averageSpeedKmh(14500, 240))).toBe('3.6 km/h');
-  });
-
-  it('returns null / "—" when a value is missing or the duration is zero', () => {
-    expect(averageSpeedKmh(null, 60)).toBeNull();
-    expect(averageSpeedKmh(5000, null)).toBeNull();
-    expect(averageSpeedKmh(5000, 0)).toBeNull();
-    expect(formatSpeed(null)).toBe('—');
+describe('trailUrl', () => {
+  it('uses the public address of the site when it is set, otherwise the one of the page', () => {
+    expect(trailUrl('abc', 'https://hike.test/')).toBe('https://hike.test/trails/abc');
+    expect(trailUrl('abc', '')).toBe(`${window.location.origin}/trails/abc`);
   });
 });
 
@@ -38,11 +30,10 @@ describe('formatCompletedDate', () => {
 });
 
 describe('recapStats', () => {
-  it('lists distance, estimated time, average speed and ascent', () => {
+  it('lists distance, estimated time and ascent', () => {
     expect(recapStats(TRAIL, 240)).toEqual([
       { label: 'Distance', value: '14.5 km' },
       { label: 'Est. time', value: '4:00 h' },
-      { label: 'Avg speed', value: '3.6 km/h' },
       { label: 'Ascent', value: '250 m' },
     ]);
   });
@@ -50,12 +41,12 @@ describe('recapStats', () => {
 
 describe('shareText', () => {
   it('puts the name and the numbers in one line', () => {
-    expect(shareText(TRAIL, 240)).toBe('I completed "Anello del Lago Arvo"! 🥾 14.5 km · 4:00 h · 3.6 km/h · 250 m ascent');
+    expect(shareText(TRAIL, 240)).toBe('I completed "Anello del Lago Arvo"! 🥾 14.5 km · est. 4:00 h · 250 m ascent');
   });
 
   it('leaves out the missing values', () => {
     expect(shareText({ name: 'Sentiero', lengthM: 8000, ascentM: null }, 120)).toBe(
-      'I completed "Sentiero"! 🥾 8 km · 2:00 h · 4.0 km/h'
+      'I completed "Sentiero"! 🥾 8 km · est. 2:00 h'
     );
     expect(shareText({ name: 'Sentiero' }, null)).toBe('I completed "Sentiero"! 🥾');
   });
@@ -105,6 +96,17 @@ describe('projectRoute', () => {
     const [[start, end]] = projectRoute({ type: 'LineString', coordinates: [[0, 59.5], [2, 60.5]] }, box);
 
     expect(end[0] - start[0]).toBeCloseTo(start[1] - end[1], 0);
+  });
+
+  it('works with very long routes', () => {
+    // Math.min(...points) would throw here: too many arguments for one call
+    const coordinates = Array.from({ length: 300000 }, (_, i) => [i / 100000, 0]);
+
+    const [line] = projectRoute({ type: 'LineString', coordinates }, box);
+
+    expect(line).toHaveLength(300000);
+    expect(line[0][0]).toBe(0);
+    expect(line.at(-1)[0]).toBeCloseTo(100);
   });
 
   it('returns [] when there is no route', () => {

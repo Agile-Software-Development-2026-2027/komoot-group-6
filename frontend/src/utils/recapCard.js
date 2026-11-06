@@ -8,12 +8,13 @@ const PHOTO_HEIGHT = 640;
 const ROUTE_BOX = { x: PAD, y: 690, width: CARD_WIDTH - PAD * 2, height: 380 };
 const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 
-// Same colors as the site  and as the route on the trail map
+// Background: the primary color of the site (--color-primary in index.css).
+// Route and start/end dots: the same colors as on the trail map (TrackLayer.jsx, .startMarker, .endMarker).
 const COLORS = {
   background: '#0f5257',
   backgroundDark: '#082426',
-  route: '#ff6b4a',
-  start: '#2f8a4f',
+  route: '#E63946',
+  start: '#1f6b3a',
   end: '#b4232c',
   text: '#ffffff',
   muted: 'rgba(255, 255, 255, 0.72)',
@@ -30,7 +31,7 @@ function loadImage(url) {
   });
 }
 
-// Draws the image so that it covers the whole rectangle, cutting what is outside 
+// Draws the image so that it covers the whole rectangle, cutting what is outside
 function drawCover(ctx, image, x, y, width, height) {
   const scale = Math.max(width / image.width, height / image.height);
   const sw = width / scale;
@@ -171,7 +172,7 @@ function drawRoute(ctx, geometry) {
   drawDot(ctx, start, COLORS.start);
 }
 
-// Bottom part: the numbers in four columns separated by thin lines, then the footer
+// Bottom part: the numbers in columns separated by thin lines, then the footer
 function drawStats(ctx, stats, footer) {
   const top = 1120;
   const columnWidth = (CARD_WIDTH - PAD * 2) / stats.length;
@@ -179,7 +180,7 @@ function drawStats(ctx, stats, footer) {
   const room = columnWidth - 56;
 
   // One font size for all the values: the biggest one (max 50px) with which even the
-  // longest value (e.g. "3.6 km/h") does not touch the next column
+  // longest value (e.g. "12:30 h") does not touch the next column
   let size = 50;
   ctx.font = `800 ${size}px ${FONT}`;
   while (size > 30 && stats.some(({ value }) => ctx.measureText(value).width > room)) {

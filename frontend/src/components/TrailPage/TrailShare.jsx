@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../context/useAuth.js';
 import { getCompletedTrails } from '../../services/trailsService.js';
 import ShareHikeDialog from './ShareHikeDialog.jsx';
@@ -13,8 +13,13 @@ export default function TrailShare({ feature, durationMin }) {
   // null = not completed (or not known yet), otherwise { completedAt }
   const [completion, setCompletion] = useState(null);
   const [open, setOpen] = useState(false);
-  // Same function at every render: the window does not redo its setup (focus, Escape key) for nothing
-  const close = useCallback(() => setOpen(false), []);
+  const shareButton = useRef(null);
+  // Same function at every render: the window does not redo its setup (focus, Escape key) for nothing.
+  // When the window closes, the focus goes back to "Share your hike".
+  const close = useCallback(() => {
+    setOpen(false);
+    shareButton.current?.focus();
+  }, []);
 
   useEffect(() => {
     // True if the user leaves the page before the answer arrives: the answer is ignored
@@ -38,7 +43,7 @@ export default function TrailShare({ feature, durationMin }) {
 
   return (
     <>
-      <button type="button" className={styles.shareButton} onClick={() => setOpen(true)}>
+      <button ref={shareButton} type="button" className={styles.shareButton} onClick={() => setOpen(true)}>
         <ShareIcon />
         Share your hike
       </button>

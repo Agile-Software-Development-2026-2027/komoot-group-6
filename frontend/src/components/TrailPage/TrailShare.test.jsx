@@ -32,8 +32,9 @@ const FEATURE = {
   },
 };
 
-const TEXT = 'I completed "Anello del Lago Arvo"! 🥾 14.5 km · 4:00 h · 3.6 km/h · 250 m ascent';
-const LINK = `${window.location.origin}/trails/${TRAIL_ID}`;
+const TEXT = 'I completed "Anello del Lago Arvo"! 🥾 14.5 km · est. 4:00 h · 250 m ascent';
+// The link starts with the public address of the site (VITE_SITE_URL, set in beforeEach)
+const LINK = `https://hike.test/trails/${TRAIL_ID}`;
 
 function completed() {
   getCompletedTrails.mockResolvedValue([
@@ -50,6 +51,7 @@ async function openDialog() {
 }
 
 beforeEach(() => {
+  vi.stubEnv('VITE_SITE_URL', 'https://hike.test');
   createRecapImage.mockResolvedValue(new Blob(['png'], { type: 'image/png' }));
   URL.createObjectURL = vi.fn(() => 'blob:recap');
   URL.revokeObjectURL = vi.fn();
@@ -59,6 +61,7 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
   vi.useRealTimers();
+  vi.unstubAllEnvs();
   delete navigator.share;
   delete navigator.canShare;
 });
@@ -99,7 +102,6 @@ describe('TrailShare', () => {
         stats: [
           { label: 'Distance', value: '14.5 km' },
           { label: 'Est. time', value: '4:00 h' },
-          { label: 'Avg speed', value: '3.6 km/h' },
           { label: 'Ascent', value: '250 m' },
         ],
       })
@@ -119,19 +121,42 @@ describe('TrailShare', () => {
     expect(download).toHaveAttribute('download', 'hike-anello-del-lago-arvo.png');
   });
 
-  it('closes with the close button and with Escape, freeing the image', async () => {
+  it('closes with the close button and with Escape, frees the image and gives the focus back', async () => {
     completed();
     const dialog = await openDialog();
     await within(dialog).findByRole('img');
+    const shareButton = screen.getByRole('button', { name: 'Share your hike' });
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:recap');
+    expect(shareButton).toHaveFocus();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Share your hike' }));
+    fireEvent.click(shareButton);
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(shareButton).toHaveFocus();
+  });
+
+  it('keeps the focus inside the window with Tab and Shift+Tab', async () => {
+    completed();
+    const dialog = await openDialog();
+    await within(dialog).findByRole('img');
+    const close = within(dialog).getByRole('button', { name: 'Close' });
+    const copy = within(dialog).getByRole('button', { name: 'Copy text' });
+    expect(close).toHaveFocus();
+
+    // Shift+Tab on the first element goes to the last one, Tab on the last one goes back to the first
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+    expect(copy).toHaveFocus();
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(close).toHaveFocus();
+
+    // Focus lost (e.g. click on the text of the window): Tab brings it back into the window
+    act(() => close.blur());
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(close).toHaveFocus();
   });
 
   it('shares the image with the system share sheet when the browser can', async () => {

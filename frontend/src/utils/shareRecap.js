@@ -1,15 +1,12 @@
 import { formatDistance, formatDuration, formatElevation } from './formatTrail.js';
 import { toImageKey } from './trailImages.js';
 
-// Average speed in km/h from length (meters) and duration (minutes), null if it cannot be computed
-export function averageSpeedKmh(lengthM, durationMin) {
-  if (!Number.isFinite(lengthM) || !Number.isFinite(durationMin) || durationMin <= 0) return null;
-  return lengthM / 1000 / (durationMin / 60);
-}
-
-// 3.625 -> "3.6 km/h", missing value -> "—"
-export function formatSpeed(kmh) {
-  return Number.isFinite(kmh) ? `${kmh.toFixed(1)} km/h` : '—';
+// Link to the trail page that is shared. VITE_SITE_URL is the public address of the site:
+// without it the link uses the address of the current page, which in development is localhost.
+// The page requires login: whoever opens the link logs in first and then lands on the trail.
+export function trailUrl(trailId, siteUrl = import.meta.env.VITE_SITE_URL) {
+  const base = (siteUrl || window.location.origin).replace(/\/+$/, '');
+  return `${base}/trails/${encodeURIComponent(trailId)}`;
 }
 
 // "2026-11-06T10:00:00Z" -> "6 Nov 2026", null if the date is missing or not valid
@@ -19,23 +16,23 @@ export function formatCompletedDate(isoDate) {
   return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
 }
 
-// The four numbers of the recap, in the order they are shown.
+// The three numbers of the recap, in the order they are shown.
 // "trail" = the properties returned by GET /api/trails/:id, "durationMin" = the estimated duration.
+// They describe the trail, not how the user walked it: no average speed, the time is marked as estimated.
 export function recapStats(trail, durationMin) {
   return [
     { label: 'Distance', value: formatDistance(trail.lengthM) },
     { label: 'Est. time', value: formatDuration(durationMin) },
-    { label: 'Avg speed', value: formatSpeed(averageSpeedKmh(trail.lengthM, durationMin)) },
     { label: 'Ascent', value: formatElevation(trail.ascentM) },
   ];
 }
 
 // Text of the message shared on WhatsApp, Telegram, X...: the name and the numbers in one line.
 export function shareText(trail, durationMin) {
+  const duration = formatDuration(durationMin);
   const parts = [
     formatDistance(trail.lengthM),
-    formatDuration(durationMin),
-    formatSpeed(averageSpeedKmh(trail.lengthM, durationMin)),
+    duration === '—' ? '—' : `est. ${duration}`,
     Number.isFinite(trail.ascentM) ? `${formatElevation(trail.ascentM)} ascent` : '—',
   ].filter((part) => part !== '—');
 
@@ -62,6 +59,18 @@ export function recapFileName(trailName) {
   return key ? `hike-${key}.png` : 'hike.png';
 }
 
+// Smallest and largest value with a loop: Math.min(...values) passes every value as an argument
+// and with tens of thousands of points it throws "Maximum call stack size exceeded".
+function minMax(values) {
+  let min = Infinity;
+  let max = -Infinity;
+  for (const value of values) {
+    if (value < min) min = value;
+    if (value > max) max = value;
+  }
+  return [min, max];
+}
+
 // Turns the route (GeoJSON LineString or MultiLineString, [lng, lat] points) into lines of
 // [x, y] pixels that fit inside "box" = { x, y, width, height }, centered and without stretching.
 // Longitudes are multiplied by cos(latitude): at our latitudes a degree of longitude is shorter
@@ -79,21 +88,18 @@ export function projectRoute(geometry, box) {
   if (valid.length === 0) return [];
 
   const points = valid.flat();
-  const lats = points.map(([, lat]) => lat);
-  const midLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+  const [minY, maxY] = minMax(points.map(([, lat]) => lat));
+  const midLat = (minY + maxY) / 2;
   const kx = Math.cos((midLat * Math.PI) / 180);
 
-  const xs = points.map(([lng]) => lng * kx);
-  const minX = Math.min(...xs);
-  const maxX = Math.max(...xs);
-  const minY = Math.min(...lats);
-  const maxY = Math.max(...lats);
+  const [minX, maxX] = minMax(points.map(([lng]) => lng * kx));
   const spanX = maxX - minX;
   const spanY = maxY - minY;
 
   // Pixels per (scaled) degree: the side that would overflow decides. A single point has no size.
-  const scales = [spanX > 0 ? box.width / spanX : Infinity, spanY > 0 ? box.height / spanY : Infinity];
-  const scale = Math.min(...scales);
+  const scaleX = spanX > 0 ? box.width / spanX : Infinity;
+  const scaleY = spanY > 0 ? box.height / spanY : Infinity;
+  const scale = Math.min(scaleX, scaleY);
   const k = Number.isFinite(scale) ? scale : 0;
 
   // Space left on the sides, so that the route is centered in the box

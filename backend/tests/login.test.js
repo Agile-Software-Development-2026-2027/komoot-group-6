@@ -51,7 +51,6 @@ describe('POST /api/auth/login', () => {
       access_token: 'access-123',
       refresh_token: 'refresh-123',
       expires_at: 1900000000,
-      // Senza "Remember me": 1 minuto dopo il login
       session_expires_at: NOW + 60,
       remember_me: false,
     });

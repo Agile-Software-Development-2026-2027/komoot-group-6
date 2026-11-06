@@ -7,6 +7,7 @@ import {
   recapStats,
   shareLinks,
   shareText,
+  trailUrl,
 } from '../../utils/shareRecap.js';
 import { trailImageUrl } from '../../utils/trailImages.js';
 import { DIFFICULTY_LABELS } from '../NearbyPanel/difficulty.js';
@@ -15,6 +16,25 @@ import styles from './ShareHike.module.css';
 
 // How many milliseconds the small confirmation / error message stays visible
 const NOTICE_MS = 3000;
+
+// Elements of the window that the Tab key can reach
+const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function keepFocusInside(container, event) {
+  const elements = [...container.querySelectorAll(FOCUSABLE)];
+  if (elements.length === 0) return;
+  const first = elements[0];
+  const last = elements.at(-1);
+  const outside = !container.contains(document.activeElement);
+
+  if (event.shiftKey && (outside || document.activeElement === first)) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && (outside || document.activeElement === last)) {
+    event.preventDefault();
+    first.focus();
+  }
+}
 
 function formatType(type) {
   if (!type) return 'Hike';
@@ -32,16 +52,17 @@ function footerText(trail) {
 
 export default function ShareHikeDialog({ feature, durationMin, completedAt, onClose }) {
   const trail = feature.properties;
-  const url = `${window.location.origin}/trails/${trail.id}`;
+  const url = trailUrl(trail.id);
   const text = shareText(trail, durationMin);
   const links = shareLinks(text, url);
   const fileName = recapFileName(trail.name);
-  // The system share sheet does not exist in every browser 
+  // The system share sheet does not exist in every browser
   const canShareNatively = typeof navigator.share === 'function';
 
   // loading -> ready ({ blob, url }) or error (the text and the links still work)
   const [image, setImage] = useState({ status: 'loading' });
   const [notice, setNotice] = useState(null);
+  const dialog = useRef(null);
   const closeButton = useRef(null);
 
   // Creates the recap image once, when the window opens
@@ -74,11 +95,13 @@ export default function ShareHikeDialog({ feature, durationMin, completedAt, onC
     };
   }, [feature, trail, durationMin, completedAt]);
 
-  // While the window is open: focus on the close button, Escape closes, the page behind does not scroll
+  // While the window is open: focus on the close button, Escape closes, Tab stays in the window,
+  // the page behind does not scroll
   useEffect(() => {
     closeButton.current?.focus();
     function handleKey(event) {
       if (event.key === 'Escape') onClose();
+      if (event.key === 'Tab') keepFocusInside(dialog.current, event);
     }
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -137,7 +160,7 @@ export default function ShareHikeDialog({ feature, durationMin, completedAt, onC
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="share-hike-title">
+      <div ref={dialog} className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="share-hike-title">
         <button
           ref={closeButton}
           type="button"
