@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from './api.js';
-import { completeTrail, getCompletedTrails, getNearbyTrails, getTrail, getTrailsInBounds, saveTrail } from './trailsService.js';
+import { completeTrail, getCompletedTrails, getNearbyTrails, getTrail, getTrailsInBounds, saveTrail, uncompleteTrail } from './trailsService.js';
 import { buildElevationProfile, calculateTrailStats } from '../utils/trailStats.js';
 
 // Cartella delle immagini finta: c'è solo l'immagine dell'"Anello del Campus UniCal"
@@ -188,6 +188,14 @@ describe('completeTrail and getCompletedTrails', () => {
 
     expect(authFetch).toHaveBeenCalledWith('/profile/completed-trails');
     expect(result).toEqual(mockList);
+  });
+
+  it('removes the completed trail from profile with DELETE', async () => {
+    const authFetch = vi.fn().mockResolvedValue();
+
+    await uncompleteTrail(authFetch, 't1');
+
+    expect(authFetch).toHaveBeenCalledWith('/profile/completed-trails/t1', { method: 'DELETE' });
   });
 });
 

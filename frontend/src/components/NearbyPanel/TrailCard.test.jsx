@@ -93,7 +93,23 @@ test('marking a hike as completed: Mark as completed → Completing... → Compl
 
   await act(async () => finishComplete());
 
-  expect(screen.getByRole('button', { name: 'Completed Sentiero del Crati' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Completed Sentiero del Crati' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Completed Sentiero del Crati' })).not.toBeDisabled();
+});
+
+test('toggling off a completed hike removes it', async () => {
+  const onToggleComplete = vi.fn().mockResolvedValue();
+  render(<TrailCard trail={TRAIL} isCompleted onSave={vi.fn()} onToggleComplete={onToggleComplete} />);
+
+  const btn = screen.getByRole('button', { name: 'Completed Sentiero del Crati' });
+  expect(btn).toBeInTheDocument();
+
+  fireEvent.click(btn);
+
+  expect(onToggleComplete).toHaveBeenCalledWith('t1', false);
+  await act(async () => {});
+
+  expect(screen.getByRole('button', { name: 'Mark as completed Sentiero del Crati' })).toBeInTheDocument();
 });
 
 test('shows an error when completing fails and lets the user retry', async () => {
@@ -103,20 +119,20 @@ test('shows an error when completing fails and lets the user retry', async () =>
   fireEvent.click(screen.getByRole('button', { name: 'Mark as completed Sentiero del Crati' }));
   await act(async () => {});
 
-  expect(screen.getByRole('alert')).toHaveTextContent('Could not mark the hike as completed. Try again.');
+  expect(screen.getByRole('alert')).toHaveTextContent('Could not update completed status. Try again.');
 
   fireEvent.click(screen.getByRole('button', { name: 'Mark as completed Sentiero del Crati' }));
   await act(async () => {});
 
   expect(onComplete).toHaveBeenCalledTimes(2);
-  expect(screen.getByRole('button', { name: 'Completed Sentiero del Crati' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Completed Sentiero del Crati' })).toBeInTheDocument();
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });
 
 test('a trail that is already completed starts as Completed', () => {
   render(<TrailCard trail={TRAIL} isCompleted onSave={vi.fn()} onComplete={vi.fn()} />);
 
-  expect(screen.getByRole('button', { name: 'Completed Sentiero del Crati' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Completed Sentiero del Crati' })).toBeInTheDocument();
 });
 
 test('clicking the name asks to show the trail on the map', () => {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Marker, useMap } from 'react-map-gl/maplibre';
 import { useAuth } from '../../context/useAuth.js';
-import { completeTrail, getCompletedTrails, getNearbyTrails, saveTrail } from '../../services/trailsService.js';
+import { completeTrail, getCompletedTrails, getNearbyTrails, saveTrail, uncompleteTrail } from '../../services/trailsService.js';
 import { DIFFICULTIES } from './difficulty.js';
 import { CloseIcon, MapPinIcon } from './icons.jsx';
 import TrailCard from './TrailCard.jsx';
@@ -90,9 +90,18 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
     };
   }, [authFetch, user]);
 
-  const handleCompleteTrail = async (trailId) => {
-    await completeTrail(authFetch, trailId);
-    setCompletedTrailIds((prev) => new Set([...prev, trailId]));
+  const handleToggleComplete = async (trailId, targetDone) => {
+    if (targetDone) {
+      await completeTrail(authFetch, trailId);
+      setCompletedTrailIds((prev) => new Set([...prev, trailId]));
+    } else {
+      await uncompleteTrail(authFetch, trailId);
+      setCompletedTrailIds((prev) => {
+        const next = new Set(prev);
+        next.delete(trailId);
+        return next;
+      });
+    }
   };
 
   // Quando la mappa si ferma aggiorna il centro della ricerca
@@ -248,7 +257,9 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
                   <TrailCard
                     trail={trail}
                     isCompleted={Boolean(user && completedTrailIds.has(trail.id))}
-                    onComplete={handleCompleteTrail}
+                    onToggleComplete={handleToggleComplete}
+                    onComplete={(id) => handleToggleComplete(id, true)}
+                    onUncomplete={(id) => handleToggleComplete(id, false)}
                     onSave={(trailId) => saveTrail(authFetch, trailId)}
                     onSelect={showOnMap}
                     isSelected={trail.id === selectedTrail?.id}

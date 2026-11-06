@@ -12,14 +12,6 @@ import styles from './NearbyPanel.module.css';
 // aria-label del segnalibro per ogni stato del salvataggio
 const SAVE_LABELS = { idle: 'Save', saving: 'Saving...', saved: 'Saved', error: 'Save' };
 
-// aria-label del pulsante per completare l'escursione (SCRUM-51)
-const COMPLETE_LABELS = {
-  idle: 'Mark as completed',
-  completing: 'Completing...',
-  completed: 'Completed',
-  error: 'Mark as completed',
-};
-
 // Colori del disegno di copertina per difficoltà: cielo, montagne lontane, montagne vicine
 const ART_COLORS = {
   easy: ['#e6f2e8', '#b5d9bd', '#6fae7f'],
@@ -61,7 +53,7 @@ function TrailArt({ trail }) {
 }
 
 // Card di un sentiero vicino: copertina con il segnalibro per salvarlo nel profilo,
-// pulsante per segnarlo come completato, nome e dati (difficoltà, tempo stimato, lunghezza, salita).
+// pulsante per segnarlo/rimuoverlo come completato, nome e dati (difficoltà, tempo stimato, lunghezza, salita).
 // onSave(trailId) salva il sentiero e restituisce una Promise.
 // onComplete(trailId) segna il sentiero come completato e restituisce una Promise.
 // onSelect(trail) mostra il sentiero sulla mappa; isSelected evidenzia la card scelta.
@@ -69,17 +61,20 @@ export default function TrailCard({
   trail,
   onSave,
   onComplete,
+  onUncomplete,
+  onToggleComplete,
   isCompleted = false,
   onSelect,
   isSelected = false,
 }) {
   const [saveStatus, setSaveStatus] = useState(trail.saved ? 'saved' : 'idle');
-  const [actionStatus, setActionStatus] = useState('idle');
+  const [actionLoading, setActionLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [localDone, setLocalDone] = useState(null);
   const [imageFailed, setImageFailed] = useState(false);
 
   const isSaved = saveStatus === 'saved';
-  const isDone = isCompleted || Boolean(trail.completed) || actionStatus === 'completed';
-  const completeStatus = isDone ? 'completed' : actionStatus;
+  const isDone = localDone !== null ? localDone : Boolean(isCompleted || trail.completed);
 
   async function handleSave() {
     setSaveStatus('saving');
@@ -91,16 +86,30 @@ export default function TrailCard({
     }
   }
 
-  async function handleComplete() {
-    if (!onComplete) return;
-    setActionStatus('completing');
+  async function handleToggle() {
+    if (actionLoading || (!onToggleComplete && !onComplete && !onUncomplete)) return;
+    const targetDone = !isDone;
+    setActionLoading(true);
+    setHasError(false);
     try {
-      await onComplete(trail.id);
-      setActionStatus('completed');
+      if (onToggleComplete) {
+        await onToggleComplete(trail.id, targetDone);
+      } else if (targetDone && onComplete) {
+        await onComplete(trail.id);
+      } else if (!targetDone && onUncomplete) {
+        await onUncomplete(trail.id);
+      }
+      setLocalDone(targetDone);
     } catch {
-      setActionStatus('error');
+      setHasError(true);
+    } finally {
+      setActionLoading(false);
     }
   }
+
+  const completeLabel = actionLoading
+    ? (isDone ? 'Removing...' : 'Completing...')
+    : (isDone ? 'Completed' : 'Mark as completed');
 
   return (
     <article className={`${styles.card} ${isSelected ? styles.selected : ''}`}>
@@ -111,16 +120,16 @@ export default function TrailCard({
           <TrailArt trail={trail} />
         )}
 
-        {onComplete && (
+        {(onToggleComplete || onComplete) && (
           <button
             type="button"
             className={`${styles.completeBtn} ${isDone ? styles.isCompleted : ''}`}
-            onClick={handleComplete}
-            disabled={completeStatus === 'completing' || isDone}
-            aria-label={`${COMPLETE_LABELS[completeStatus]} ${trail.name}`}
-            title={isDone ? 'Hike completed' : 'Mark as completed'}
+            onClick={handleToggle}
+            disabled={actionLoading}
+            aria-label={`${completeLabel} ${trail.name}`}
+            title={isDone ? 'Remove from completed' : 'Mark as completed'}
           >
-            <CheckIcon filled={isDone} />
+            <CheckIcon />
           </button>
         )}
 
@@ -183,8 +192,8 @@ export default function TrailCard({
         <p role="alert" className={styles.cardError}>Could not save the trail. Try again.</p>
       )}
 
-      {completeStatus === 'error' && (
-        <p role="alert" className={styles.cardError}>Could not mark the hike as completed. Try again.</p>
+      {hasError && (
+        <p role="alert" className={styles.cardError}>Could not update completed status. Try again.</p>
       )}
     </article>
   );

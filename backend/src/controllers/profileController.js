@@ -68,3 +68,22 @@ export async function getCompletedTrails(req, res) {
   return res.json(data ?? []);
 }
 
+// DELETE /api/profile/completed-trails/:trailId
+// Rimuove un sentiero completato nel profilo dell'utente loggato.
+export async function uncompleteTrail(req, res) {
+  const { trailId } = req.params;
+
+  const { error } = await supabaseAsUser(req.token)
+    .from('completed_trails')
+    .delete()
+    .eq('user_id', req.user.id)
+    .eq('trail_id', trailId);
+
+  if (error) {
+    if (error.code === '22P02') return res.status(400).json({ error: 'Invalid trail id' });
+    throw error;
+  }
+
+  return res.status(204).end();
+}
+

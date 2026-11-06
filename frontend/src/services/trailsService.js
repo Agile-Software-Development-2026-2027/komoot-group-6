@@ -103,3 +103,8 @@ export async function completeTrail(authFetch, trailId) {
 export async function getCompletedTrails(authFetch) {
   return authFetch('/profile/completed-trails');
 }
+
+// Rimuove il sentiero dai completati nel profilo dell'utente (SCRUM-51).
+export async function uncompleteTrail(authFetch, trailId) {
+  await authFetch(`/profile/completed-trails/${trailId}`, { method: 'DELETE' });
+}
