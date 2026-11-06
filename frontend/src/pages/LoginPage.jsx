@@ -9,6 +9,8 @@ import './AuthPages.css';
 const EMPTY_FORM = {
   email: '',
   password: '',
+  // "Remember me": se spuntato l'utente resta loggato, altrimenti la sessione dura 1 minuto
+  rememberMe: false,
 };
 
 export default function LoginPage() {
@@ -28,10 +30,11 @@ export default function LoginPage() {
   // La pagina che l'utente voleva aprire prima di essere mandato qui. Se non c'è, dopo il login va alla home.
   const destination = location.state?.from?.pathname || '/';
 
-  // Un solo gestore per tutti i campi: l'attributo "name" dice quale è cambiato
+  // Un solo gestore per tutti i campi: l'attributo "name" dice quale è cambiato.
+  // Per la casella "Remember me" conta se è spuntata (checked), non il valore.
   function handleChange(event) {
-    const { name, value } = event.target;
-    setValues((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = event.target;
+    setValues((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     // Toglie l'errore di quel campo mentre l'utente lo corregge
     setErrors((prev) => ({ ...prev, [name]: undefined }));
   }
@@ -94,6 +97,16 @@ export default function LoginPage() {
           error={errors.password}
           autoComplete="current-password"
         />
+
+        <label className="remember-me">
+          <input
+            type="checkbox"
+            name="rememberMe"
+            checked={values.rememberMe}
+            onChange={handleChange}
+          />
+          Remember me
+        </label>
 
         <button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Logging in...' : 'Log in'}

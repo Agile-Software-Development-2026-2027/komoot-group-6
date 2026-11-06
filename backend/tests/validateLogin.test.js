@@ -41,6 +41,20 @@ describe('validateLogin', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
+  it('chiama next() con rememberMe true o false', () => {
+    for (const rememberMe of [true, false]) {
+      const { res, next } = run({ email: 'mario@esempio.it', password: 'password123', rememberMe });
+      expect(next).toHaveBeenCalledOnce();
+      expect(res.status).not.toHaveBeenCalled();
+    }
+  });
+
+  it('risponde 400 se rememberMe non è true o false', () => {
+    const { res, next } = run({ email: 'mario@esempio.it', password: 'password123', rememberMe: 'yes' });
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(next).not.toHaveBeenCalled();
+  });
+
   it('risponde 400 se il body manca', () => {
     const { res, next } = run(undefined);
     expect(res.status).toHaveBeenCalledWith(400);

@@ -22,6 +22,13 @@ test("senza ultima attività la sessione non è valida", () => {
   expect(isSessionExpired(session, null, NOW)).toBe(true);
 });
 
+test('con "Remember me" l\'inattività non conta, solo la durata massima', () => {
+  const remembered = { ...session, remember_me: true };
+  expect(isSessionExpired(remembered, NOW - 2 * IDLE_TIMEOUT_MS, NOW)).toBe(false);
+  expect(isSessionExpired(remembered, null, NOW)).toBe(false);
+  expect(isSessionExpired({ ...remembered, session_expires_at: NOW / 1000 }, NOW, NOW)).toBe(true);
+});
+
 test('senza session_expires_at conta solo l\'inattività', () => {
   expect(isSessionExpired({ access_token: 'access-123' }, NOW - 60 * 1000, NOW)).toBe(false);
   expect(isSessionExpired({ access_token: 'access-123' }, NOW - IDLE_TIMEOUT_MS, NOW)).toBe(true);

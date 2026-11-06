@@ -247,6 +247,23 @@
 }
 
 
+/* Casella "Remember me" sotto la password */
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.remember-me input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
 .auth-switch {
   font-size: 0.9rem;
   text-align: center;

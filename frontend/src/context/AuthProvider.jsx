@@ -4,7 +4,9 @@ import { getCurrentUser, loginUser, logoutUser, refreshSession } from '../servic
 import { isSessionExpired } from '../utils/sessionExpiry.js';
 import { AuthContext } from './AuthContext.js';
 
-// Nome con cui la sessione viene salvata nel browser (localStorage).
+// Nome con cui la sessione viene salvata nel browser.
+// Con "Remember me" sta in localStorage (resta anche chiudendo il browser),
+// altrimenti in sessionStorage (si cancella quando si chiude il browser).
 const STORAGE_KEY = 'auth.session';
 // Momento dell'ultima attività dell'utente. È salvato a parte perché cambia spesso:
 // così resta dopo un refresh della pagina ed è condiviso tra le schede aperte sul sito.
@@ -15,11 +17,14 @@ const ACTIVITY_EVENTS = ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touc
 const ACTIVITY_SAVE_INTERVAL_MS = 15 * 1000;
 // Ogni quanto controllare, mentre l'app è aperta, se la sessione è scaduta.
 const EXPIRY_CHECK_INTERVAL_MS = 30 * 1000;
+// Il ritardo più lungo che setTimeout accetta (circa 24 giorni): oltre, il timer partirebbe subito.
+const MAX_TIMEOUT_MS = 2_147_483_647;
 
-// Legge la sessione salvata. Restituisce null se non c'è o non si riesce a leggerla.
+// Legge la sessione salvata (prima con "Remember me", poi senza).
+// Restituisce null se non c'è o non si riesce a leggerla.
 function readStoredSession() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) ?? sessionStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
@@ -27,11 +32,16 @@ function readStoredSession() {
 }
 
 // Salva la sessione nel browser, o la cancella se è null.
+// La toglie da entrambi i posti e la scrive in quello giusto in base a "Remember me".
 // Restituisce false se il browser non permette di salvare (per esempio in navigazione privata).
 function writeStoredSession(session) {
   try {
-    if (session) localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-    else localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
+    if (session) {
+      const storage = session.remember_me ? localStorage : sessionStorage;
+      storage.setItem(STORAGE_KEY, JSON.stringify(session));
+    }
     return true;
   } catch {
     return false;
@@ -97,7 +107,8 @@ export function AuthProvider({ children }) {
 
   // All'apertura dell'app (quindi anche a ogni refresh della pagina): se c'è una sessione salvata
   // e non è scaduta la fa verificare al backend.
-  // Se l'access token è scaduto prova a rinnovarlo col refresh token, se non ci riesce l'utente risulta non loggato.
+  // Se l'access token è scaduto: con "Remember me" prova a rinnovarlo col refresh token
+  // (se non ci riesce l'utente risulta non loggato), senza "Remember me" la sessione è finita.
   useEffect(() => {
     let cancelled = false;
 
@@ -130,6 +141,15 @@ export function AuthProvider({ children }) {
           setUser(data.user);
         }
       } catch {
+        // Senza "Remember me" il token non si rinnova: bisogna rifare il login.
+        if (!stored.remember_me) {
+          if (!cancelled) {
+            persist(null);
+            setUser(null);
+            setSessionExpired(true);
+          }
+          return;
+        }
         try {
           const data = await refreshSession(stored.refresh_token);
           if (!cancelled) {
@@ -153,9 +173,10 @@ export function AuthProvider({ children }) {
   }, [persist, setLastActivity]);
 
   // Login: il backend verifica le credenziali, poi salviamo sessione e utente.
+  // rememberMe: true se l'utente ha spuntato "Remember me".
   const login = useCallback(
-    async ({ email, password }) => {
-      const data = await loginUser({ email, password });
+    async ({ email, password, rememberMe = false }) => {
+      const data = await loginUser({ email, password, rememberMe });
       setLastActivity(Date.now());
       persist(data.session);
       setUser(data.user);
@@ -211,15 +232,25 @@ export function AuthProvider({ children }) {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     const timer = setInterval(checkExpiry, EXPIRY_CHECK_INTERVAL_MS);
 
+    // Senza "Remember me" la sessione dura 1 minuto: un timer la chiude proprio alla scadenza,
+    // senza aspettare il controllo periodico.
+    const expiresAt = sessionRef.current?.session_expires_at;
+    const delay = expiresAt ? expiresAt * 1000 - Date.now() : null;
+    const expiryTimer = delay !== null && delay <= MAX_TIMEOUT_MS
+      ? setTimeout(checkExpiry, Math.max(0, delay))
+      : null;
+
     return () => {
       ACTIVITY_EVENTS.forEach((type) => window.removeEventListener(type, handleActivity, options));
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       clearInterval(timer);
+      clearTimeout(expiryTimer);
     };
   }, [user, expireSession, getLastActivity, setLastActivity]);
 
 
   // Aggiunge il token e se è scaduto lo rinnova una volta e riprova.
+  // Il rinnovo vale solo con "Remember me": senza, un token scaduto chiude la sessione.
   const authFetch = useCallback(
     async (path, options = {}) => {
       const current = sessionRef.current;
@@ -232,7 +263,14 @@ export function AuthProvider({ children }) {
         return await apiRequest(path, { ...options, token: current.access_token });
       } catch (err) {
         const isExpired = err instanceof ApiError && err.status === 401;
-        if (!isExpired || !current.refresh_token) throw err;
+        if (!isExpired) throw err;
+
+        if (!current.remember_me || !current.refresh_token) {
+          persist(null);
+          setUser(null);
+          setSessionExpired(true);
+          throw new ApiError('Session expired. Please log in again.', 401);
+        }
 
         let refreshed;
         try {

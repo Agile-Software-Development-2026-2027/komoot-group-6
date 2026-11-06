@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { AuthProvider } from './AuthProvider.jsx';
 import { useAuth } from './useAuth.js';
-import { getCurrentUser, logoutUser } from '../services/loginService.js';
+import { getCurrentUser, loginUser, logoutUser, refreshSession } from '../services/loginService.js';
 import { IDLE_TIMEOUT_MS } from '../utils/sessionExpiry.js';
 
 vi.mock('../services/loginService.js', () => ({
@@ -51,7 +51,73 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   localStorage.clear();
+  sessionStorage.clear();
+  vi.useRealTimers();
   vi.restoreAllMocks();
+});
+
+// Pulsante che fa il login, con o senza "Remember me".
+function LoginButton({ rememberMe }) {
+  const { login } = useAuth();
+  return <button onClick={() => login({ email: 'mario@esempio.it', password: 'password123', rememberMe })}>log in</button>;
+}
+
+test('con "Remember me" la sessione va in localStorage, senza in sessionStorage', async () => {
+  for (const rememberMe of [true, false]) {
+    loginUser.mockResolvedValue({ user: { id: 'abc-123' }, session: { ...SESSION, remember_me: rememberMe } });
+    render(
+      <AuthProvider>
+        <LoginButton rememberMe={rememberMe} />
+        <Status />
+      </AuthProvider>
+    );
+
+    fireEvent.click(await screen.findByText('log in'));
+    await screen.findByText('logged in');
+
+    expect(loginUser).toHaveBeenCalledWith({ email: 'mario@esempio.it', password: 'password123', rememberMe });
+    const saved = rememberMe ? localStorage : sessionStorage;
+    const other = rememberMe ? sessionStorage : localStorage;
+    expect(JSON.parse(saved.getItem('auth.session')).remember_me).toBe(rememberMe);
+    expect(other.getItem('auth.session')).toBeNull();
+
+    cleanup();
+    localStorage.clear();
+    sessionStorage.clear();
+  }
+});
+
+test('senza "Remember me" la sessione si chiude dopo 1 minuto', async () => {
+  vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval'] });
+  reloadPage({ session: { ...SESSION, session_expires_at: NOW / 1000 + 60, remember_me: false }, lastActivity: NOW });
+  await act(() => vi.advanceTimersByTimeAsync(0));
+  expect(screen.getByText('logged in')).toBeInTheDocument();
+
+  Date.now.mockReturnValue(NOW + 60 * 1000);
+  await act(() => vi.advanceTimersByTimeAsync(60 * 1000));
+
+  expect(screen.getByText('session expired')).toBeInTheDocument();
+  expect(logoutUser).toHaveBeenCalledWith('access-123');
+});
+
+test('al refresh, con il token scaduto, "Remember me" rinnova la sessione', async () => {
+  getCurrentUser.mockRejectedValue(new Error('expired'));
+  refreshSession.mockResolvedValue({ user: { id: 'abc-123' }, session: { ...SESSION, access_token: 'access-456', remember_me: true } });
+
+  reloadPage({ session: { ...SESSION, remember_me: true }, lastActivity: NOW - 2 * IDLE_TIMEOUT_MS });
+
+  expect(await screen.findByText('logged in')).toBeInTheDocument();
+  expect(refreshSession).toHaveBeenCalledWith('refresh-123');
+  expect(JSON.parse(localStorage.getItem('auth.session')).access_token).toBe('access-456');
+});
+
+test('al refresh, con il token scaduto e senza "Remember me", bisogna rifare il login', async () => {
+  getCurrentUser.mockRejectedValue(new Error('expired'));
+
+  reloadPage({ session: { ...SESSION, remember_me: false }, lastActivity: NOW - MINUTE });
+
+  expect(await screen.findByText('session expired')).toBeInTheDocument();
+  expect(refreshSession).not.toHaveBeenCalled();
 });
 
 test('al refresh una sessione usata da poco resta attiva', async () => {
