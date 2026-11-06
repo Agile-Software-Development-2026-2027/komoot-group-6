@@ -43,7 +43,7 @@ test('shows the cover photo and falls back to the drawing if it does not load', 
   expect(container.querySelector('svg polygon')).not.toBeNull();
 });
 
-test('the bookmark saves the trail: Save → Saving... → Saved', async () => {
+test('the bookmark saves the trail: Save → Saving... → Saved and shows "Trail saved"', async () => {
   let finishSave;
   const onSave = vi.fn(() => new Promise((resolve) => { finishSave = resolve; }));
   render(<TrailCard trail={TRAIL} onSave={onSave} />);
@@ -53,9 +53,42 @@ test('the bookmark saves the trail: Save → Saving... → Saved', async () => {
   expect(onSave).toHaveBeenCalledWith('t1');
   expect(screen.getByRole('button', { name: 'Saving... Sentiero del Crati' })).toBeDisabled();
 
-  await act(async () => finishSave());
+  await act(async () => finishSave('saved'));
 
-  expect(screen.getByRole('button', { name: 'Saved Sentiero del Crati' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Saved Sentiero del Crati' })).not.toBeDisabled();
+  expect(screen.getByRole('status')).toHaveTextContent('Trail saved');
+});
+
+test('saving the same trail again shows "Trail already saved"', async () => {
+  const onSave = vi.fn().mockResolvedValueOnce('saved').mockResolvedValueOnce('already-saved');
+  render(<TrailCard trail={TRAIL} onSave={onSave} />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Save Sentiero del Crati' }));
+  await act(async () => {});
+  expect(screen.getByRole('status')).toHaveTextContent('Trail saved');
+
+  fireEvent.click(screen.getByRole('button', { name: 'Saved Sentiero del Crati' }));
+  await act(async () => {});
+
+  expect(onSave).toHaveBeenCalledTimes(2);
+  expect(screen.getByRole('status')).toHaveTextContent('Trail already saved');
+  expect(screen.getByRole('button', { name: 'Saved Sentiero del Crati' })).toBeInTheDocument();
+});
+
+test('the save message disappears after a few seconds', async () => {
+  vi.useFakeTimers();
+  try {
+    render(<TrailCard trail={TRAIL} onSave={vi.fn().mockResolvedValue('saved')} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Sentiero del Crati' }));
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    expect(screen.getByRole('status')).toHaveTextContent('Trail saved');
+
+    await act(() => vi.advanceTimersByTimeAsync(3000));
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 test('shows an error when saving fails and lets the user retry', async () => {
@@ -71,14 +104,22 @@ test('shows an error when saving fails and lets the user retry', async () => {
   await act(async () => {});
 
   expect(onSave).toHaveBeenCalledTimes(2);
-  expect(screen.getByRole('button', { name: 'Saved Sentiero del Crati' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Saved Sentiero del Crati' })).toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('Trail saved');
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });
 
-test('a trail that is already saved starts as Saved', () => {
-  render(<TrailCard trail={{ ...TRAIL, saved: true }} onSave={vi.fn()} />);
+test('a trail that is already saved starts as Saved and can still be clicked', async () => {
+  const onSave = vi.fn().mockResolvedValue('already-saved');
+  render(<TrailCard trail={{ ...TRAIL, saved: true }} onSave={onSave} />);
 
-  expect(screen.getByRole('button', { name: 'Saved Sentiero del Crati' })).toBeDisabled();
+  const bookmark = screen.getByRole('button', { name: 'Saved Sentiero del Crati' });
+  expect(bookmark).not.toBeDisabled();
+
+  fireEvent.click(bookmark);
+  await act(async () => {});
+
+  expect(screen.getByRole('status')).toHaveTextContent('Trail already saved');
 });
 
 test('marking a hike as completed: Mark as completed → Completing... → Completed', async () => {
@@ -135,6 +176,26 @@ test('a trail that is already completed starts as Completed', () => {
   expect(screen.getByRole('button', { name: 'Completed Sentiero del Crati' })).toBeInTheDocument();
 });
 
+test('a trail saved in the profile (isSaved) shows the full bookmark and says it is already saved', async () => {
+  const onSave = vi.fn().mockResolvedValue('already-saved');
+  render(<TrailCard trail={TRAIL} isSaved onSave={onSave} />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Saved Sentiero del Crati' }));
+  await act(async () => {});
+
+  expect(onSave).toHaveBeenCalledWith('t1');
+  expect(screen.getByRole('status')).toHaveTextContent('Trail already saved');
+});
+
+test('the bookmark fills in when the saved list arrives after the card', () => {
+  const { rerender } = render(<TrailCard trail={TRAIL} onSave={vi.fn()} />);
+  expect(screen.getByRole('button', { name: 'Save Sentiero del Crati' })).toBeInTheDocument();
+
+  rerender(<TrailCard trail={TRAIL} isSaved onSave={vi.fn()} />);
+
+  expect(screen.getByRole('button', { name: 'Saved Sentiero del Crati' })).toBeInTheDocument();
+});
+
 test('clicking the name asks to show the trail on the map', () => {
   const onSelect = vi.fn();
   render(<TrailCard trail={{ ...TRAIL, start: [16.2, 39.3] }} onSave={vi.fn()} onSelect={onSelect} isSelected />);
@@ -152,4 +213,11 @@ test('without a start point the name is not clickable', () => {
 
   expect(screen.getByRole('heading', { name: 'Sentiero del Crati' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Sentiero del Crati' })).not.toBeInTheDocument();
+});
+
+
+test('has a link to the page of the trail', () => {
+  render(<TrailCard trail={TRAIL} onSave={vi.fn()} />);
+
+  expect(screen.getByRole('link', { name: /details/i })).toHaveAttribute('href', '/trails/t1');
 });

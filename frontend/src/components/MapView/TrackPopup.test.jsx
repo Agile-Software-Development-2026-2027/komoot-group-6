@@ -111,4 +111,11 @@ describe('TrackPopup', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('has a link to the page of the trail', () => {
+    render(<TrackPopup trail={trail} lngLat={lngLat} onClose={() => {}} />);
+
+    const link = screen.getByRole('link', { name: /view trail details/i });
+    expect(link.getAttribute('href')).toBe(`/trails/${trail.id}`);
+  });
 });

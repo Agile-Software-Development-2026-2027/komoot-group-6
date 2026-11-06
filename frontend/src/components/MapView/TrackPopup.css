@@ -69,3 +69,29 @@
   font-size: 0.9375rem;
   font-weight: 600;
 }
+
+
+.track-popup-details {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+  border-radius: 10px;
+  background: var(--color-primary-light);
+  transition: filter 0.15s;
+}
+
+.track-popup-details:hover {
+  filter: brightness(0.96);
+}
+
+.track-popup-details:focus-visible {
+  outline: 3px solid var(--color-primary-light);
+  outline-offset: 2px;
+}

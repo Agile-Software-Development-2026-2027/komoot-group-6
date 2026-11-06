@@ -13,7 +13,7 @@ const COMPLETE_ERRORS = {
   '22P02': { status: 400, error: 'Invalid trail id' }, // l'id non è un uuid
 };
 
-// POST /api/profile/saved-trails
+
 // Salva un sentiero nel profilo dell'utente loggato (tabella saved_trails, vedi database/saved_trails.sql).
 // requireAuth ha già messo l'utente in req.user e il token in req.token.
 export async function saveTrail(req, res) {
@@ -33,7 +33,23 @@ export async function saveTrail(req, res) {
   return res.status(201).json({ trailId });
 }
 
-// POST /api/profile/completed-trails
+
+// Restituisce i sentieri salvati dall'utente loggato, dal più recente: [{ trail_id, created_at }, ...].
+// Il frontend li usa per mostrare il segnalibro pieno sulle card dei sentieri già salvati.
+export async function getSavedTrails(req, res) {
+  const { data, error } = await supabaseAsUser(req.token)
+    .from('saved_trails')
+    .select('trail_id, created_at')
+    .eq('user_id', req.user.id)
+    .order('created_at', { ascending: false });
+
+  // Errore inatteso: ci pensa errorHandler (500)
+  if (error) throw error;
+
+  return res.json(data ?? []);
+}
+
+
 // Segna un sentiero come completato nel profilo dell'utente loggato (tabella completed_trails, vedi database/completed_trails.sql).
 // requireAuth ha già messo l'utente in req.user e il token in req.token.
 export async function completeTrail(req, res) {
@@ -53,7 +69,7 @@ export async function completeTrail(req, res) {
   return res.status(201).json({ trailId });
 }
 
-// GET /api/profile/completed-trails
+
 // Restituisce l'elenco dei sentieri completati dall'utente loggato.
 export async function getCompletedTrails(req, res) {
   const { data, error } = await supabaseAsUser(req.token)
@@ -68,7 +84,7 @@ export async function getCompletedTrails(req, res) {
   return res.json(data ?? []);
 }
 
-// DELETE /api/profile/completed-trails/:trailId
+
 // Rimuove un sentiero completato nel profilo dell'utente loggato.
 export async function uncompleteTrail(req, res) {
   const { trailId } = req.params;

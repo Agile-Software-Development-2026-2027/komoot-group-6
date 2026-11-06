@@ -1,6 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from './api.js';
-import { completeTrail, getCompletedTrails, getNearbyTrails, getTrail, getTrailsInBounds, saveTrail, uncompleteTrail } from './trailsService.js';
+import {
+  completeTrail,
+  getCompletedTrails,
+  getNearbyTrails,
+  getSavedTrails,
+  getTrail,
+  getTrailsInBounds,
+  saveTrail,
+  uncompleteTrail,
+} from './trailsService.js';
 import { buildElevationProfile, calculateTrailStats } from '../utils/trailStats.js';
 
 // Cartella delle immagini finta: c'è solo l'immagine dell'"Anello del Campus UniCal"
@@ -146,20 +155,31 @@ describe('getNearbyTrails', () => {
 });
 
 describe('saveTrail', () => {
-  it('sends the trail id to the profile', async () => {
+  it('sends the trail id to the profile and returns saved', async () => {
     const authFetch = vi.fn().mockResolvedValue({ trailId: 't1' });
 
-    await saveTrail(authFetch, 't1');
+    await expect(saveTrail(authFetch, 't1')).resolves.toBe('saved');
 
     expect(authFetch).toHaveBeenCalledWith('/profile/saved-trails', { method: 'POST', body: { trailId: 't1' } });
   });
 
-  it('treats an already saved trail (409) as success, but not other errors', async () => {
+  it('returns already-saved for a trail that was already saved (409), but throws other errors', async () => {
     const alreadySaved = vi.fn().mockRejectedValue(new ApiError('Trail already saved', 409));
-    await expect(saveTrail(alreadySaved, 't1')).resolves.toBeUndefined();
+    await expect(saveTrail(alreadySaved, 't1')).resolves.toBe('already-saved');
 
     const serverDown = vi.fn().mockRejectedValue(new ApiError('Cannot reach the server.', 0));
     await expect(saveTrail(serverDown, 't1')).rejects.toThrow('Cannot reach the server.');
+  });
+});
+
+describe('getSavedTrails', () => {
+  it('fetches the list of saved trails from the profile', async () => {
+    const savedList = [{ trail_id: 't1', created_at: '2026-11-06T10:00:00Z' }];
+    const authFetch = vi.fn().mockResolvedValue(savedList);
+
+    await expect(getSavedTrails(authFetch)).resolves.toEqual(savedList);
+
+    expect(authFetch).toHaveBeenCalledWith('/profile/saved-trails');
   });
 });
 
