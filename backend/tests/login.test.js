@@ -51,10 +51,36 @@ describe('POST /api/auth/login', () => {
       access_token: 'access-123',
       refresh_token: 'refresh-123',
       expires_at: 1900000000,
-      // 8 ore dopo il login
-      session_expires_at: NOW + 8 * 60 * 60,
+      // Senza "Remember me": 1 minuto dopo il login
+      session_expires_at: NOW + 60,
+      remember_me: false,
     });
     expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith(validBody);
+  });
+
+  it('con "Remember me" la sessione dura fino a 30 giorni dal login', async () => {
+    supabase.auth.signInWithPassword.mockResolvedValue({
+      data: {
+        user: { id: 'abc-123', email: validBody.email, user_metadata: {} },
+        session: { access_token: 'access-123', refresh_token: 'refresh-123', expires_at: 1900000000 },
+      },
+      error: null,
+    });
+
+    const res = await request(app).post('/api/auth/login').send({ ...validBody, rememberMe: true });
+
+    expect(res.status).toBe(200);
+    expect(res.body.session.session_expires_at).toBe(NOW + 30 * 24 * 60 * 60);
+    expect(res.body.session.remember_me).toBe(true);
+    // A Supabase vanno solo email e password
+    expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith(validBody);
+  });
+
+  it('risponde 400 se rememberMe non è true o false', async () => {
+    const res = await request(app).post('/api/auth/login').send({ ...validBody, rememberMe: 'yes' });
+
+    expect(res.status).toBe(400);
+    expect(supabase.auth.signInWithPassword).not.toHaveBeenCalled();
   });
 
   it('risponde 400 e non chiama Supabase se i dati non sono validi', async () => {

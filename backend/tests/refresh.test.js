@@ -12,12 +12,9 @@ const validBody = {
   refresh_token: 'refresh-123',
 };
 
-// Ora finta (in secondi) e durata massima della sessione: 8 ore.
 const NOW = 1_800_000_000;
-const MAX_AGE = 8 * 60 * 60;
+const MAX_AGE = 30 * 24 * 60 * 60;
 
-// Access token finto con la stessa forma di quelli di Supabase (intestazione.dati.firma):
-// al backend interessa solo il campo amr, con il momento del login.
 function fakeAccessToken(loginTime) {
   const payload = { amr: [{ method: 'password', timestamp: loginTime }] };
   return `header.${Buffer.from(JSON.stringify(payload)).toString('base64url')}.signature`;
@@ -58,11 +55,13 @@ describe('POST /api/auth/refresh', () => {
       expires_at: 1900000000,
       // La scadenza dipende dal momento del login, non da quello del refresh
       session_expires_at: NOW - 60 * 60 + MAX_AGE,
+      // Il refresh lo usano solo le sessioni con "Remember me"
+      remember_me: true,
     });
     expect(supabase.auth.refreshSession).toHaveBeenCalledWith(validBody);
   });
 
-  it('risponde 401 se sono passate 8 ore dal login', async () => {
+  it('risponde 401 se sono passati 30 giorni dal login', async () => {
     supabase.auth.refreshSession.mockResolvedValue(refreshedSession(fakeAccessToken(NOW - MAX_AGE)));
 
     const res = await request(app).post('/api/auth/refresh').send(validBody);

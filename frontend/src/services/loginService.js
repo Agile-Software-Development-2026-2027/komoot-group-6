@@ -2,10 +2,11 @@ import { apiRequest } from './api.js';
 
 
 // Come nella registrazione, l'email viene ripulita dagli spazi e la password no.
-export function loginUser({ email, password }) {
+// rememberMe: true se l'utente ha spuntato "Remember me" (resta loggato).
+export function loginUser({ email, password, rememberMe = false }) {
   return apiRequest('/auth/login', {
     method: 'POST',
-    body: { email: email.trim(), password },
+    body: { email: email.trim(), password, rememberMe },
   });
 }
 

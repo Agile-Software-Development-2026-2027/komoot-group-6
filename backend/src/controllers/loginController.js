@@ -11,10 +11,14 @@ function toPublicUser(user) {
   };
 }
 
-// Durata massima di una sessione: passato questo tempo dal login il refresh viene rifiutato
-// e bisogna rifare il login, anche se l'utente è sempre rimasto attivo.
+// Durata della sessione senza "Remember me": 1 minuto dal login, come l'access token
+// (su Supabase la scadenza del JWT è impostata a 60 secondi). Poi bisogna rifare il login.
+const SESSION_MAX_AGE_SECONDS = 60;
+
+// Con "Remember me" il frontend rinnova il token col refresh token e l'utente resta loggato,
+// anche chiudendo il browser, ma non oltre 30 giorni dal login.
 // Da solo Supabase rinnoverebbe la sessione all'infinito.
-const SESSION_MAX_AGE_SECONDS = 8 * 60 * 60;
+const REMEMBER_ME_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
 
 function nowInSeconds() {
@@ -33,20 +37,23 @@ function getLoginTime(accessToken) {
   }
 }
 
-// Tiene solo i dati della sessione che servono al frontend
-function toPublicSession(session, loggedInAt) {
+// Tiene solo i dati della sessione che servono al frontend.
+// remember_me dice al frontend dove salvare la sessione e se può rinnovarla.
+function toPublicSession(session, loggedInAt, rememberMe) {
+  const maxAge = rememberMe ? REMEMBER_ME_MAX_AGE_SECONDS : SESSION_MAX_AGE_SECONDS;
   return {
     access_token: session.access_token,
     refresh_token: session.refresh_token,
     expires_at: session.expires_at,
-    session_expires_at: loggedInAt + SESSION_MAX_AGE_SECONDS,
+    session_expires_at: loggedInAt + maxAge,
+    remember_me: rememberMe,
   };
 }
 
 // Fa controllare email e password a Supabase. 
 // Se sono giuste restituisce l'utente e i token della sessione; altrimenti un errore con lo status adatto.
 export async function login(req, res) {
-  const { email, password } = req.body;
+  const { email, password, rememberMe = false } = req.body;
 
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
@@ -66,7 +73,7 @@ export async function login(req, res) {
   return res.json({
     user: toPublicUser(data.user),
     // Il login è appena avvenuto: la durata massima parte da adesso.
-    session: toPublicSession(data.session, nowInSeconds()),
+    session: toPublicSession(data.session, nowInSeconds(), rememberMe),
   });
 }
 
@@ -77,9 +84,10 @@ export async function me(req, res) {
 }
 
 
-// L'access token scade dopo circa un'ora: con il refresh token se ne ottiene
+// L'access token scade dopo 1 minuto: con il refresh token se ne ottiene
 // uno nuovo, senza che l'utente debba rifare il login.
-// Non oltre SESSION_MAX_AGE_SECONDS dal login: a quel punto bisogna rifare il login.
+// Il frontend lo chiama solo per le sessioni con "Remember me" (senza, dopo 1 minuto si torna al login),
+// e non oltre REMEMBER_ME_MAX_AGE_SECONDS dal login: a quel punto bisogna rifare il login.
 export async function refresh(req, res) {
   const { refresh_token: refreshToken } = req.body;
 
@@ -91,13 +99,13 @@ export async function refresh(req, res) {
 
   // Se non si riesce a sapere quando è avvenuto il login, per sicurezza la sessione non viene rinnovata.
   const loggedInAt = getLoginTime(data.session.access_token);
-  if (!loggedInAt || nowInSeconds() - loggedInAt >= SESSION_MAX_AGE_SECONDS) {
+  if (!loggedInAt || nowInSeconds() - loggedInAt >= REMEMBER_ME_MAX_AGE_SECONDS) {
     return res.status(401).json({ error: 'Session expired. Please log in again.' });
   }
 
   return res.json({
     user: toPublicUser(data.user),
-    session: toPublicSession(data.session, loggedInAt),
+    session: toPublicSession(data.session, loggedInAt, true),
   });
 }
 
