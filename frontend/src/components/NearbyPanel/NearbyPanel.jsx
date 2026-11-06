@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Marker, useMap } from 'react-map-gl/maplibre';
 import { useAuth } from '../../context/useAuth.js';
-import { completeTrail, getCompletedTrails, getNearbyTrails, saveTrail, uncompleteTrail } from '../../services/trailsService.js';
+import {
+  completeTrail,
+  getCompletedTrails,
+  getNearbyTrails,
+  getSavedTrails,
+  saveTrail,
+  uncompleteTrail,
+} from '../../services/trailsService.js';
 import { DIFFICULTIES } from './difficulty.js';
 import { CloseIcon, MapPinIcon } from './icons.jsx';
 import TrailCard from './TrailCard.jsx';
@@ -69,6 +76,8 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
   const [selectedTrail, setSelectedTrail] = useState(null);
   // Ultima scelta e quando è stata fatta
   const selectionRef = useRef(null);
+  // ID dei sentieri già salvati nel profilo: il loro segnalibro è pieno, anche dopo un nuovo login
+  const [savedTrailIds, setSavedTrailIds] = useState(() => new Set());
   // ID dei sentieri completati dall'utente (SCRUM-51)
   const [completedTrailIds, setCompletedTrailIds] = useState(() => new Set());
 
@@ -89,6 +98,33 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
       cancelled = true;
     };
   }, [authFetch, user]);
+
+  // Carica i sentieri salvati dall'utente loggato (a ogni login o cambio di utente)
+  useEffect(() => {
+    if (!user) return undefined;
+
+    let cancelled = false;
+    getSavedTrails(authFetch)
+      .then((data) => {
+        if (!cancelled && Array.isArray(data)) {
+          setSavedTrailIds(new Set(data.map((item) => item.trail_id)));
+        }
+      })
+      // Se l'elenco non arriva i segnalibri restano vuoti, ma salvare funziona lo stesso
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authFetch, user]);
+
+  // Salva il sentiero e lo aggiunge ai salvati, così il segnalibro resta pieno
+  // anche se la card viene ricreata (per esempio dopo una nuova ricerca)
+  async function handleSave(trailId) {
+    const result = await saveTrail(authFetch, trailId);
+    setSavedTrailIds((prev) => new Set(prev).add(trailId));
+    return result;
+  }
 
   const handleToggleComplete = async (trailId, targetDone) => {
     if (targetDone) {
@@ -256,11 +292,12 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
                 <li key={trail.id}>
                   <TrailCard
                     trail={trail}
+                    isSaved={Boolean(user && savedTrailIds.has(trail.id))}
                     isCompleted={Boolean(user && completedTrailIds.has(trail.id))}
                     onToggleComplete={handleToggleComplete}
                     onComplete={(id) => handleToggleComplete(id, true)}
                     onUncomplete={(id) => handleToggleComplete(id, false)}
-                    onSave={(trailId) => saveTrail(authFetch, trailId)}
+                    onSave={handleSave}
                     onSelect={showOnMap}
                     isSelected={trail.id === selectedTrail?.id}
                   />

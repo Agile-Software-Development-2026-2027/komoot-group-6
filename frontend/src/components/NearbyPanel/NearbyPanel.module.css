@@ -377,6 +377,14 @@
   color: var(--color-error);
 }
 
+/* Conferma dopo il click sul segnalibro ("Trail saved" / "Trail already saved") */
+.cardNotice {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
 /* Segnaposto sulla mappa del sentiero scelto */
 .pin {
   display: block;
