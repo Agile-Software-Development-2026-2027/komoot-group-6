@@ -96,6 +96,70 @@
 .field input[aria-invalid='true']:focus {
   box-shadow: 0 0 0 3px var(--color-error-bg);
 }
+/* Label + (i) icon on the same row. The tooltip is positioned from here,
+   so it starts at the left edge of the field and stays inside the card. */
+.field-label-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* The (i) button. ".auth-card .field-info .field-info-button" is longer than
+   ".auth-card button" on purpose: it wins over the style of the big green buttons. */
+.auth-card .field-info .field-info-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  color: var(--color-muted);
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  box-shadow: none;
+  cursor: help;
+  transition: color 0.15s, background 0.15s;
+}
+
+.auth-card .field-info .field-info-button:hover:not(:disabled),
+.auth-card .field-info .field-info-button:focus-visible {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  transform: none;
+  box-shadow: none;
+  outline: none;
+}
+
+/* Hidden until the (i) is hovered, focused or tapped */
+.field-info-tooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 2;
+  max-width: 260px;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #fff;
+  background: var(--color-text);
+  border-radius: 8px;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.15);
+  pointer-events: none; /* never blocks clicks on the input under it */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+}
+
+.field-info:hover .field-info-tooltip,
+.field-info:focus-within .field-info-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
 
 .field-hint,
 .field-error {
@@ -197,3 +261,4 @@
 .auth-switch a:hover {
   text-decoration: underline;
 }
+

@@ -1,17 +1,14 @@
 import { apiRequest } from './api.js';
 
-// Chiama POST /auth/register sul backend.
-// I campi opzionali vengono inviati solo se compilati.
-export function registerUser({ email, password, username, displayName }) {
+export function registerUser({ email, password, username, displayName, birthDate }) {
   return apiRequest('/auth/register', {
     method: 'POST',
     body: {
       email: email.trim(),
-      // La password non viene ripulita dagli spazi.
       password,
-      // Un campo vuoto diventa undefined, pertanto viene escluso dal JSON.
-      username: username.trim() || undefined,
+      username: username.trim(),
       displayName: displayName.trim() || undefined,
+      birthDate,
     },
   });
 }
