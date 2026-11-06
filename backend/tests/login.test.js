@@ -72,7 +72,6 @@ describe('POST /api/auth/login', () => {
     expect(res.status).toBe(200);
     expect(res.body.session.session_expires_at).toBe(NOW + 30 * 24 * 60 * 60);
     expect(res.body.session.remember_me).toBe(true);
-    // A Supabase vanno solo email e password
     expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith(validBody);
   });
 

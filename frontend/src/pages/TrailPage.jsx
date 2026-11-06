@@ -5,6 +5,7 @@ import TrailComments from '../components/TrailPage/TrailComments.jsx';
 import TrailDifficulty from '../components/TrailPage/TrailDifficulty.jsx';
 import TrailHeader from '../components/TrailPage/TrailHeader.jsx';
 import TrailMap from '../components/TrailPage/TrailMap.jsx';
+import TrailShare from '../components/TrailPage/TrailShare.jsx';
 import TrailStart from '../components/TrailPage/TrailStart.jsx';
 import TrailStats from '../components/TrailPage/TrailStats.jsx';
 import { ChevronLeftIcon } from '../components/TrailPage/icons.jsx';
@@ -13,11 +14,9 @@ import { estimateDurationMin } from '../utils/formatTrail.js';
 import { isLoop } from '../utils/routeShape.js';
 import { trailSummary } from '../utils/trailSummary.js';
 import styles from '../components/TrailPage/TrailPage.module.css';
+import shareStyles from '../components/TrailPage/ShareHike.module.css';
 
-// Page of one trail (the "Hike Page"), at /trails/:id (e.g. /trails/f4ef6996-...).
-// It loads the trail from GET /api/trails/:id and shows it like a Komoot tour:
-// big photo with the name, key numbers and a one-sentence summary, the map with the
-// route, description on the left with difficulty and start on the right, then the comments.
+
 export default function TrailPage() {
   const { id } = useParams();
   // Increases when the user presses "Try again"
@@ -87,8 +86,7 @@ function TrailContent({ id, onRetry }) {
     );
   }
 
-  // The answer is a GeoJSON Feature: the data is in "properties",
-  // the whole route is in "geometry" (the map uses the whole Feature)
+
   const { feature } = state;
   const trail = feature.properties;
   // Not every trail has an estimated duration: we estimate it from length and ascent
@@ -97,10 +95,14 @@ function TrailContent({ id, onRetry }) {
 
   return (
     <article className={styles.content}>
-      <Link to="/" className={styles.back}>
-        <ChevronLeftIcon />
-        Back to map
-      </Link>
+      {/* "Share your hike" appears on the right only if the user has completed this trail (SCRUM-14) */}
+      <div className={shareStyles.topBar}>
+        <Link to="/" className={styles.back}>
+          <ChevronLeftIcon />
+          Back to map
+        </Link>
+        <TrailShare feature={feature} durationMin={durationMin} />
+      </div>
 
       <TrailHeader trail={trail} />
 

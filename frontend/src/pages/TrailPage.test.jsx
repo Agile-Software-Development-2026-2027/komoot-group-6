@@ -1,5 +1,3 @@
-// Tests for the trail page: the four states (loading, ready, not found, error).
-// The backend is fake: getTrail is mocked, the menu is replaced by nothing.
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -11,13 +9,13 @@ vi.mock('../services/trailsService.js', async (importOriginal) => ({
   ...(await importOriginal()), // keeps CAI_TO_DIFFICULTY
   getTrail: vi.fn(),
 }));
-// The real SideMenu needs a logged-in user (AuthProvider): not needed here
 vi.mock('../components/SideMenu.jsx', () => ({ default: () => null }));
 
-// The real map (MapLibre) cannot run in tests: a simple box that shows what it receives
+
 vi.mock('../components/TrailPage/TrailMap.jsx', () => ({
   default: ({ trail }) => <div data-testid="trail-map">{trail.geometry.type}</div>,
 }));
+vi.mock('../components/TrailPage/TrailShare.jsx', () => ({ default: () => null }));
 
 const TRAIL_ID = 'f4ef6996-f2e9-4462-9d86-a56d15cbaff2';
 
@@ -84,7 +82,7 @@ describe('TrailPage', () => {
 
     await screen.findByRole('heading', { level: 1 });
 
-    // CAI scale: the grade of this trail is the current one
+   
     const scale = screen.getByRole('list', { name: 'CAI difficulty scale' });
     expect(scale.querySelector('[aria-current="true"]').textContent).toBe('T');
     expect(screen.getByText('Easy · T (Tourist)')).toBeTruthy();
