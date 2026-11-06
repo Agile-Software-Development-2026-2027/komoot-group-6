@@ -80,13 +80,22 @@ export async function getNearbyTrails(authFetch, { lat, lng, radiusKm }) {
 }
 
 // Salva il sentiero nel profilo dell'utente.
-// Se era già salvato (409) per l'utente il risultato è lo stesso, quindi non è un errore.
+// Restituisce 'saved' se è stato salvato adesso, 'already-saved' se era già nel profilo (409):
+// non è un errore, ma la card mostra un messaggio diverso.
 export async function saveTrail(authFetch, trailId) {
   try {
     await authFetch('/profile/saved-trails', { method: 'POST', body: { trailId } });
+    return 'saved';
   } catch (err) {
-    if (!(err instanceof ApiError && err.status === 409)) throw err;
+    if (err instanceof ApiError && err.status === 409) return 'already-saved';
+    throw err;
   }
+}
+
+// Sentieri salvati dall'utente loggato: [{ trail_id, created_at }, ...].
+// Servono per mostrare il segnalibro pieno sui sentieri già salvati (anche dopo un nuovo login).
+export async function getSavedTrails(authFetch) {
+  return authFetch('/profile/saved-trails');
 }
 
 

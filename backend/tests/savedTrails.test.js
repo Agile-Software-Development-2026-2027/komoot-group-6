@@ -11,9 +11,12 @@ import { supabase, supabaseAsUser } from '../src/config/supabase.js';
 
 const TRAIL_ID = '7d3c0b8e-2f7a-4c1e-9a55-0b6f1c2d3e4f';
 
-// Finto client Supabase: supabaseAsUser(token).from('saved_trails').insert(riga)
+
 const insert = vi.fn();
-const from = vi.fn(() => ({ insert }));
+const order = vi.fn();
+const eq = vi.fn(() => ({ order }));
+const select = vi.fn(() => ({ eq }));
+const from = vi.fn(() => ({ insert, select }));
 
 // Manda la richiesta come utente loggato
 function save(body) {
@@ -32,6 +35,57 @@ beforeEach(() => {
   });
   supabaseAsUser.mockReturnValue({ from });
   insert.mockResolvedValue({ error: null });
+  order.mockResolvedValue({ data: [], error: null });
+});
+
+describe('GET /api/profile/saved-trails', () => {
+  // Manda la richiesta come utente loggato
+  function getSaved() {
+    return request(app)
+      .get('/api/profile/saved-trails')
+      .set('Authorization', 'Bearer access-123');
+  }
+
+  it('restituisce i sentieri salvati dall\'utente, dal più recente (200)', async () => {
+    const rows = [{ trail_id: TRAIL_ID, created_at: '2026-11-06T10:00:00Z' }];
+    order.mockResolvedValue({ data: rows, error: null });
+
+    const res = await getSaved();
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual(rows);
+    expect(supabaseAsUser).toHaveBeenCalledWith('access-123');
+    expect(from).toHaveBeenCalledWith('saved_trails');
+    expect(select).toHaveBeenCalledWith('trail_id, created_at');
+    expect(eq).toHaveBeenCalledWith('user_id', 'abc-123');
+    expect(order).toHaveBeenCalledWith('created_at', { ascending: false });
+  });
+
+  it('restituisce una lista vuota se il database non manda righe', async () => {
+    order.mockResolvedValue({ data: null, error: null });
+
+    const res = await getSaved();
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+
+  it('risponde 401 senza token e non legge nulla', async () => {
+    const res = await request(app).get('/api/profile/saved-trails');
+
+    expect(res.status).toBe(401);
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it('risponde 500 per un errore inatteso del database', async () => {
+    order.mockResolvedValue({ data: null, error: { code: '42501', message: 'permission denied' } });
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const res = await getSaved();
+
+    expect(res.status).toBe(500);
+    consoleError.mockRestore();
+  });
 });
 
 describe('POST /api/profile/saved-trails', () => {
