@@ -6,7 +6,7 @@ import {
   formatElevation,
 } from '../../utils/formatTrail.js';
 import { DIFFICULTY_LABELS } from './difficulty.js';
-import { BookmarkIcon, ClimbIcon, ClockIcon, DistanceIcon, PinIcon } from './icons.jsx';
+import { BookmarkIcon, CheckIcon, ClimbIcon, ClockIcon, DistanceIcon, PinIcon } from './icons.jsx';
 import styles from './NearbyPanel.module.css';
 
 // aria-label del segnalibro per ogni stato del salvataggio
@@ -53,13 +53,28 @@ function TrailArt({ trail }) {
 }
 
 // Card di un sentiero vicino: copertina con il segnalibro per salvarlo nel profilo,
-// nome e una riga di dati (difficoltà, tempo stimato, lunghezza, salita).
+// pulsante per segnarlo/rimuoverlo come completato, nome e dati (difficoltà, tempo stimato, lunghezza, salita).
 // onSave(trailId) salva il sentiero e restituisce una Promise.
+// onComplete(trailId) segna il sentiero come completato e restituisce una Promise.
 // onSelect(trail) mostra il sentiero sulla mappa; isSelected evidenzia la card scelta.
-export default function TrailCard({ trail, onSave, onSelect, isSelected = false }) {
+export default function TrailCard({
+  trail,
+  onSave,
+  onComplete,
+  onUncomplete,
+  onToggleComplete,
+  isCompleted = false,
+  onSelect,
+  isSelected = false,
+}) {
   const [saveStatus, setSaveStatus] = useState(trail.saved ? 'saved' : 'idle');
+  const [actionLoading, setActionLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [localDone, setLocalDone] = useState(null);
   const [imageFailed, setImageFailed] = useState(false);
+
   const isSaved = saveStatus === 'saved';
+  const isDone = localDone !== null ? localDone : Boolean(isCompleted || trail.completed);
 
   async function handleSave() {
     setSaveStatus('saving');
@@ -71,6 +86,31 @@ export default function TrailCard({ trail, onSave, onSelect, isSelected = false 
     }
   }
 
+  async function handleToggle() {
+    if (actionLoading || (!onToggleComplete && !onComplete && !onUncomplete)) return;
+    const targetDone = !isDone;
+    setActionLoading(true);
+    setHasError(false);
+    try {
+      if (onToggleComplete) {
+        await onToggleComplete(trail.id, targetDone);
+      } else if (targetDone && onComplete) {
+        await onComplete(trail.id);
+      } else if (!targetDone && onUncomplete) {
+        await onUncomplete(trail.id);
+      }
+      setLocalDone(targetDone);
+    } catch {
+      setHasError(true);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  const completeLabel = actionLoading
+    ? (isDone ? 'Removing...' : 'Completing...')
+    : (isDone ? 'Completed' : 'Mark as completed');
+
   return (
     <article className={`${styles.card} ${isSelected ? styles.selected : ''}`}>
       <div className={styles.cover}>
@@ -78,6 +118,19 @@ export default function TrailCard({ trail, onSave, onSelect, isSelected = false 
           <img src={trail.imageUrl} alt="" loading="lazy" onError={() => setImageFailed(true)} />
         ) : (
           <TrailArt trail={trail} />
+        )}
+
+        {(onToggleComplete || onComplete) && (
+          <button
+            type="button"
+            className={`${styles.completeBtn} ${isDone ? styles.isCompleted : ''}`}
+            onClick={handleToggle}
+            disabled={actionLoading}
+            aria-label={`${completeLabel} ${trail.name}`}
+            title={isDone ? 'Remove from completed' : 'Mark as completed'}
+          >
+            <CheckIcon />
+          </button>
         )}
 
         <button
@@ -137,6 +190,10 @@ export default function TrailCard({ trail, onSave, onSelect, isSelected = false 
 
       {saveStatus === 'error' && (
         <p role="alert" className={styles.cardError}>Could not save the trail. Try again.</p>
+      )}
+
+      {hasError && (
+        <p role="alert" className={styles.cardError}>Could not update completed status. Try again.</p>
       )}
     </article>
   );

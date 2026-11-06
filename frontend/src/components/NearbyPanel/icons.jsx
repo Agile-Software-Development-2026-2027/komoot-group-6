@@ -87,3 +87,12 @@ export function CloseIcon() {
   );
 }
 
+// Spunta per il completamento del sentiero (SCRUM-51)
+export function CheckIcon() {
+  return (
+    <svg {...LINE} width="18" height="18" fill="none">
+      <path d="M20 6L9 17l-5-5" strokeWidth="2.5" />
+    </svg>
+  );
+}
+
