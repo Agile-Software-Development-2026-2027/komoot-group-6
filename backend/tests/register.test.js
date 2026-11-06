@@ -10,9 +10,10 @@ import { supabase } from '../src/config/supabase.js';
 
 const validBody = {
   email: 'mario@esempio.it',
-  password: 'password123',
+  password: 'password123!',
   username: 'mario_rossi',
   displayName: 'Mario',
+  birthDate: '2001-05-14',
 };
 
 beforeEach(() => {
@@ -35,7 +36,7 @@ describe('POST /api/auth/register', () => {
         email: validBody.email,
         password: validBody.password,
         options: expect.objectContaining({
-          data: { username: 'mario_rossi', display_name: 'Mario' },
+        data: { username: 'mario_rossi', display_name: 'Mario', birth_date: '2001-05-14' },
         }),
       })
     );
