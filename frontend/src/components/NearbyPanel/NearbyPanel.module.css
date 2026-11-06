@@ -280,6 +280,40 @@
   color: var(--color-primary);
 }
 
+/* Pulsante per segnare l'escursione completata */
+.completeBtn {
+  position: absolute;
+  top: 10px;
+  right: 58px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  color: var(--color-text);
+  background: rgb(255 255 255 / 0.95);
+  border: 0;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.2);
+  cursor: pointer;
+  transition: transform 0.15s, color 0.15s, background-color 0.15s;
+}
+
+.completeBtn:hover:not(:disabled) {
+  color: #16803c;
+  transform: scale(1.08);
+}
+
+.completeBtn:disabled {
+  cursor: default;
+}
+
+.completeBtn.isCompleted {
+  color: #fff;
+  background: #16803c;
+}
+
 .cardTitle {
   margin: 6px 0 0;
   font-size: 1.05rem;

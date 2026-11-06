@@ -88,3 +88,23 @@ export async function saveTrail(authFetch, trailId) {
     if (!(err instanceof ApiError && err.status === 409)) throw err;
   }
 }
+
+
+// Se era già completato (409) per l'utente il risultato è lo stesso, quindi non è un errore.
+export async function completeTrail(authFetch, trailId) {
+  try {
+    await authFetch('/profile/completed-trails', { method: 'POST', body: { trailId } });
+  } catch (err) {
+    if (!(err instanceof ApiError && err.status === 409)) throw err;
+  }
+}
+
+// Restituisce l'elenco dei sentieri completati per l'utente loggato.
+export async function getCompletedTrails(authFetch) {
+  return authFetch('/profile/completed-trails');
+}
+
+// Rimuove il sentiero dai completati nel profilo dell'utente (SCRUM-51).
+export async function uncompleteTrail(authFetch, trailId) {
+  await authFetch(`/profile/completed-trails/${trailId}`, { method: 'DELETE' });
+}
