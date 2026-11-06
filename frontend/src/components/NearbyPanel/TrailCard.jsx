@@ -5,6 +5,7 @@ import {
   formatDuration,
   formatElevation,
 } from '../../utils/formatTrail.js';
+import TrailDetailsLink from '../TrailPage/TrailDetailsLink.jsx';
 import { DIFFICULTY_LABELS } from './difficulty.js';
 import { BookmarkIcon, CheckIcon, ClimbIcon, ClockIcon, DistanceIcon, PinIcon } from './icons.jsx';
 import styles from './NearbyPanel.module.css';
@@ -206,10 +207,16 @@ export default function TrailCard({
         </div>
       </dl>
 
-      <p className={styles.away}>
-        <PinIcon />
-        {formatDistance(trail.distanceM)} away
-      </p>
+          
+      <div className={styles.cardFooter}>
+        <p className={styles.away}>
+          <PinIcon />
+          {formatDistance(trail.distanceM)} away
+        </p>
+        <TrailDetailsLink trailId={trail.id} className={styles.detailsLink}>
+          Details
+        </TrailDetailsLink>
+      </div>
 
       {saveMessage && (
         <p role="status" className={styles.cardNotice}>{saveMessage}</p>

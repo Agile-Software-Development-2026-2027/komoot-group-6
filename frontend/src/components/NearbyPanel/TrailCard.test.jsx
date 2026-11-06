@@ -214,3 +214,10 @@ test('without a start point the name is not clickable', () => {
   expect(screen.getByRole('heading', { name: 'Sentiero del Crati' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Sentiero del Crati' })).not.toBeInTheDocument();
 });
+
+
+test('has a link to the page of the trail', () => {
+  render(<TrailCard trail={TRAIL} onSave={vi.fn()} />);
+
+  expect(screen.getByRole('link', { name: /details/i })).toHaveAttribute('href', '/trails/t1');
+});

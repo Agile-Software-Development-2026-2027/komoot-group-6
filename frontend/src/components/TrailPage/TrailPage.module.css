@@ -1,0 +1,455 @@
+/* Styles of the trail page (/trails/:id). Colors come from the variables in index.css.
+   One continuous background: the sections are separated by space and thin lines, not by boxes. */
+
+.page {
+  min-height: 100vh;
+  padding: 24px 16px 64px;
+}
+
+.content {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 56px; /* leaves room for the menu button in the top-left corner */
+  padding: 6px 14px 6px 8px;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+  border-radius: 999px;
+  transition: background 0.15s;
+}
+
+.back:hover {
+  background: var(--color-primary-light);
+}
+
+/* ---------- Hero: big photo with the name written on it ---------- */
+
+.hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: 180px;
+  overflow: hidden;
+  border-radius: 24px;
+  /* Without a photo: a soft colored background */
+  background: linear-gradient(135deg, var(--color-primary-light), color-mix(in srgb, var(--color-primary) 22%, white));
+}
+
+.heroWithPhoto {
+  min-height: clamp(280px, 42vw, 500px);
+}
+
+.heroImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Dark shade at the bottom of the photo: the white text is readable on any picture */
+.heroWithPhoto::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgb(8 36 38 / 0.82) 0%, rgb(8 36 38 / 0.35) 38%, transparent 65%);
+}
+
+.heroText {
+  position: relative;
+  z-index: 1; /* above the dark shade */
+  padding: 28px 32px;
+}
+
+.kicker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+
+.heroWithPhoto .kicker {
+  color: rgb(255 255 255 / 0.88);
+}
+
+.heroWithPhoto .title {
+  color: #fff;
+  text-shadow: 0 2px 12px rgb(0 0 0 / 0.3);
+}
+
+.badge {
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  border-radius: 999px;
+}
+
+/* Difficulty colors: used by the badge and by the difficulty scale */
+.easy {
+  color: #1f6b3a;
+  background: #e3f3e8;
+}
+
+.moderate {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.hard {
+  color: #8a2c1d;
+  background: #fbe7e3;
+}
+
+/* ---------- The trail at a glance: numbers + one sentence ---------- */
+
+.overview {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.stats {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+/* Each number is separated from the previous one by a thin vertical line */
+.stat {
+  padding: 4px 20px;
+  border-left: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+}
+
+.stat:first-child {
+  padding-left: 0;
+  border-left: none;
+}
+
+.stat dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.stat dt svg {
+  color: var(--color-primary);
+}
+
+.stat dd {
+  margin: 4px 0 0;
+  font-size: clamp(1.4rem, 2.6vw, 1.9rem);
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+.summary {
+  max-width: 68ch;
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: var(--color-text);
+}
+
+/* ---------- Sections ---------- */
+
+.mapSection h2,
+.section h2 {
+  margin: 0 0 14px;
+  font-size: 1.3rem;
+  letter-spacing: -0.01em;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+  gap: 56px;
+  align-items: start;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Thin line between two sections of the right column */
+.section + .section {
+  margin-top: 28px;
+  padding-top: 28px;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+}
+
+/* Comments: the whole width, under a thin line */
+.comments {
+  padding-top: 28px;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+}
+
+.sectionText {
+  margin: 0;
+  line-height: 1.7;
+  color: var(--color-text);
+}
+
+/* ---------- Map: big and blended into the page (no box, soft edges) ---------- */
+
+.map {
+  position: relative;
+  height: clamp(320px, 45vw, 520px);
+  /* The edges of the map fade into the background of the page.
+     Two gradients (left-right and top-bottom) are combined: only the middle stays fully visible. */
+  -webkit-mask-image:
+    linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent),
+    linear-gradient(to bottom, transparent, #000 40px, #000 calc(100% - 40px), transparent);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent),
+    linear-gradient(to bottom, transparent, #000 40px, #000 calc(100% - 40px), transparent);
+  mask-composite: intersect;
+}
+
+/* Map buttons, scale and credits moved inside the faded edges, so they stay fully visible */
+.map :global(.maplibregl-ctrl-top-right) {
+  top: 36px;
+  right: 36px;
+}
+
+.map :global(.maplibregl-ctrl-bottom-left) {
+  bottom: 30px;
+  left: 36px;
+}
+
+.map :global(.maplibregl-ctrl-bottom-right) {
+  bottom: 30px;
+  right: 36px;
+}
+
+.mapMessage {
+  display: grid;
+  place-items: center;
+  height: 240px;
+  margin: 0;
+  border-radius: 18px;
+  color: var(--color-muted);
+  background: var(--color-primary-light);
+}
+
+/* Start and end of the trail: white dots with a colored ring */
+.marker {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 4px solid;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.3);
+}
+
+.startMarker {
+  border-color: #1f6b3a; /* green: start */
+}
+
+.endMarker {
+  border-color: #b4232c; /* dark red: end */
+}
+
+/* Legend in the top-left corner of the map */
+.mapLegend {
+  position: absolute;
+  top: 40px;
+  left: 40px;
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  padding: 6px 12px;
+  list-style: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text);
+  background: rgb(255 255 255 / 0.92);
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.12);
+}
+
+.mapLegend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mapLegend .marker {
+  width: 12px;
+  height: 12px;
+  border-width: 3px;
+  box-shadow: none;
+}
+
+/* ---------- Difficulty: the CAI scale ---------- */
+
+.scale {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.scaleStep {
+  padding: 6px 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--color-muted);
+  background: color-mix(in srgb, var(--color-border) 45%, transparent);
+  border-radius: 6px;
+}
+
+/* The grade of this trail: full color */
+.scaleStep.easy {
+  color: #fff;
+  background: #2f8a4f;
+}
+
+.scaleStep.moderate {
+  color: #fff;
+  background: var(--color-primary);
+}
+
+.scaleStep.hard {
+  color: #fff;
+  background: #b4432c;
+}
+
+.gradeName {
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+
+/* ---------- Starting point ---------- */
+
+.coordinates {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 14px;
+  font-variant-numeric: tabular-nums; /* digits with the same width */
+  color: var(--color-muted);
+}
+
+.coordinates svg {
+  color: var(--color-primary);
+}
+
+.directions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  background: var(--color-primary);
+  border-radius: 999px;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 25%, transparent);
+  transition: background 0.15s, transform 0.15s;
+}
+
+.directions:hover {
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
+}
+
+.directions:focus-visible {
+  outline: 3px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+/* ---------- Comments (placeholder) ---------- */
+
+.emptyComments {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 22px 24px;
+  color: var(--color-muted);
+  border: 1.5px dashed var(--color-border);
+  border-radius: 16px;
+}
+
+.emptyComments svg {
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+
+.emptyComments p {
+  margin: 0;
+}
+
+.emptyComments strong {
+  display: block;
+  color: var(--color-text);
+}
+
+/* ---------- Loading / not found / error ---------- */
+
+.message {
+  max-width: 420px;
+  margin: 15vh auto 0;
+  text-align: center;
+  color: var(--color-muted);
+}
+
+.message h1 {
+  margin: 0 0 8px;
+  color: var(--color-text);
+}
+
+.messageLink,
+.retry {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 10px 18px;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  background: var(--color-primary);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.messageLink:hover,
+.retry:hover {
+  background: var(--color-primary-hover);
+}
+

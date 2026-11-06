@@ -46,7 +46,7 @@ export async function getTrail(id) {
 }
 
 // Il backend usa la scala CAI (T, E, EE, EEA); card e filtri usano easy / moderate / hard.
-const CAI_TO_DIFFICULTY = { T: 'easy', E: 'moderate', EE: 'hard', EEA: 'hard' };
+export const CAI_TO_DIFFICULTY = { T: 'easy', E: 'moderate', EE: 'hard', EEA: 'hard' };
 
 function toLngLat(point) {
   const isValid = Array.isArray(point) && point.length >= 2 && point.slice(0, 2).every(Number.isFinite);
