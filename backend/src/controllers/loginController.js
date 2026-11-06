@@ -11,18 +11,40 @@ function toPublicUser(user) {
   };
 }
 
-// Tiene solo i dati della sessione che servono al frontend.
-function toPublicSession(session) {
+// Durata massima di una sessione: passato questo tempo dal login il refresh viene rifiutato
+// e bisogna rifare il login, anche se l'utente è sempre rimasto attivo.
+// Da solo Supabase rinnoverebbe la sessione all'infinito.
+const SESSION_MAX_AGE_SECONDS = 8 * 60 * 60;
+
+
+function nowInSeconds() {
+  return Math.floor(Date.now() / 1000);
+}
+
+// Restituisce il momento del login (in secondi) scritto nell'access token, che è un JWT.
+// Restituisce null se il token non si riesce a leggere.
+function getLoginTime(accessToken) {
+  try {
+    const payload = JSON.parse(Buffer.from(accessToken.split('.')[1], 'base64url').toString());
+    const times = (payload.amr ?? []).map((entry) => entry.timestamp).filter(Number.isFinite);
+    return times.length > 0 ? Math.min(...times) : null;
+  } catch {
+    return null;
+  }
+}
+
+// Tiene solo i dati della sessione che servono al frontend
+function toPublicSession(session, loggedInAt) {
   return {
     access_token: session.access_token,
     refresh_token: session.refresh_token,
     expires_at: session.expires_at,
+    session_expires_at: loggedInAt + SESSION_MAX_AGE_SECONDS,
   };
 }
 
-// POST /api/auth/login
-// Fa controllare email e password a Supabase. Se sono giuste restituisce
-// l'utente e i token della sessione; altrimenti un errore con lo status adatto.
+// Fa controllare email e password a Supabase. 
+// Se sono giuste restituisce l'utente e i token della sessione; altrimenti un errore con lo status adatto.
 export async function login(req, res) {
   const { email, password } = req.body;
 
@@ -43,20 +65,21 @@ export async function login(req, res) {
 
   return res.json({
     user: toPublicUser(data.user),
-    session: toPublicSession(data.session),
+    // Il login è appena avvenuto: la durata massima parte da adesso.
+    session: toPublicSession(data.session, nowInSeconds()),
   });
 }
 
-// GET /api/auth/me
-// Restituisce l'utente a cui appartiene il token. Il controllo del token
-// lo ha già fatto requireAuth, che gira prima e mette l'utente in req.user.
+
+// Restituisce l'utente a cui appartiene il token.
 export async function me(req, res) {
   return res.json({ user: toPublicUser(req.user) });
 }
 
-// POST /api/auth/refresh
+
 // L'access token scade dopo circa un'ora: con il refresh token se ne ottiene
 // uno nuovo, senza che l'utente debba rifare il login.
+// Non oltre SESSION_MAX_AGE_SECONDS dal login: a quel punto bisogna rifare il login.
 export async function refresh(req, res) {
   const { refresh_token: refreshToken } = req.body;
 
@@ -66,19 +89,23 @@ export async function refresh(req, res) {
     return res.status(401).json({ error: 'Session expired. Please log in again.' });
   }
 
+  // Se non si riesce a sapere quando è avvenuto il login, per sicurezza la sessione non viene rinnovata.
+  const loggedInAt = getLoginTime(data.session.access_token);
+  if (!loggedInAt || nowInSeconds() - loggedInAt >= SESSION_MAX_AGE_SECONDS) {
+    return res.status(401).json({ error: 'Session expired. Please log in again.' });
+  }
+
   return res.json({
     user: toPublicUser(data.user),
-    session: toPublicSession(data.session),
+    session: toPublicSession(data.session, loggedInAt),
   });
 }
 
-// POST /api/auth/logout
-// Il client Supabase del backend non tiene sessioni in memoria (persistSession: false),
-// quindi supabase.auth.signOut() non saprebbe quale sessione chiudere.
-// Per questo chiamiamo direttamente l'API di Supabase con il token dell'utente,
-// che così viene revocato e non funziona più.
+
+// scope=local chiude solo la sessione di questo dispositivo: senza, Supabase chiuderebbe
+// quelle dell'utente su tutti i dispositivi (anche quando qui la sessione scade per inattività).
 export async function logout(req, res) {
-  const response = await fetch(`${process.env.SUPABASE_URL}/auth/v1/logout`, {
+  const response = await fetch(`${process.env.SUPABASE_URL}/auth/v1/logout?scope=local`, {
     method: 'POST',
     headers: {
       apikey: process.env.SUPABASE_ANON_KEY,
@@ -94,7 +121,7 @@ export async function logout(req, res) {
   return res.status(204).end();
 }
 
-// POST /api/auth/forgot-password
+
 // Chiede a Supabase di mandare all'utente l'email con il link per reimpostare
 // la password. Il link riporta alla pagina /auth/reset-password del frontend.
 export async function forgotPassword(req, res) {
@@ -115,7 +142,7 @@ export async function forgotPassword(req, res) {
   });
 }
 
-// POST /api/auth/reset-password
+
 // Imposta la nuova password. Il frontend prende l'access_token dal link
 // arrivato per email e lo manda qui insieme alla password nuova.
 export async function resetPassword(req, res) {
