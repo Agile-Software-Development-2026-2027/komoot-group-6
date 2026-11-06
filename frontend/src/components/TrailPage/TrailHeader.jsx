@@ -10,45 +10,29 @@ function formatType(type) {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-// Top of the trail page: photo and map side by side, then type, name and difficulty.
-// "trail" = the properties returned by GET /api/trails/:id.
-// "children" = what goes next to the photo (the map, from TrailPage).
-// Without a photo the map takes the whole width.
-export default function TrailHeader({ trail, children }) {
+// Top of the trail page, like the cover of a Komoot tour: the photo in big,
+// with type, difficulty and name written over its lower part.
+// Without a photo the same texts are shown on a soft colored background.
+// "trail" = the properties returned by GET /api/trails/:id
+export default function TrailHeader({ trail }) {
   const imageUrl = trailImageUrl(trail.name);
   // The backend uses the CAI scale (T, E, EE, EEA): the page shows Easy / Intermediate / Difficult
   const difficulty = CAI_TO_DIFFICULTY[trail.difficulty];
 
   return (
-    <header className={styles.header}>
-      <div className={styles.hero}>
-        {imageUrl && (
-          <div className={styles.cover}>
-            <img src={imageUrl} alt="" />
-          </div>
-        )}
-        {children}
-        {!imageUrl && !children && (
-          // Neither a photo nor a map: a soft colored box with the first letter of the name
-          <div className={styles.cover}>
-            <span className={styles.coverFallback} aria-hidden="true">
-              {trail.name?.charAt(0)}
-            </span>
-          </div>
-        )}
-      </div>
+    <header className={`${styles.hero} ${imageUrl ? styles.heroWithPhoto : ''}`}>
+      {imageUrl && <img className={styles.heroImage} src={imageUrl} alt="" />}
 
-      <div className={styles.titleRow}>
-        <div>
-          {trail.trailType && <p className={styles.kicker}>{formatType(trail.trailType)}</p>}
-          <h1 className={styles.title}>{trail.name}</h1>
-        </div>
-        {difficulty && (
-          <span className={`${styles.badge} ${styles[difficulty]}`}>
-            {DIFFICULTY_LABELS[difficulty]}
-            <span className={styles.badgeCode}> · {trail.difficulty}</span>
-          </span>
-        )}
+      <div className={styles.heroText}>
+        <p className={styles.kicker}>
+          {formatType(trail.trailType)}
+          {difficulty && (
+            <span className={`${styles.badge} ${styles[difficulty]}`}>
+              {DIFFICULTY_LABELS[difficulty]} · {trail.difficulty}
+            </span>
+          )}
+        </p>
+        <h1 className={styles.title}>{trail.name}</h1>
       </div>
     </header>
   );

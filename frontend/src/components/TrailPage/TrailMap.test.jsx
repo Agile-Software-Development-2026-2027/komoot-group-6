@@ -57,7 +57,7 @@ describe('TrailMap', () => {
 
     expect(mock.mapProps.initialViewState).toEqual({
       bounds: [[16.21, 39.35], [16.25, 39.37]],
-      fitBoundsOptions: { padding: 48 },
+      fitBoundsOptions: { padding: 64 },
     });
     expect(mock.mapProps.mapStyle).toBe('outdoor.json');
     // Scrolling the page does not zoom the map by mistake

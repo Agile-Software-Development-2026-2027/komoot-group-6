@@ -60,7 +60,7 @@ afterEach(() => {
 });
 
 describe('TrailPage', () => {
-  it('shows "loading" and then the trail with its details', async () => {
+    it('shows "loading" and then the trail with its details', async () => {
     getTrail.mockResolvedValue(FEATURE);
     renderPage();
 
@@ -68,14 +68,42 @@ describe('TrailPage', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Anello del Campus UniCal' })).toBeTruthy();
     expect(getTrail).toHaveBeenCalledWith(TRAIL_ID);
 
-    // Difficulty T is shown as "Easy", the type with a capital letter
-    expect(screen.getByText('Easy')).toBeTruthy();
-    expect(screen.getByText('Hiking')).toBeTruthy();
-    // Stats, formatted
-    expect(screen.getByText('1:00 h')).toBeTruthy();
-    expect(screen.getByText('4 km')).toBeTruthy();
-    expect(screen.getByText('240 m')).toBeTruthy();
+    // Type and difficulty over the photo (T = Easy)
+    expect(screen.getByText('Easy · T')).toBeTruthy();
+    // Key numbers, formatted
+    const stats = screen.getAllByRole('definition').map((dd) => dd.textContent);
+    expect(stats).toEqual(['1:00 h', '4 km', '40 m', '40 m', '240 m']);
+    // One sentence built from the data: the route ends less than 100 m from the start = round trip
+    expect(screen.getByText(/^An easy round trip of 4 km: about 1:00 h on foot/)).toBeTruthy();
     expect(screen.getByText('Giro ad anello tra i viali del campus.')).toBeTruthy();
+    // The map receives the whole Feature, route included
+    expect(screen.getByTestId('trail-map').textContent).toBe('LineString');
+  });
+
+  it('explains the difficulty and links to the directions to the start', async () => {
+    getTrail.mockResolvedValue(FEATURE);
+    renderPage();
+
+    await screen.findByRole('heading', { level: 1 });
+
+    // CAI scale: the grade of this trail is the current one
+    const scale = screen.getByRole('list', { name: 'CAI difficulty scale' });
+    expect(scale.querySelector('[aria-current="true"]').textContent).toBe('T');
+    expect(screen.getByText('Easy · T (Tourist)')).toBeTruthy();
+
+    const directions = screen.getByRole('link', { name: 'Get directions' });
+    expect(directions.getAttribute('href')).toBe('https://www.google.com/maps/dir/?api=1&destination=39.359,16.2275');
+    expect(screen.getByText('39.3590° N, 16.2275° E')).toBeTruthy();
+  });
+
+  it('has the placeholder of the comments section', async () => {
+    getTrail.mockResolvedValue(FEATURE);
+    renderPage();
+
+    const comments = await screen.findByRole('region', { name: 'Comments' });
+    expect(comments.id).toBe('comments');
+    expect(comments.dataset.trailId).toBe(TRAIL_ID);
+    expect(comments.textContent).toMatch(/no comments yet/i);
   });
 
   it('estimates the duration when the trail does not have one', async () => {

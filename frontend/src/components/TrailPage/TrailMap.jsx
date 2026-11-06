@@ -1,4 +1,3 @@
-import turfDistance from '@turf/distance';
 import { setWorkerUrl } from 'maplibre-gl';
 import Map, { Layer, Marker, NavigationControl, ScaleControl, Source } from 'react-map-gl/maplibre';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
@@ -7,6 +6,7 @@ import { HIDDEN_BASE_LAYERS, MAP_BASE_STYLES, MAPTILER_API_KEY } from '../../con
 import { hideLayers } from '../../map/hideLayers.js';
 import { useFirstLabelLayerId } from '../../map/useFirstLabelLayerId.js';
 import { routeBounds } from '../../utils/routeBounds.js';
+import { isLoop, lastPoint } from '../../utils/routeShape.js';
 import TrackLayer from '../MapView/TrackLayer.jsx';
 import styles from './TrailPage.module.css';
 
@@ -17,18 +17,9 @@ setWorkerUrl(workerUrl);
 const hideBaseLayers = hideLayers(HIDDEN_BASE_LAYERS);
 
 // Space (in pixels) left around the route when the map zooms on it
-const ROUTE_PADDING = 48;
+const ROUTE_PADDING = 64;
 // Zoom used when the trail is a single point (no route to fit)
 const POINT_ZOOM = 14;
-// If the end is farther than this from the start, the route is "one way" and gets an end marker
-const LOOP_TOLERANCE_M = 100;
-
-// Last [lng, lat] of a LineString or MultiLineString, null for anything else
-function lastPoint(geometry) {
-  if (geometry?.type === 'LineString') return geometry.coordinates.at(-1) ?? null;
-  if (geometry?.type === 'MultiLineString') return geometry.coordinates.at(-1)?.at(-1) ?? null;
-  return null;
-}
 
 // White border drawn UNDER the red route: it makes the route stand out on any background,
 // like the highlighted tours on Komoot. Drawn below the text labels (place names stay readable).
@@ -57,9 +48,9 @@ export default function TrailMap({ trail }) {
   const end = lastPoint(trail.geometry);
   const hasStart = Number.isFinite(start?.[0]) && Number.isFinite(start?.[1]);
   const isRoute = trail.geometry?.type === 'LineString' || trail.geometry?.type === 'MultiLineString';
-  // A loop ends where it starts: one marker is enough
-  const showEnd = hasStart && end && turfDistance(start, end, { units: 'meters' }) > LOOP_TOLERANCE_M;
-
+  
+  // A loop ends where it starts: one marker is enough. Only a one-way route gets the end marker.
+  const showEnd = isLoop(start, trail.geometry) === false;
   if (!MAPTILER_API_KEY || !bounds) {
     return <p className={styles.mapMessage}>Map not available</p>;
   }
@@ -81,7 +72,7 @@ export default function TrailMap({ trail }) {
         cooperativeGestures
         style={{ width: '100%', height: '100%' }}
       >
-        <NavigationControl position="bottom-right" showCompass={false} />
+        <NavigationControl position="top-right" showCompass={false} />
         <ScaleControl position="bottom-left" maxWidth={100} unit="metric" />
 
         {/* Order matters: the border first (below), then the red route on top */}
