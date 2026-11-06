@@ -1,7 +1,7 @@
 // Tests for the trail page: the four states (loading, ready, not found, error).
 // The backend is fake: getTrail is mocked, the menu is replaced by nothing.
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ApiError } from '../services/api.js';
 import { getTrail } from '../services/trailsService.js';
@@ -10,7 +10,11 @@ import TrailPage from './TrailPage.jsx';
 vi.mock('../services/trailsService.js', async (importOriginal) => ({
   ...(await importOriginal()), // keeps CAI_TO_DIFFICULTY
   getTrail: vi.fn(),
+  // Likes (SCRUM-15): 12 by default, not yet liked by the user
+  getTrailLikes: vi.fn(() => Promise.resolve({ count: 12, liked: false })),
 }));
+// The like button uses authFetch from the login: a fake function is enough here
+vi.mock('../context/useAuth.js', () => ({ useAuth: () => ({ authFetch: () => {} }) }));
 // The real SideMenu needs a logged-in user (AuthProvider): not needed here
 vi.mock('../components/SideMenu.jsx', () => ({ default: () => null }));
 
@@ -92,6 +96,16 @@ describe('TrailPage', () => {
     const directions = screen.getByRole('link', { name: 'Get directions' });
     expect(directions.getAttribute('href')).toBe('https://www.google.com/maps/dir/?api=1&destination=39.359,16.2275');
     expect(screen.getByText('39.3590° N, 16.2275° E')).toBeTruthy();
+  });
+
+  it('shows the like button with the total likes on the cover', async () => {
+    getTrail.mockResolvedValue(FEATURE);
+    renderPage();
+
+    const hero = (await screen.findByRole('heading', { level: 1 })).closest('header');
+    const like = await within(hero).findByRole('button', { name: 'Like this trail' });
+    expect(like.textContent).toBe('12');
+    expect(within(hero).getByText('12 people like this trail')).toBeTruthy();
   });
 
   it('has the placeholder of the comments section', async () => {
