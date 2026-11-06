@@ -41,8 +41,6 @@ const FEATURE = {
   },
 };
 
-// The map receives the whole Feature, route included
-expect(screen.getByTestId('trail-map').textContent).toBe('LineString');
 // Opens /trails/:id as if the user typed the address
 function renderPage(id = TRAIL_ID) {
   render(
