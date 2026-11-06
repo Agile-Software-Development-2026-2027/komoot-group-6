@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Popup, useMap } from 'react-map-gl/maplibre';
 import { getPanOffset } from '../../utils/panToFit.js';
+import TrailDetailsLink from '../TrailPage/TrailDetailsLink.jsx';
 import './TrackPopup.css';
 
 function formatDistance(meters) {
@@ -100,7 +101,11 @@ export default function TrackPopup({ trail, lngLat, onClose }) {
               <dd>{value}</dd>
             </div>
           ))}
-        </dl>
+               </dl>
+        {/* Opens the page of the trail, with map, profile and all the details */}
+        <TrailDetailsLink trailId={trail.id} className="track-popup-details">
+          View trail details <span aria-hidden="true">→</span>
+        </TrailDetailsLink>
       </div>
     </Popup>
   );

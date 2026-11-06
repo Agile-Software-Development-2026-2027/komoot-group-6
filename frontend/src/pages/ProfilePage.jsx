@@ -6,6 +6,7 @@ import { useAuth } from '../context/useAuth.js';
 import './AuthPages.css';
 import './ProfilePage.css';
 
+
 // Pagina del profilo: mostra i dati dell'utente loggato.
 export default function ProfilePage() {
   const { user } = useAuth();
