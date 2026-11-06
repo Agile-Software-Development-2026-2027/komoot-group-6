@@ -12,17 +12,17 @@ const EMPTY_FORM = {
 };
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, sessionExpired } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   // Quello che l'utente ha scritto in ogni campo
   const [values, setValues] = useState(EMPTY_FORM);
-  // Messaggi sotto i campi (dal controllo nel browser)
+  // Messaggi sotto i campi
   const [errors, setErrors] = useState({});
-  // Messaggio in cima al modulo (dal backend)
+  // Messaggio in cima al modulo 
   const [serverError, setServerError] = useState('');
-  // true mentre la richiesta è in corso: disattiva il pulsante
+  // true mentre la richiesta è in corso
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // La pagina che l'utente voleva aprire prima di essere mandato qui. Se non c'è, dopo il login va alla home.
@@ -69,6 +69,11 @@ export default function LoginPage() {
 
         {serverError && (
           <p className="form-error" role="alert">{serverError}</p>
+        )}
+
+        {/* Mostrato quando l'utente è stato disconnesso perché la sessione era scaduta */}
+        {sessionExpired && !serverError && (
+          <p className="form-info" role="status">Your session has expired. Please log in again.</p>
         )}
 
         <FormField
