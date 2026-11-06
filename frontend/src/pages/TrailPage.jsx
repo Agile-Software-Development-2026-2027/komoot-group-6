@@ -2,13 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import SideMenu from '../components/SideMenu.jsx';
 import TrailHeader from '../components/TrailPage/TrailHeader.jsx';
+import TrailMap from '../components/TrailPage/TrailMap.jsx';
 import TrailStats from '../components/TrailPage/TrailStats.jsx';
+import { ChevronLeftIcon } from '../components/TrailPage/icons.jsx';
 import { getTrail } from '../services/trailsService.js';
 import styles from '../components/TrailPage/TrailPage.module.css';
 
-// Page of one trail, at /trails/:id (e.g. /trails/f4ef6996-...).
-// It loads the trail from GET /api/trails/:id and shows it "in big":
-// header with photo, stats, description. Map, elevation profile, actions
 export default function TrailPage() {
   const { id } = useParams();
   // Increases when the user presses "Try again"
@@ -77,17 +76,20 @@ function TrailContent({ id, onRetry }) {
     );
   }
 
-  // The answer is a GeoJSON Feature: the data is in "properties",
-  // the whole route is in "geometry" (used by the map in the next step)
+ 
   const trail = state.feature.properties;
 
   return (
     <article className={styles.content}>
-      <Link to="/" className={styles.back}>
-        ← Back to map
+           <Link to="/" className={styles.back}>
+        <ChevronLeftIcon />
+        Back to map
       </Link>
 
-      <TrailHeader trail={trail} />
+      <TrailHeader trail={trail}>
+        <TrailMap trail={state.feature} />
+      </TrailHeader>
+
 
       <div className={styles.columns}>
         <div className={styles.main}>

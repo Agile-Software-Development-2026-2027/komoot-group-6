@@ -344,12 +344,13 @@
   gap: 8px;
 }
 
-/* Link to the trail page. position + z-index: it stays above the ::after of .cardLink,
-   which covers the whole card, so a click here opens the page instead of selecting the trail. */
 .detailsLink {
   position: relative;
   z-index: 1;
-  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px 4px 12px;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--color-primary);

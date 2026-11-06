@@ -14,6 +14,11 @@ vi.mock('../services/trailsService.js', async (importOriginal) => ({
 // The real SideMenu needs a logged-in user (AuthProvider): not needed here
 vi.mock('../components/SideMenu.jsx', () => ({ default: () => null }));
 
+// The real map (MapLibre) cannot run in tests: a simple box that shows what it receives
+vi.mock('../components/TrailPage/TrailMap.jsx', () => ({
+  default: ({ trail }) => <div data-testid="trail-map">{trail.geometry.type}</div>,
+}));
+
 const TRAIL_ID = 'f4ef6996-f2e9-4462-9d86-a56d15cbaff2';
 
 // What GET /api/trails/:id returns: a Feature with the route as geometry
@@ -36,6 +41,8 @@ const FEATURE = {
   },
 };
 
+// The map receives the whole Feature, route included
+expect(screen.getByTestId('trail-map').textContent).toBe('LineString');
 // Opens /trails/:id as if the user typed the address
 function renderPage(id = TRAIL_ID) {
   render(

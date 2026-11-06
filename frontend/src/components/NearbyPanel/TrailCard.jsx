@@ -138,7 +138,7 @@ export default function TrailCard({ trail, onSave, onSelect, isSelected = false 
           {formatDistance(trail.distanceM)} away
         </p>
         <TrailDetailsLink trailId={trail.id} className={styles.detailsLink}>
-          Details <span aria-hidden="true">→</span>
+          Details
         </TrailDetailsLink>
       </div>
 

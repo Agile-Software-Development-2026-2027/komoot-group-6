@@ -104,7 +104,7 @@ export default function TrackPopup({ trail, lngLat, onClose }) {
                </dl>
         {/* Opens the page of the trail, with map, profile and all the details */}
         <TrailDetailsLink trailId={trail.id} className="track-popup-details">
-          View trail details <span aria-hidden="true">→</span>
+          View trail details 
         </TrailDetailsLink>
       </div>
     </Popup>
