@@ -117,3 +117,19 @@ export async function getCompletedTrails(authFetch) {
 export async function uncompleteTrail(authFetch, trailId) {
   await authFetch(`/profile/completed-trails/${trailId}`, { method: 'DELETE' });
 }
+
+// Likes of the trail (SCRUM-15). All three answer with { trailId, count, liked }:
+// count = total likes of all users, liked = true if the logged-in user's like is among them.
+export async function getTrailLikes(authFetch, trailId) {
+  return authFetch(`/trails/${encodeURIComponent(trailId)}/likes`);
+}
+
+// Adds the like. If it was already there, the backend still answers with the updated total.
+export async function likeTrail(authFetch, trailId) {
+  return authFetch(`/trails/${encodeURIComponent(trailId)}/likes`, { method: 'POST' });
+}
+
+// Removes the like and returns the updated total.
+export async function unlikeTrail(authFetch, trailId) {
+  return authFetch(`/trails/${encodeURIComponent(trailId)}/likes`, { method: 'DELETE' });
+}
