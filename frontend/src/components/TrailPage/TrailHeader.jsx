@@ -14,7 +14,8 @@ function formatType(type) {
 // with type, difficulty and name written over its lower part.
 // Without a photo the same texts are shown on a soft colored background.
 // "trail" = the properties returned by GET /api/trails/:id
-export default function TrailHeader({ trail }) {
+// "children" = actions shown in the bottom-right corner of the cover (e.g. the like button)
+export default function TrailHeader({ trail, children }) {
   const imageUrl = trailImageUrl(trail.name);
   // The backend uses the CAI scale (T, E, EE, EEA): the page shows Easy / Intermediate / Difficult
   const difficulty = CAI_TO_DIFFICULTY[trail.difficulty];
@@ -34,6 +35,8 @@ export default function TrailHeader({ trail }) {
         </p>
         <h1 className={styles.title}>{trail.name}</h1>
       </div>
+
+      {children && <div className={styles.heroActions}>{children}</div>}
     </header>
   );
 }

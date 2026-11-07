@@ -43,6 +43,7 @@
 .hero {
   position: relative;
   display: flex;
+  flex-wrap: wrap; /* on narrow screens the like button goes under the title */
   align-items: flex-end;
   min-height: 180px;
   overflow: hidden;
@@ -74,7 +75,23 @@
 .heroText {
   position: relative;
   z-index: 1; /* above the dark shade */
+  flex: 1 1 320px;
   padding: 28px 32px;
+}
+
+/* Actions in the bottom-right corner of the cover (the like button) */
+.heroActions {
+  position: relative;
+  z-index: 1; /* above the dark shade */
+  margin-left: auto;
+  padding: 0 32px 28px;
+}
+
+/* On the photo the sentence under the like button becomes white
+   (the variables are read by TrailLikeButton.module.css) */
+.heroWithPhoto .heroActions {
+  --like-text-color: rgb(255 255 255 / 0.92);
+  --like-text-shadow: 0 1px 6px rgb(0 0 0 / 0.4);
 }
 
 .kicker {
