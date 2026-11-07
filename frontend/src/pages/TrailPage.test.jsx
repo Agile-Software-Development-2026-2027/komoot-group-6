@@ -22,6 +22,8 @@ vi.mock('../components/SideMenu.jsx', () => ({ default: () => null }));
 vi.mock('../components/TrailPage/TrailMap.jsx', () => ({
   default: ({ trail }) => <div data-testid="trail-map">{trail.geometry.type}</div>,
 }));
+// "Share your hike" has its own tests (TrailShare.test.jsx)
+vi.mock('../components/TrailPage/TrailShare.jsx', () => ({ default: () => null }));
 
 const TRAIL_ID = 'f4ef6996-f2e9-4462-9d86-a56d15cbaff2';
 

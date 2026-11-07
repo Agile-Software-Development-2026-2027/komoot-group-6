@@ -51,7 +51,6 @@ describe('POST /api/auth/login', () => {
       access_token: 'access-123',
       refresh_token: 'refresh-123',
       expires_at: 1900000000,
-      // Senza "Remember me": 1 minuto dopo il login
       session_expires_at: NOW + 60,
       remember_me: false,
     });
@@ -72,7 +71,6 @@ describe('POST /api/auth/login', () => {
     expect(res.status).toBe(200);
     expect(res.body.session.session_expires_at).toBe(NOW + 30 * 24 * 60 * 60);
     expect(res.body.session.remember_me).toBe(true);
-    // A Supabase vanno solo email e password
     expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith(validBody);
   });
 
