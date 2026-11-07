@@ -1,21 +1,21 @@
 import { supabaseAsUser } from '../config/supabase.js';
 
-// Errori di Postgres che possono arrivare dall'insert, con la risposta da dare.
+// Postgres errors that can come from the insert, with the response to give.
 const INSERT_ERRORS = {
-  '23505': { status: 409, error: 'Trail already saved' }, // chiave duplicata: l'utente l'ha già salvato
-  '23503': { status: 404, error: 'Trail not found' }, // il sentiero non esiste nella tabella trails
-  '22P02': { status: 400, error: 'Invalid trail id' }, // l'id non è un uuid
+  '23505': { status: 409, error: 'Trail already saved' }, // duplicate key: the user has already saved it
+  '23503': { status: 404, error: 'Trail not found' }, // the trail does not exist in the trails table
+  '22P02': { status: 400, error: 'Invalid trail id' }, // the id is not a uuid
 };
 
 const COMPLETE_ERRORS = {
-  '23505': { status: 409, error: 'Trail already completed' }, // chiave duplicata: l'utente l'ha già completato
-  '23503': { status: 404, error: 'Trail not found' }, // il sentiero non esiste nella tabella trails
-  '22P02': { status: 400, error: 'Invalid trail id' }, // l'id non è un uuid
+  '23505': { status: 409, error: 'Trail already completed' }, // duplicate key: the user has already completed it
+  '23503': { status: 404, error: 'Trail not found' }, // the trail does not exist in the trails table
+  '22P02': { status: 400, error: 'Invalid trail id' }, // the id is not a uuid
 };
 
 
-// Salva un sentiero nel profilo dell'utente loggato (tabella saved_trails, vedi database/saved_trails.sql).
-// requireAuth ha già messo l'utente in req.user e il token in req.token.
+// Saves a trail in the logged-in user's profile (saved_trails table, see database/saved_trails.sql).
+// requireAuth has already put the user in req.user and the token in req.token.
 export async function saveTrail(req, res) {
   const { trailId } = req.body;
 
@@ -26,7 +26,7 @@ export async function saveTrail(req, res) {
   if (error) {
     const known = INSERT_ERRORS[error.code];
     if (known) return res.status(known.status).json({ error: known.error });
-    // Errore inatteso: ci pensa errorHandler (500)
+    // Unexpected error: errorHandler takes care of it (500)
     throw error;
   }
 
@@ -34,8 +34,8 @@ export async function saveTrail(req, res) {
 }
 
 
-// Restituisce i sentieri salvati dall'utente loggato, dal più recente: [{ trail_id, created_at }, ...].
-// Il frontend li usa per mostrare il segnalibro pieno sulle card dei sentieri già salvati.
+// Returns the trails saved by the logged-in user, most recent first: [{ trail_id, created_at }, ...].
+// The frontend uses them to show the filled bookmark on the cards of trails already saved.
 export async function getSavedTrails(req, res) {
   const { data, error } = await supabaseAsUser(req.token)
     .from('saved_trails')
@@ -43,15 +43,15 @@ export async function getSavedTrails(req, res) {
     .eq('user_id', req.user.id)
     .order('created_at', { ascending: false });
 
-  // Errore inatteso: ci pensa errorHandler (500)
+  // Unexpected error: errorHandler takes care of it (500)
   if (error) throw error;
 
   return res.json(data ?? []);
 }
 
 
-// Segna un sentiero come completato nel profilo dell'utente loggato (tabella completed_trails, vedi database/completed_trails.sql).
-// requireAuth ha già messo l'utente in req.user e il token in req.token.
+// Marks a trail as completed in the logged-in user's profile (completed_trails table, see database/completed_trails.sql).
+// requireAuth has already put the user in req.user and the token in req.token.
 export async function completeTrail(req, res) {
   const { trailId } = req.body;
 
@@ -62,7 +62,7 @@ export async function completeTrail(req, res) {
   if (error) {
     const known = COMPLETE_ERRORS[error.code];
     if (known) return res.status(known.status).json({ error: known.error });
-    // Errore inatteso: ci pensa errorHandler (500)
+    // Unexpected error: errorHandler takes care of it (500)
     throw error;
   }
 
@@ -70,7 +70,7 @@ export async function completeTrail(req, res) {
 }
 
 
-// Restituisce l'elenco dei sentieri completati dall'utente loggato.
+// Returns the list of trails completed by the logged-in user.
 export async function getCompletedTrails(req, res) {
   const { data, error } = await supabaseAsUser(req.token)
     .from('completed_trails')
@@ -85,7 +85,52 @@ export async function getCompletedTrails(req, res) {
 }
 
 
-// Rimuove un sentiero completato nel profilo dell'utente loggato.
+// PostgREST answers PGRST116 when .single() finds no row:
+// the profile does not exist, or the RLS policies do not let the user touch it.
+const NO_ROWS = 'PGRST116';
+
+// Returns whether the logged-in user's profile is public: { isPublic } (column profiles.is_public,
+// see database/profiles_visibility.sql). Profiles are private by default.
+export async function getVisibility(req, res) {
+  const { data, error } = await supabaseAsUser(req.token)
+    .from('profiles')
+    .select('is_public')
+    .eq('id', req.user.id)
+    .single();
+
+  if (error) {
+    if (error.code === NO_ROWS) return res.status(404).json({ error: 'Profile not found' });
+    // Unexpected error: errorHandler takes care of it (500)
+    throw error;
+  }
+
+  return res.json({ isPublic: data.is_public });
+}
+
+
+// Makes the logged-in user's profile public or private. The body { isPublic } has already been checked
+// by validateVisibility. Answers with the saved value.
+export async function setVisibility(req, res) {
+  const { isPublic } = req.body;
+
+  const { data, error } = await supabaseAsUser(req.token)
+    .from('profiles')
+    .update({ is_public: isPublic })
+    .eq('id', req.user.id)
+    .select('is_public')
+    .single();
+
+  if (error) {
+    if (error.code === NO_ROWS) return res.status(404).json({ error: 'Profile not found' });
+    // Unexpected error: errorHandler takes care of it (500)
+    throw error;
+  }
+
+  return res.json({ isPublic: data.is_public });
+}
+
+
+// Removes a completed trail from the logged-in user's profile.
 export async function uncompleteTrail(req, res) {
   const { trailId } = req.params;
 

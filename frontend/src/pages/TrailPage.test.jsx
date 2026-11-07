@@ -1,5 +1,5 @@
 // Tests for the trail page: the four states (loading, ready, not found, error).
-// The backend is fake: getTrail is mocked, the menu is replaced by nothing.
+// The backend is fake: getTrail is mocked.
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -11,8 +11,6 @@ vi.mock('../services/trailsService.js', async (importOriginal) => ({
   ...(await importOriginal()), // keeps CAI_TO_DIFFICULTY
   getTrail: vi.fn(),
 }));
-// The real SideMenu needs a logged-in user (AuthProvider): not needed here
-vi.mock('../components/SideMenu.jsx', () => ({ default: () => null }));
 
 // The real map (MapLibre) cannot run in tests: a simple box that shows what it receives
 vi.mock('../components/TrailPage/TrailMap.jsx', () => ({

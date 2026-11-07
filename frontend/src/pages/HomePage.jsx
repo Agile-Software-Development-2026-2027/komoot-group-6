@@ -6,7 +6,9 @@ import TrackLayer from '../components/MapView/TrackLayer.jsx';
 import TrackPopup from '../components/MapView/TrackPopup.jsx';
 import TrailStartsLayer from '../components/MapView/TrailStartsLayer.jsx';
 import NearbyPanel from '../components/NearbyPanel/NearbyPanel.jsx';
-import SideMenu from '../components/SideMenu.jsx';
+import { Link } from 'react-router-dom';
+import Avatar from '../components/Avatar.jsx';
+import { useAuth } from '../context/useAuth.js';
 import ElevationProfile from '../components/ElevationChart/ElevationChart.jsx';
 import { CloseIcon, TrailsIcon } from '../components/NearbyPanel/icons.jsx';
 import { useLayerEvents } from '../map/useLayerEvents.js';
@@ -14,11 +16,11 @@ import { getTrail, getTrailsInBounds } from '../services/trailsService.js';
 import { buildElevationProfile } from '../utils/trailStats.js';
 import './HomePage.css';
 
-// Attesa dopo l'ultimo spostamento della mappa prima di chiedere i sentieri dell'area
+// Wait after the last map move before asking for the trails of the area
 const BOUNDS_DEBOUNCE_MS = 300;
 
-// Tiene aggiornati i sentieri dell'area visibile: li chiede all'avvio e a ogni spostamento della mappa.
-// Va messo dentro <MapView> per poter usare useMap().
+// Keeps the trails of the visible area up to date: it asks for them at start and after every map move.
+// It must be placed inside <MapView> so it can use useMap().
 function TrailsInView({ onLoad }) {
   const { current: map } = useMap();
 
@@ -26,7 +28,7 @@ function TrailsInView({ onLoad }) {
     if (!map) return undefined;
 
     let timer;
-    // Numero dell'ultima richiesta: le risposte più vecchie vengono scartate
+    // Number of the latest request: older responses are discarded
     let lastRequest = 0;
 
     const load = () => {
@@ -35,7 +37,7 @@ function TrailsInView({ onLoad }) {
         .then((trails) => {
           if (request === lastRequest) onLoad(trails);
         })
-        // Backend spento o errore: restano i sentieri già mostrati.
+        // Backend down or error: the trails already shown stay.
         .catch(() => {});
     };
     const schedule = () => {
@@ -55,8 +57,8 @@ function TrailsInView({ onLoad }) {
   return null;
 }
 
-// Centra la mappa sul percorso (una Feature con una LineString) e, a fine movimento, chiama onDone.
-// Se il percorso non ha linee da inquadrare chiama subito onDone.
+// Centers the map on the route (a Feature with a LineString) and, when the movement ends, calls onDone.
+// If the route has no lines to frame it calls onDone right away.
 function FitToTrack({ data, onDone }) {
   const { current: map } = useMap();
 
@@ -87,23 +89,25 @@ function FitToTrack({ data, onDone }) {
   return null;
 }
 
-// Chiama onSelect quando si clicca su un punto di partenza (layer di TrailStartsLayer).
+// Calls onSelect when a start point is clicked (layer of TrailStartsLayer).
 function TrailClick({ onSelect }) {
   useLayerEvents('trail-starts', { onClick: onSelect });
   return null;
 }
 
 // Map fullscreen view with toolbar, nearby trails panel and elevation profile chart.
-// I componenti che disegnano sulla mappa (sentieri, pannelli, popup)
-// vanno aggiunti come children di <MapView>.
+// Components that draw on the map (trails, panels, popups)
+// are added as children of <MapView>.
 export default function HomePage() {
-  // FeatureCollection dei punti di partenza dell'area visibile
+  const { user } = useAuth();
+  const name = user?.displayName || user?.username || user?.email || '?';
+  // FeatureCollection of the start points of the visible area
   const [trails, setTrails] = useState(null);
-  // { id, lngLat, properties } del sentiero cliccato, null se nessuno
+  // { id, lngLat, properties } of the clicked trail, null if none
   const [selected, setSelected] = useState(null);
-  // Feature con il percorso completo del sentiero selezionato
+  // Feature with the full route of the selected trail
   const [route, setRoute] = useState(null);
-  // Il popup si apre quando la mappa ha finito di inquadrare il percorso
+  // The popup opens when the map has finished framing the route
   const [popupOpen, setPopupOpen] = useState(false);
   const selectedIdRef = useRef(null);
   const [hoveredPoint, setHoveredPoint] = useState(null);
@@ -131,7 +135,7 @@ export default function HomePage() {
         .then((detail) => {
           if (selectedIdRef.current === id) setRoute(detail);
         })
-        // Percorso non scaricabile: i dettagli si vedono comunque.
+        // Route cannot be downloaded: the details are shown anyway.
         .catch(() => {
           if (selectedIdRef.current === id) setPopupOpen(true);
         });
@@ -165,7 +169,10 @@ export default function HomePage() {
   return (
     <main className="home">
       <h1 className="visually-hidden">Home</h1>
-      <SideMenu />
+      {/* Profile icon, top-right: links to the profile page */}
+      <Link to="/profile" className="home-profile" aria-label="Profile">
+        <Avatar name={name} />
+      </Link>
       <section className="home-map" aria-label="Map">
         <MapView>
           <TrailsInView onLoad={setTrails} />
@@ -196,7 +203,7 @@ export default function HomePage() {
             />
             {/* Next buttons go here: leaderboard, filters... each with its own openPanel name */}
           </MapToolbar>
-          {/* Sentieri vicini al centro della mappa, con filtri e salvataggio nel profilo */}
+          {/* Trails near the center of the map, with filters and saving to the profile */}
           <NearbyPanel isOpen={openPanel === 'nearby'} onClose={closePanel} />
         </MapView>
       </section>

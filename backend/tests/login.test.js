@@ -31,7 +31,8 @@ describe('POST /api/auth/login', () => {
         user: {
           id: 'abc-123',
           email: validBody.email,
-          user_metadata: { username: 'mario_rossi', display_name: 'Mario' },
+          user_metadata: { username: 'mario_rossi', display_name: 'Mario', birth_date: '1990-05-17' },
+          created_at: '2026-01-15T10:00:00Z',
         },
         session: { access_token: 'access-123', refresh_token: 'refresh-123', expires_at: 1900000000 },
       },
@@ -46,12 +47,14 @@ describe('POST /api/auth/login', () => {
       email: validBody.email,
       username: 'mario_rossi',
       displayName: 'Mario',
+      birthDate: '1990-05-17',
+      createdAt: '2026-01-15T10:00:00Z',
     });
     expect(res.body.session).toEqual({
       access_token: 'access-123',
       refresh_token: 'refresh-123',
       expires_at: 1900000000,
-      // Senza "Remember me": 1 minuto dopo il login
+      // Without "Remember me": 1 minute after login
       session_expires_at: NOW + 60,
       remember_me: false,
     });
@@ -72,7 +75,7 @@ describe('POST /api/auth/login', () => {
     expect(res.status).toBe(200);
     expect(res.body.session.session_expires_at).toBe(NOW + 30 * 24 * 60 * 60);
     expect(res.body.session.remember_me).toBe(true);
-    // A Supabase vanno solo email e password
+    // Only email and password go to Supabase
     expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith(validBody);
   });
 

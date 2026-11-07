@@ -19,7 +19,8 @@ describe('GET /api/auth/me', () => {
         user: {
           id: 'abc-123',
           email: 'mario@esempio.it',
-          user_metadata: { username: 'mario_rossi', display_name: 'Mario' },
+          user_metadata: { username: 'mario_rossi', display_name: 'Mario', birth_date: '1990-05-17' },
+          created_at: '2026-01-15T10:00:00Z',
         },
       },
       error: null,
@@ -33,6 +34,8 @@ describe('GET /api/auth/me', () => {
       email: 'mario@esempio.it',
       username: 'mario_rossi',
       displayName: 'Mario',
+      birthDate: '1990-05-17',
+      createdAt: '2026-01-15T10:00:00Z',
     });
     expect(supabase.auth.getUser).toHaveBeenCalledWith('access-123');
   });
