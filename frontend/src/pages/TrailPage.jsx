@@ -3,7 +3,9 @@ import { Link, useParams } from 'react-router-dom';
 import TrailComments from '../components/TrailPage/TrailComments.jsx';
 import TrailDifficulty from '../components/TrailPage/TrailDifficulty.jsx';
 import TrailHeader from '../components/TrailPage/TrailHeader.jsx';
+import TrailLikeButton from '../components/TrailPage/TrailLikeButton.jsx';
 import TrailMap from '../components/TrailPage/TrailMap.jsx';
+import TrailShare from '../components/TrailPage/TrailShare.jsx';
 import TrailStart from '../components/TrailPage/TrailStart.jsx';
 import TrailStats from '../components/TrailPage/TrailStats.jsx';
 import { ChevronLeftIcon } from '../components/TrailPage/icons.jsx';
@@ -95,12 +97,19 @@ function TrailContent({ id, onRetry }) {
 
   return (
     <article className={styles.content}>
-      <Link to="/" className={styles.back}>
-        <ChevronLeftIcon />
-        Back to map
-      </Link>
+      {/* "Share your hike" appears on the right only if the user has completed this trail (SCRUM-14) */}
+      <div className={styles.topBar}>
+        <Link to="/" className={styles.back}>
+          <ChevronLeftIcon />
+          Back to map
+        </Link>
+        <TrailShare feature={feature} durationMin={durationMin} />
+      </div>
 
-      <TrailHeader trail={trail} />
+      {/* On the cover, bottom right: heart with the total likes (SCRUM-15) */}
+      <TrailHeader trail={trail}>
+        <TrailLikeButton trailId={trail.id} />
+      </TrailHeader>
 
       {/* The trail at a glance: numbers and one sentence built from them */}
       <div className={styles.overview}>

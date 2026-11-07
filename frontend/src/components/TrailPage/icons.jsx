@@ -95,3 +95,12 @@ export function CommentIcon() {
     </svg>
   );
 }
+
+// Heart of the like button: empty (outline only) or filled, always in the color of the text around it
+export function HeartIcon({ filled = false }) {
+  return (
+    <svg {...LINE} width="22" height="22" fill={filled ? 'currentColor' : 'none'}>
+      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" />
+    </svg>
+  );
+}
