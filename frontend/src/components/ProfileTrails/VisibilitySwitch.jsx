@@ -7,7 +7,7 @@ export default function VisibilitySwitch({ isPublic, disabled = false, onChange,
   return (
     <div className="visibility">
       <div className="visibility-row">
-        <span id="visibility-label" className="visibility-label">Profilo pubblico</span>
+        <span id="visibility-label" className="visibility-label">Public profile</span>
         <button
           type="button"
           role="switch"
@@ -24,13 +24,13 @@ export default function VisibilitySwitch({ isPublic, disabled = false, onChange,
 
       <p id="visibility-hint" className="visibility-hint">
         {isPublic
-          ? 'Pubblico: il tuo profilo può essere visto da altri utenti.'
-          : 'Privato: solo tu vedi il tuo profilo.'}
+          ? 'Public: other users can see your profile.'
+          : 'Private: only you can see your profile.'}
       </p>
 
       {error && (
         <p role="alert" className="visibility-error">
-          Non è stato possibile aggiornare la visibilità. Riprova.
+          Could not update visibility. Try again.
         </p>
       )}
     </div>

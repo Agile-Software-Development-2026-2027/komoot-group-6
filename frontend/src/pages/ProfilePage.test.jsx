@@ -72,13 +72,13 @@ it('shows a dash for missing account data', async () => {
   for (const label of ['Username', 'Display name', 'Member since']) {
     expect(valueOf(label).textContent).toBe('—');
   }
-  // Without a birth date there is "Aggiungi", disabled until profile editing exists
-  const add = within(screen.getByText('Date of birth').closest('.profile-row')).getByRole('button', { name: 'Aggiungi' });
+  // Without a birth date there is "Add", disabled until profile editing exists
+  const add = within(screen.getByText('Date of birth').closest('.profile-row')).getByRole('button', { name: 'Add' });
   expect(add.disabled).toBe(true);
   await screen.findByRole('tab', { name: 'Saved (0)' });
 });
 
-it('shows dates as "6 nov 2026"', async () => {
+it('shows dates as "6 Nov 2026"', async () => {
   useAuth.mockReturnValue({
     user: { ...fullUser, birthDate: '1990-05-17', createdAt: '2026-11-06T12:00:00Z' },
     authFetch: vi.fn(),
@@ -86,8 +86,8 @@ it('shows dates as "6 nov 2026"', async () => {
 
   render(<ProfilePage />);
 
-  expect(valueOf('Date of birth').textContent).toBe('17 mag 1990');
-  expect(valueOf('Member since').textContent).toBe('6 nov 2026');
+  expect(valueOf('Date of birth').textContent).toBe('17 May 1990');
+  expect(valueOf('Member since').textContent).toBe('6 Nov 2026');
   await screen.findByRole('tab', { name: 'Saved (0)' });
 });
 
@@ -103,10 +103,10 @@ it('shows the totals of the completed trails in the stat cards', async () => {
 
   await screen.findByRole('tab', { name: 'Saved (1)' });
   const stat = (label) => screen.getByText(label).parentElement.querySelector('dd').textContent;
-  expect(stat('Completati')).toBe('2');
-  expect(stat('Km totali')).toBe('10 km');
-  expect(stat('Dislivello')).toBe('↑ 600 m');
-  expect(stat('Salvati')).toBe('1');
+  expect(stat('Completed trails')).toBe('2');
+  expect(stat('Total distance')).toBe('10 km');
+  expect(stat('Total ascent')).toBe('↑ 600 m');
+  expect(stat('Saved trails')).toBe('1');
 });
 
 it('shows the difficulty as a badge on each trail row', async () => {
@@ -141,10 +141,10 @@ it('lists saved and completed trails in two tabs, with counts', async () => {
 it('shows an empty message when there are no trails', async () => {
   render(<ProfilePage />);
 
-  expect(await screen.findByText('Non hai ancora salvato nessun percorso.')).toBeTruthy();
-  expect(screen.getByRole('link', { name: 'Esplora percorsi' }).getAttribute('href')).toBe('/');
+  expect(await screen.findByText("You haven't saved any trails yet.")).toBeTruthy();
+  expect(screen.getByRole('link', { name: 'Explore trails' }).getAttribute('href')).toBe('/');
   fireEvent.click(screen.getByRole('tab', { name: 'Completed (0)' }));
-  expect(screen.getByText('Non hai ancora completato nessun percorso.')).toBeTruthy();
+  expect(screen.getByText("You haven't completed any trails yet.")).toBeTruthy();
 });
 
 it('skips a trail whose details cannot be loaded', async () => {
@@ -217,14 +217,14 @@ it('lets the user retry when the lists cannot be loaded', async () => {
 });
 
 // The visibility switch, which becomes enabled once the value has arrived from the backend
-const visibilitySwitch = () => screen.getByRole('switch', { name: 'Profilo pubblico' });
+const visibilitySwitch = () => screen.getByRole('switch', { name: 'Public profile' });
 
 it('shows the profile as private by default, with the switch ready once loaded', async () => {
   render(<ProfilePage />);
 
   await waitFor(() => expect(visibilitySwitch().disabled).toBe(false));
   expect(visibilitySwitch().getAttribute('aria-checked')).toBe('false');
-  expect(screen.getByText('Privato: solo tu vedi il tuo profilo.')).toBeTruthy();
+  expect(screen.getByText('Private: only you can see your profile.')).toBeTruthy();
 });
 
 it('reads the saved visibility from the backend', async () => {
@@ -233,7 +233,7 @@ it('reads the saved visibility from the backend', async () => {
   render(<ProfilePage />);
 
   await waitFor(() => expect(visibilitySwitch().getAttribute('aria-checked')).toBe('true'));
-  expect(screen.getByText(/Pubblico: il tuo profilo può essere visto/)).toBeTruthy();
+  expect(screen.getByText(/Public: other users can see your profile/)).toBeTruthy();
 });
 
 it('keeps the switch disabled while the visibility is loading', async () => {
@@ -262,6 +262,6 @@ it('goes back to the previous value and shows an error when saving fails', async
 
   fireEvent.click(visibilitySwitch());
 
-  expect((await screen.findByRole('alert')).textContent).toContain('Non è stato possibile aggiornare la visibilità');
+  expect((await screen.findByRole('alert')).textContent).toContain('Could not update visibility');
   expect(visibilitySwitch().getAttribute('aria-checked')).toBe('false');
 });

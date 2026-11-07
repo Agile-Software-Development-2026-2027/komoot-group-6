@@ -120,7 +120,7 @@
   }
 }
 
-/* Label below the number, but first in the code (so it reads "Completati: 3") */
+/* Label below the number, but first in the code (so it reads "Completed trails: 3") */
 .profile-stat {
   display: flex;
   flex-direction: column-reverse;
@@ -241,7 +241,7 @@
   cursor: not-allowed;
 }
 
-/* "Aggiungi" in place of a missing date: discreet, like a link */
+/* "Add" in place of a missing date: discreet, like a link */
 .profile-add {
   min-height: 44px;
   padding: 0 0 0 8px;

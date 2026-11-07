@@ -51,16 +51,16 @@ export default function ProfilePage() {
   const ready = !loading && !error;
   const totals = completedTotals(completed);
   const stats = [
-    { label: 'Completati', value: ready ? completed.length : EMPTY },
-    { label: 'Km totali', value: ready ? formatDistance(totals.lengthM) : EMPTY },
-    { label: 'Dislivello', value: ready ? `↑ ${formatElevation(totals.ascentM)}` : EMPTY },
-    { label: 'Salvati', value: ready ? saved.length : EMPTY },
+    { label: 'Completed trails', value: ready ? completed.length : EMPTY },
+    { label: 'Total distance', value: ready ? formatDistance(totals.lengthM) : EMPTY },
+    { label: 'Total ascent', value: ready ? `↑ ${formatElevation(totals.ascentM)}` : EMPTY },
+    { label: 'Saved trails', value: ready ? saved.length : EMPTY },
   ];
 
   // Saved and Completed show a list; Last route shows the route of the last completed trail
   const tabs = [
-    { id: 'saved', label: 'Saved', trails: saved, emptyText: 'Non hai ancora salvato nessun percorso.' },
-    { id: 'completed', label: 'Completed', trails: completed, emptyText: 'Non hai ancora completato nessun percorso.' },
+    { id: 'saved', label: 'Saved', trails: saved, emptyText: "You haven't saved any trails yet." },
+    { id: 'completed', label: 'Completed', trails: completed, emptyText: "You haven't completed any trails yet." },
     { id: 'route', label: 'Last route' },
   ];
   const current = tabs.find(({ id }) => id === tab);
@@ -92,7 +92,7 @@ export default function ProfilePage() {
           </div>
         </header>
 
-        <dl className="profile-stats" aria-label="Statistiche">
+        <dl className="profile-stats" aria-label="Statistics">
           {stats.map(({ label, value }) => <Stat key={label} label={label} value={value} />)}
         </dl>
 
@@ -103,8 +103,8 @@ export default function ProfilePage() {
               <div className="profile-card-head">
                 <h2 id="profile-account" className="profile-section-title">Account</h2>
                 {/* There is no page to edit the profile yet: the button is disabled */}
-                <button type="button" className="profile-outline" disabled title="Presto disponibile">
-                  Modifica profilo
+                <button type="button" className="profile-outline" disabled title="Coming soon">
+                  Edit profile
                 </button>
               </div>
 
@@ -114,8 +114,8 @@ export default function ProfilePage() {
                 <Row label="Display name">{user.displayName || EMPTY}</Row>
                 <Row label="Date of birth">
                   {formatDate(user.birthDate) ?? (
-                    <button type="button" className="profile-add" disabled title="Presto disponibile">
-                      Aggiungi
+                    <button type="button" className="profile-add" disabled title="Coming soon">
+                      Add
                     </button>
                   )}
                 </Row>

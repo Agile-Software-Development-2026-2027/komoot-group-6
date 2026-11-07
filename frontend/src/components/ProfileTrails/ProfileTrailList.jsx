@@ -23,7 +23,7 @@ export default function ProfileTrailList({ trails, emptyText }) {
       <div className="trail-empty">
         <CompassIcon />
         <p>{emptyText}</p>
-        <Link to="/" className="trail-empty-action">Esplora percorsi</Link>
+        <Link to="/" className="trail-empty-action">Explore trails</Link>
       </div>
     );
   }
@@ -42,7 +42,7 @@ export default function ProfileTrailList({ trails, emptyText }) {
               )}
             </span>
             <span className="trail-row-num">{formatDistance(trail.lengthM)}</span>
-            <span className="trail-row-num" aria-label={`Dislivello ${formatElevation(trail.ascentM)}`}>
+            <span className="trail-row-num" aria-label={`Ascent ${formatElevation(trail.ascentM)}`}>
               ↑ {formatElevation(trail.ascentM)}
             </span>
             <span className="trail-row-date">{formatDate(trail.date) ?? ''}</span>
