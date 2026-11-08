@@ -5,12 +5,13 @@ import SideMenu from '../components/SideMenu.jsx';
 import { useAuth } from '../context/useAuth.js';
 import './AuthPages.css';
 import './ProfilePage.css';
+import HikingInfo from '../components/HikeInfo.jsx';
 
 // Pagina del profilo: mostra i dati dell'utente loggato.
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, authFetch } = useAuth();
   const name = user.displayName || user.username || user.email;
-
+  console.log("User info::", user)
   return (
     <main className="auth-page">
       <SideMenu />
@@ -36,7 +37,7 @@ export default function ProfilePage() {
             <dd>{user.displayName || '—'}</dd>
           </div>
         </dl>
-
+        <HikingInfo authFetch={authFetch}/>
         <LogoutButton />
 
         <p className="auth-switch"><Link to="/">← Back to home</Link></p>
