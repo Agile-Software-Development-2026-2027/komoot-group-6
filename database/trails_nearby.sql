@@ -6,7 +6,7 @@
 create index if not exists trails_route_geog_gix on public.trails using gist ((route::geography));
 create index if not exists trails_start_point_geog_gix on public.trails using gist ((start_point::geography));
 
--- Returns the same columns as the other list functions (start point as lng, lat),
+-- Returns the same columns as the other list functions (start point as lng, lat, plus image_url),
 -- plus distance_m: meters from the search position to the closest point of the trail.
 -- The parameters are called origin_* because lng and lat are already output columns.
 create or replace function public.nearby_trails(
@@ -18,7 +18,7 @@ create or replace function public.nearby_trails(
 returns table (
   id uuid, name text, description text, trail_type text, difficulty text,
   length_m integer, ascent_m integer, descent_m integer, max_elevation_m integer,
-  est_duration_min integer,
+  est_duration_min integer, image_url text,
   lng double precision, lat double precision,
   distance_m double precision
 )
@@ -37,7 +37,7 @@ as $$
   )
   select
     t.id, t.name, t.description, t.trail_type, t.difficulty,
-    t.length_m, t.ascent_m, t.descent_m, t.max_elevation_m, t.est_duration_min,
+    t.length_m, t.ascent_m, t.descent_m, t.max_elevation_m, t.est_duration_min, t.image_url,
     ST_X(t.start_point::geometry) as lng,
     ST_Y(t.start_point::geometry) as lat,
     ST_Distance(coalesce(t.route::geography, t.start_point::geography), p.origin) as distance_m

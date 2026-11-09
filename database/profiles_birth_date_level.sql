@@ -7,6 +7,7 @@
 --    - level: starts at 0 for everyone, users cannot change it themselves
 -- 2. handle_new_user (the trigger function that creates the profile on
 --    sign-up) also copies the birth date sent by the backend.
+--    The trigger on auth.users that calls it is (re)created here too.
 -- 3. Privileges: users cannot change their own level or birth date,
 --    and other users cannot read someone's birth date.
 -- =====================================================================
@@ -48,6 +49,12 @@ begin
   return new;
 end $function$;
 
+-- The trigger: after every new user in auth.users, create their profile
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
 -- 3. Privileges --------------------------------------------------------
 -- UPDATE: users may still edit these columns of their own profile
 -- (the RLS policy profiles_update_own still decides WHICH row),
@@ -57,6 +64,7 @@ grant update (username, display_name, avatar_url, bio) on public.profiles to aut
 
 -- SELECT: every column except birth_date, which stays private.
 -- NOTE: "select *" on profiles is now refused for users: list the columns.
+-- NOTE: this also removes the grants on is_public: run profiles_is_public.sql after this file.
 revoke select on public.profiles from anon, authenticated;
 grant select (id, username, display_name, avatar_url, bio, created_at, level) on public.profiles to anon, authenticated;
 
