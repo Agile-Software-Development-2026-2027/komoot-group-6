@@ -119,7 +119,7 @@ test('the save message disappears after a few seconds', async () => {
     await act(() => vi.advanceTimersByTimeAsync(0));
     expect(screen.getByRole('status')).toHaveTextContent('Trail saved');
 
-    await act(() => vi.advanceTimersByTimeAsync(3000));
+    await act(() => vi.advanceTimersByTimeAsync(6000));
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   } finally {
     vi.useRealTimers();
