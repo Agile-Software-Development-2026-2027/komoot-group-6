@@ -33,7 +33,10 @@ vi.mock('../components/MapView/TrackPopup.jsx', () => ({
   default: ({ trail, onClose }) => trail ? <button onClick={onClose}>Close selected trail</button> : null,
 }));
 vi.mock('../components/NearbyPanel/NearbyPanel.jsx', () => ({ default: () => null }));
-vi.mock('../components/SideMenu.jsx', () => ({ default: () => null }));
+vi.mock('../context/useAuth.js', () => ({ useAuth: () => ({ user: { username: 'mario.rossi' } }) }));
+vi.mock('react-router-dom', () => ({
+  Link: ({ to, children, ...props }) => <a href={to} {...props}>{children}</a>,
+}));
 vi.mock('../components/ElevationChart/ElevationChart.jsx', () => ({
   default: ({ data, onHover }) => (
     <button onClick={() => onHover(data[1])} onMouseLeave={() => onHover(null)}>Hover profile</button>
@@ -80,4 +83,9 @@ it('places the marker at the hovered route coordinate and clears it on leave, ro
   fireEvent.click(screen.getByRole('button', { name: 'Close selected trail' }));
   expect(screen.queryByTestId('hover-marker')).toBeNull();
   expect(screen.queryByRole('button', { name: 'Hover profile' })).toBeNull();
+});
+
+it('shows the profile icon in the top-right, linking to the profile page', () => {
+  render(<HomePage />);
+  expect(screen.getByRole('link', { name: 'Profile' }).getAttribute('href')).toBe('/profile');
 });

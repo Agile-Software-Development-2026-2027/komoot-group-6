@@ -25,7 +25,6 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin-left: 56px; /* leaves room for the menu button in the top-left corner */
   padding: 6px 14px 6px 8px;
   font-weight: 600;
   color: var(--color-primary);
