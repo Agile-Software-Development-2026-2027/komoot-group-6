@@ -12,6 +12,8 @@ vi.mock('../../config/map.config.js', () => ({
   MAPTILER_API_KEY: 'test-key',
   MAP_BASE_STYLES: [{ id: 'outdoor', label: 'Outdoor', url: 'outdoor.json' }],
   HIDDEN_BASE_LAYERS: [],
+  ROUTE_PADDING: 64,
+  POINT_ZOOM: 14,
 }));
 vi.mock('react-map-gl/maplibre', () => ({
   default: (props) => {

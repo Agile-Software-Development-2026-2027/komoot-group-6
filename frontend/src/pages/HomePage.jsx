@@ -11,13 +11,15 @@ import Avatar from '../components/Avatar.jsx';
 import { useAuth } from '../context/useAuth.js';
 import ElevationProfile from '../components/ElevationChart/ElevationChart.jsx';
 import { CloseIcon, TrailsIcon } from '../components/NearbyPanel/icons.jsx';
+import {
+  BOUNDS_DEBOUNCE_MS,
+  FIT_TRACK_DURATION_MS,
+  FIT_TRACK_PADDING,
+} from '../config/map.config.js';
 import { useLayerEvents } from '../map/useLayerEvents.js';
 import { getTrail, getTrailsInBounds } from '../services/trailsService.js';
 import { buildElevationProfile } from '../utils/trailStats.js';
 import './HomePage.css';
-
-// Wait after the last map move before asking for the trails of the area
-const BOUNDS_DEBOUNCE_MS = 300;
 
 // Keeps the trails of the visible area up to date: it asks for them at start and after every map move.
 // It must be placed inside <MapView> so it can use useMap().
@@ -82,7 +84,10 @@ function FitToTrack({ data, onDone }) {
     }
 
     map.once('moveend', onDone);
-    map.fitBounds([[bounds[0], bounds[1]], [bounds[2], bounds[3]]], { padding: 40, duration: 800 });
+    map.fitBounds([[bounds[0], bounds[1]], [bounds[2], bounds[3]]], {
+      padding: FIT_TRACK_PADDING,
+      duration: FIT_TRACK_DURATION_MS,
+    });
     return () => map.off('moveend', onDone);
   }, [map, data, onDone]);
 

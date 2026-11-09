@@ -2,7 +2,13 @@ import { setWorkerUrl } from 'maplibre-gl';
 import Map, { Layer, Marker, NavigationControl, ScaleControl, Source } from 'react-map-gl/maplibre';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { HIDDEN_BASE_LAYERS, MAP_BASE_STYLES, MAPTILER_API_KEY } from '../../config/map.config.js';
+import {
+  HIDDEN_BASE_LAYERS,
+  MAP_BASE_STYLES,
+  MAPTILER_API_KEY,
+  POINT_ZOOM,
+  ROUTE_PADDING,
+} from '../../config/map.config.js';
 import { hideLayers } from '../../map/hideLayers.js';
 import { useFirstLabelLayerId } from '../../map/useFirstLabelLayerId.js';
 import { routeBounds } from '../../utils/routeBounds.js';
@@ -15,11 +21,6 @@ setWorkerUrl(workerUrl);
 
 // Same base map as the home page, with the same layers hidden
 const hideBaseLayers = hideLayers(HIDDEN_BASE_LAYERS);
-
-// Space (in pixels) left around the route when the map zooms on it
-const ROUTE_PADDING = 64;
-// Zoom used when the trail is a single point (no route to fit)
-const POINT_ZOOM = 14;
 
 // White border drawn UNDER the red route: it makes the route stand out on any background,
 // like the highlighted tours on Komoot. Drawn below the text labels (place names stay readable).

@@ -15,6 +15,7 @@ import {
   HIDDEN_BASE_LAYERS,
   MAP_BASE_STYLES,
   MAPTILER_API_KEY,
+  RECENTER_DURATION_MS,
 } from '../../config/map.config.js';
 import { hideLayers } from '../../map/hideLayers.js';
 import UserLocationControl from './UserLocationControl.jsx';
@@ -68,7 +69,7 @@ export default function MapView({ baseStyleId = MAP_BASE_STYLES[0].id, children 
       zoom: HOME_VIEW.zoom,
       pitch: HOME_VIEW.pitch,
       bearing: HOME_VIEW.bearing,
-      duration: 1000, // 1 second, we can try to modify this
+      duration: RECENTER_DURATION_MS,
     });
   };
 
