@@ -1,20 +1,20 @@
 import { trailImageUrl } from '../utils/trailImages.js';
 import { ApiError, apiRequest } from './api.js';
 
-// Solo in sviluppo e su richiesta esplicita: GPX originali per provare grafico e mappa.
-// Senza VITE_USE_LOCAL_GPX=true il servizio continua a usare il backend.
+// Only in development and on explicit request: original GPX files to try the chart and the map.
+// Without VITE_USE_LOCAL_GPX=true the service keeps using the backend.
 async function getLocalTrails() {
   const { default: collection } = await import('../data/gpxTrails.json');
   return collection.features;
 }
 
-// Chiamate al backend che riguardano i sentieri.
-// getTrailsInBounds e getTrail: i sentieri sono dati pubblici, gli endpoint non richiedono il login,
-// quindi niente token. getNearbyTrails e saveTrail ricevono invece authFetch da useAuth(),
-// che aggiunge il token e lo rinnova se è scaduto.
+// Backend calls about trails.
+// getTrailsInBounds and getTrail: trails are public data, the endpoints do not require login,
+// so no token. getNearbyTrails and saveTrail instead receive authFetch from useAuth(),
+// which adds the token and refreshes it if it has expired.
 
-// Sentieri che partono dentro l'area [minLng, minLat, maxLng, maxLat].
-// Restituisce una FeatureCollection di punti (i punti di partenza).
+// Trails that start inside the area [minLng, minLat, maxLng, maxLat].
+// Returns a FeatureCollection of points (the starting points).
 export async function getTrailsInBounds(bbox) {
   if (!import.meta.env.DEV || import.meta.env.VITE_USE_LOCAL_GPX !== 'true') {
     return apiRequest(`/trails?bbox=${bbox.join(',')}`);
@@ -33,7 +33,7 @@ export async function getTrailsInBounds(bbox) {
   return structuredClone({ type: 'FeatureCollection', features });
 }
 
-// Un sentiero con il percorso completo: una Feature la cui geometria è il percorso.
+// A trail with the full route: a Feature whose geometry is the route.
 export async function getTrail(id) {
   if (!import.meta.env.DEV || import.meta.env.VITE_USE_LOCAL_GPX !== 'true') {
     return apiRequest(`/trails/${encodeURIComponent(id)}`);
@@ -45,7 +45,7 @@ export async function getTrail(id) {
   return structuredClone(trail);
 }
 
-// Il backend usa la scala CAI (T, E, EE, EEA); card e filtri usano easy / moderate / hard.
+// The backend uses the CAI scale (T, E, EE, EEA); cards and filters use easy / moderate / hard.
 export const CAI_TO_DIFFICULTY = { T: 'easy', E: 'moderate', EE: 'hard', EEA: 'hard' };
 
 function toLngLat(point) {
@@ -53,14 +53,14 @@ function toLngLat(point) {
   return isValid ? [point[0], point[1]] : null;
 }
 
-// Converte un sentiero della risposta nel formato usato dalle card.
-// Ogni sentiero è una Feature GeoJSON: la geometria è il punto di partenza, i dati sono in properties.
+// Converts a trail from the response into the format used by the cards.
+// Each trail is a GeoJSON Feature: the geometry is the starting point, the data is in properties.
 function toTrail(feature) {
   const props = feature?.properties ?? {};
   return {
     id: props.id ?? feature?.id,
     name: props.name,
-    // Un livello che non è nella tabella resta com'è
+    // A level that is not in the table stays as it is
     difficulty: CAI_TO_DIFFICULTY[props.difficulty] ?? props.difficulty ?? null,
     lengthM: props.lengthM,
     elevationGainM: props.ascentM,
@@ -71,17 +71,17 @@ function toTrail(feature) {
   };
 }
 
-// Sentieri entro radiusKm dal punto (lat, lng), i più vicini per primi.
-// Il backend vuole il raggio in metri e risponde con una FeatureCollection.
+// Trails within radiusKm of the point (lat, lng), closest first.
+// The backend wants the radius in meters and answers with a FeatureCollection.
 export async function getNearbyTrails(authFetch, { lat, lng, radiusKm }) {
   const query = new URLSearchParams({ lat, lng, radius: Math.round(radiusKm * 1000) });
   const data = await authFetch(`/trails/nearby?${query}`);
   return (data?.features ?? []).map(toTrail);
 }
 
-// Salva il sentiero nel profilo dell'utente.
-// Restituisce 'saved' se è stato salvato adesso, 'already-saved' se era già nel profilo (409):
-// non è un errore, ma la card mostra un messaggio diverso.
+// Saves the trail to the user's profile.
+// Returns 'saved' if it was saved now, 'already-saved' if it was already in the profile (409):
+// it is not an error, but the card shows a different message.
 export async function saveTrail(authFetch, trailId) {
   try {
     await authFetch('/profile/saved-trails', { method: 'POST', body: { trailId } });
@@ -92,14 +92,19 @@ export async function saveTrail(authFetch, trailId) {
   }
 }
 
-// Sentieri salvati dall'utente loggato: [{ trail_id, created_at }, ...].
-// Servono per mostrare il segnalibro pieno sui sentieri già salvati (anche dopo un nuovo login).
+// Trails saved by the logged-in user: [{ trail_id, created_at }, ...].
+// Used to show the filled bookmark on trails already saved (even after a new login).
 export async function getSavedTrails(authFetch) {
   return authFetch('/profile/saved-trails');
 }
 
+// Removes the trail from the saved ones in the user's profile (the bookmark becomes empty again).
+export async function unsaveTrail(authFetch, trailId) {
+  await authFetch(`/profile/saved-trails/${encodeURIComponent(trailId)}`, { method: 'DELETE' });
+}
 
-// Se era già completato (409) per l'utente il risultato è lo stesso, quindi non è un errore.
+
+// If it was already completed (409) the result for the user is the same, so it is not an error.
 export async function completeTrail(authFetch, trailId) {
   try {
     await authFetch('/profile/completed-trails', { method: 'POST', body: { trailId } });
@@ -108,17 +113,17 @@ export async function completeTrail(authFetch, trailId) {
   }
 }
 
-// Restituisce l'elenco dei sentieri completati per l'utente loggato.
+// Returns the list of trails completed by the logged-in user.
 export async function getCompletedTrails(authFetch) {
   return authFetch('/profile/completed-trails');
 }
 
-// Rimuove il sentiero dai completati nel profilo dell'utente (SCRUM-51).
+// Removes the trail from the completed ones in the user's profile.
 export async function uncompleteTrail(authFetch, trailId) {
   await authFetch(`/profile/completed-trails/${trailId}`, { method: 'DELETE' });
 }
 
-// Likes of the trail (SCRUM-15). All three answer with { trailId, count, liked }:
+// Likes of the trail. All three answer with { trailId, count, liked }:
 // count = total likes of all users, liked = true if the logged-in user's like is among them.
 export async function getTrailLikes(authFetch, trailId) {
   return authFetch(`/trails/${encodeURIComponent(trailId)}/likes`);

@@ -16,9 +16,13 @@ const insert = vi.fn();
 const order = vi.fn();
 const eq = vi.fn(() => ({ order }));
 const select = vi.fn(() => ({ eq }));
-const from = vi.fn(() => ({ insert, select }));
+// Delete chain: .delete().eq('user_id', ...).eq('trail_id', ...)
+const deleteEqTrail = vi.fn();
+const deleteEqUser = vi.fn(() => ({ eq: deleteEqTrail }));
+const remove = vi.fn(() => ({ eq: deleteEqUser }));
+const from = vi.fn(() => ({ insert, select, delete: remove }));
 
-// Manda la richiesta come utente loggato
+// Sends the request as a logged-in user
 function save(body) {
   return request(app)
     .post('/api/profile/saved-trails')
@@ -28,7 +32,7 @@ function save(body) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  // Di default il token è valido e l'insert va a buon fine
+  // By default the token is valid and the insert succeeds
   supabase.auth.getUser.mockResolvedValue({
     data: { user: { id: 'abc-123', email: 'mario@esempio.it' } },
     error: null,
@@ -36,10 +40,11 @@ beforeEach(() => {
   supabaseAsUser.mockReturnValue({ from });
   insert.mockResolvedValue({ error: null });
   order.mockResolvedValue({ data: [], error: null });
+  deleteEqTrail.mockResolvedValue({ error: null });
 });
 
 describe('GET /api/profile/saved-trails', () => {
-  // Manda la richiesta come utente loggato
+  // Sends the request as a logged-in user
   function getSaved() {
     return request(app)
       .get('/api/profile/saved-trails')
@@ -94,7 +99,7 @@ describe('POST /api/profile/saved-trails', () => {
 
     expect(res.status).toBe(201);
     expect(res.body).toEqual({ trailId: TRAIL_ID });
-    // La query parte con il token dell'utente, così valgono le policy RLS
+    // The query runs with the user's token, so the RLS policies apply
     expect(supabaseAsUser).toHaveBeenCalledWith('access-123');
     expect(from).toHaveBeenCalledWith('saved_trails');
     expect(insert).toHaveBeenCalledWith({ user_id: 'abc-123', trail_id: TRAIL_ID });
@@ -130,10 +135,57 @@ describe('POST /api/profile/saved-trails', () => {
 
   it('risponde 500 per un errore inatteso del database', async () => {
     insert.mockResolvedValue({ error: { code: '42501', message: 'permission denied' } });
-    // errorHandler stampa l'errore: qui lo silenziamo
+    // errorHandler prints the error: here we silence it
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const res = await save({ trailId: TRAIL_ID });
+
+    expect(res.status).toBe(500);
+    consoleError.mockRestore();
+  });
+});
+
+describe('DELETE /api/profile/saved-trails/:trailId', () => {
+  // Sends the request as a logged-in user
+  function unsave(trailId = TRAIL_ID) {
+    return request(app)
+      .delete(`/api/profile/saved-trails/${trailId}`)
+      .set('Authorization', 'Bearer access-123');
+  }
+
+  it('toglie il sentiero dai salvati dell\'utente del token (204)', async () => {
+    const res = await unsave();
+
+    expect(res.status).toBe(204);
+    // The query runs with the user's token, so the RLS policies apply
+    expect(supabaseAsUser).toHaveBeenCalledWith('access-123');
+    expect(from).toHaveBeenCalledWith('saved_trails');
+    expect(remove).toHaveBeenCalled();
+    expect(deleteEqUser).toHaveBeenCalledWith('user_id', 'abc-123');
+    expect(deleteEqTrail).toHaveBeenCalledWith('trail_id', TRAIL_ID);
+  });
+
+  it('risponde 401 senza token e non cancella nulla', async () => {
+    const res = await request(app).delete(`/api/profile/saved-trails/${TRAIL_ID}`);
+
+    expect(res.status).toBe(401);
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it('risponde 400 se l\'id non è un uuid', async () => {
+    deleteEqTrail.mockResolvedValue({ error: { code: '22P02', message: 'invalid input syntax for type uuid' } });
+
+    const res = await unsave('non-un-uuid');
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Invalid trail id');
+  });
+
+  it('risponde 500 per un errore inatteso del database', async () => {
+    deleteEqTrail.mockResolvedValue({ error: { code: '42501', message: 'permission denied' } });
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const res = await unsave();
 
     expect(res.status).toBe(500);
     consoleError.mockRestore();

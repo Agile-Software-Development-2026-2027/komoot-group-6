@@ -1,7 +1,6 @@
 import { supabaseAsUser } from '../config/supabase.js';
 import { calculateHikeScore } from '../utils/calculateHikeScore.js';
-
-// Postgres errors that can come from the insert, with the response to give.
+// Postgres errors that can come from the insert, with the response to send.
 const INSERT_ERRORS = {
   '23505': { status: 409, error: 'Trail already saved' }, // duplicate key: the user has already saved it
   '23503': { status: 404, error: 'Trail not found' }, // the trail does not exist in the trails table
@@ -15,7 +14,7 @@ const COMPLETE_ERRORS = {
 };
 
 
-// Saves a trail in the logged-in user's profile (saved_trails table, see database/saved_trails.sql).
+// Saves a trail to the logged-in user's profile (saved_trails table, see database/saved_trails.sql).
 // requireAuth has already put the user in req.user and the token in req.token.
 export async function saveTrail(req, res) {
   const { trailId } = req.body;
@@ -48,6 +47,27 @@ export async function getSavedTrails(req, res) {
   if (error) throw error;
 
   return res.json(data ?? []);
+}
+
+
+// Removes a trail from the logged-in user's saved trails (the bookmark becomes empty again).
+// If the trail was not saved it is not an error: the result for the user is the same (204).
+export async function unsaveTrail(req, res) {
+  const { trailId } = req.params;
+
+  const { error } = await supabaseAsUser(req.token)
+    .from('saved_trails')
+    .delete()
+    .eq('user_id', req.user.id)
+    .eq('trail_id', trailId);
+
+  if (error) {
+    if (error.code === '22P02') return res.status(400).json({ error: 'Invalid trail id' }); // the id is not a uuid
+    // Unexpected error: errorHandler takes care of it (500)
+    throw error;
+  }
+
+  return res.status(204).end();
 }
 
 

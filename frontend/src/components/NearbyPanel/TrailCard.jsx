@@ -10,30 +10,40 @@ import { DIFFICULTY_LABELS } from './difficulty.js';
 import { BookmarkIcon, CheckIcon, ClimbIcon, ClockIcon, DistanceIcon, PinIcon } from './icons.jsx';
 import styles from './NearbyPanel.module.css';
 
-// aria-label del segnalibro per ogni stato del salvataggio
-const SAVE_LABELS = { idle: 'Save', saving: 'Saving...', saved: 'Saved', error: 'Save' };
 
-// Messaggio mostrato sotto la card dopo il click sul segnalibro, in base alla risposta di onSave
-const SAVE_MESSAGES = { saved: 'Trail saved', 'already-saved': 'Trail already saved' };
+const SAVE_LABELS = { save: 'Save', saving: 'Saving...', saved: 'Saved', removing: 'Removing...' };
 
-// Per quanti millisecondi resta visibile il messaggio
-const SAVE_MESSAGE_MS = 3000;
+// Message shown under the card after clicking the bookmark
+const SAVE_MESSAGES = {
+  saved: 'Trail saved',
+  'already-saved': 'Trail already saved',
+  removed: 'Trail removed from saved',
+};
 
-// Colori del disegno di copertina per difficoltà: cielo, montagne lontane, montagne vicine
+// Error shown under the card, based on the action that failed
+const SAVE_ERRORS = {
+  save: 'Could not save the trail. Try again.',
+  remove: 'Could not remove the trail. Try again.',
+};
+
+// How many milliseconds the message stays visible
+const SAVE_MESSAGE_MS = 6000;
+
+// Cover drawing colors by difficulty: sky, far mountains, near mountains
 const ART_COLORS = {
   easy: ['#e6f2e8', '#b5d9bd', '#6fae7f'],
   moderate: ['#e0eeef', '#a7cdd0', '#4f8f95'],
   hard: ['#e7eaf1', '#b4bdd1', '#5d6b8a'],
 };
 
-// Profili di montagne: ogni sentiero ne usa uno, scelto dal suo id
+// Mountain skylines: each trail uses one, chosen from its id
 const SKYLINES = [
   ['0,120 60,70 120,105 190,55 260,100 320,75 320,180 0,180', '0,150 70,110 140,140 210,100 280,135 320,120 320,180 0,180'],
   ['0,110 80,60 150,95 220,45 320,95 320,180 0,180', '0,140 90,120 160,95 240,130 320,105 320,180 0,180'],
   ['0,100 50,80 130,40 200,90 270,65 320,85 320,180 0,180', '0,135 60,125 120,100 200,140 260,115 320,130 320,180 0,180'],
 ];
 
-// Copertina disegnata, usata quando il sentiero non ha una foto (o la foto non si carica)
+// Drawn cover, used when the trail has no photo (or the photo does not load)
 function TrailArt({ trail }) {
   const [sky, far, near] = ART_COLORS[trail.difficulty] ?? ART_COLORS.moderate;
   const seed = [...String(trail.id)].reduce((sum, char) => sum + char.charCodeAt(0), 0);
@@ -45,7 +55,7 @@ function TrailArt({ trail }) {
       <circle cx="70" cy="50" r="18" fill="#fff" opacity="0.8" />
       <polygon points={farPeaks} fill={far} />
       <polygon points={nearPeaks} fill={near} />
-      {/* Sentiero tratteggiato che sale tra le montagne */}
+      {/* Dashed trail climbing between the mountains */}
       <path
         d="M30 180 C90 165 110 150 150 155 S230 135 290 140"
         fill="none"
@@ -59,16 +69,18 @@ function TrailArt({ trail }) {
   );
 }
 
-// Card di un sentiero vicino: copertina con il segnalibro per salvarlo nel profilo,
-// pulsante per segnarlo/rimuoverlo come completato, nome e dati (difficoltà, tempo stimato, lunghezza, salita).
-// onSave(trailId) salva il sentiero e restituisce una Promise con 'saved' o 'already-saved'.
-// Il segnalibro resta cliccabile anche dopo il salvataggio, così l'utente vede "Trail already saved".
-// isSaved dice se il sentiero è già nel profilo dell'utente (lo carica il padre): il segnalibro parte pieno.
-// onComplete(trailId) segna il sentiero come completato e restituisce una Promise.
-// onSelect(trail) mostra il sentiero sulla mappa; isSelected evidenzia la card scelta.
+// Card of a nearby trail: cover with the bookmark to save it to the profile,
+// button to mark/unmark it as completed, name and data (difficulty, estimated time, length, elevation gain).
+// The bookmark works as a toggle:
+// - trail not saved: the click calls onSave(trailId), which returns a Promise with 'saved' or 'already-saved';
+// - trail already saved: the click calls onUnsave(trailId) and removes it from the saved ones.
+// isSaved tells whether the trail is already in the user's profile (loaded by the parent): the bookmark starts filled.
+// onComplete(trailId) marks the trail as completed and returns a Promise.
+// onSelect(trail) shows the trail on the map; isSelected highlights the chosen card.
 export default function TrailCard({
   trail,
   onSave,
+  onUnsave,
   isSaved: isSavedInProfile = false,
   onComplete,
   onUncomplete,
@@ -77,36 +89,54 @@ export default function TrailCard({
   onSelect,
   isSelected = false,
 }) {
-  const [saveStatus, setSaveStatus] = useState(trail.saved ? 'saved' : 'idle');
+  // Bookmark state set by a click on the card (null = the profile decides)
+  const [localSaved, setLocalSaved] = useState(null);
+  // Bookmark action in progress: 'saving', 'removing' or null
+  const [saveAction, setSaveAction] = useState(null);
+  // Failed bookmark action: 'save', 'remove' or null
+  const [saveError, setSaveError] = useState(null);
   const [saveMessage, setSaveMessage] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [localDone, setLocalDone] = useState(null);
   const [imageFailed, setImageFailed] = useState(false);
 
-  // Se la card non sta salvando e non ha dato errore, vale quello che dice il profilo:
-  // così il segnalibro si riempie anche quando l'elenco dei salvati arriva dopo la card
-  const shownSaveStatus = saveStatus === 'idle' && isSavedInProfile ? 'saved' : saveStatus;
-  const isSaved = shownSaveStatus === 'saved';
+  // Until the user clicks, the profile decides:
+  // so the bookmark fills in even when the saved list arrives after the card
+  const isSaved = localSaved !== null ? localSaved : Boolean(isSavedInProfile || trail.saved);
+  const bookmarkState = saveAction ?? (isSaved ? 'saved' : 'save');
   const isDone = localDone !== null ? localDone : Boolean(isCompleted || trail.completed);
 
-  // Il messaggio di conferma sparisce da solo dopo qualche secondo
+  // The confirmation message disappears by itself after a few seconds
   useEffect(() => {
     if (!saveMessage) return undefined;
     const timer = setTimeout(() => setSaveMessage(null), SAVE_MESSAGE_MS);
     return () => clearTimeout(timer);
   }, [saveMessage]);
 
-  async function handleSave() {
-    setSaveStatus('saving');
+  // Click on the bookmark: saves the trail if it is not saved, otherwise removes it from the saved ones
+  async function handleBookmark() {
+    if (saveAction) return;
+    const removing = isSaved;
+    setSaveAction(removing ? 'removing' : 'saving');
     setSaveMessage(null);
+    setSaveError(null);
     try {
-      const result = await onSave(trail.id);
-      setSaveStatus('saved');
-      // Se onSave non dice com'è andata, il sentiero si considera salvato adesso
-      setSaveMessage(SAVE_MESSAGES[result] ?? SAVE_MESSAGES.saved);
+      if (removing) {
+        await onUnsave(trail.id);
+        setLocalSaved(false);
+        setSaveMessage(SAVE_MESSAGES.removed);
+      } else {
+        const result = await onSave(trail.id);
+        setLocalSaved(true);
+        // If onSave does not say how it went, the trail is considered saved now
+        setSaveMessage(SAVE_MESSAGES[result] ?? SAVE_MESSAGES.saved);
+      }
     } catch {
-      setSaveStatus('error');
+      // The bookmark stays as it was and the user can try again
+      setSaveError(removing ? 'remove' : 'save');
+    } finally {
+      setSaveAction(null);
     }
   }
 
@@ -160,10 +190,11 @@ export default function TrailCard({
         <button
           type="button"
           className={`${styles.bookmark} ${isSaved ? styles.isSaved : ''}`}
-          onClick={handleSave}
-          disabled={saveStatus === 'saving'}
-          aria-label={`${SAVE_LABELS[shownSaveStatus]} ${trail.name}`}
-          title={isSaved ? 'Saved to your profile' : 'Save to your profile'}
+          onClick={handleBookmark}
+          disabled={saveAction !== null}
+          aria-label={`${SAVE_LABELS[bookmarkState]} ${trail.name}`}
+          aria-pressed={isSaved}
+          title={isSaved ? 'Remove from your saved trails' : 'Save to your profile'}
         >
           <BookmarkIcon filled={isSaved} />
         </button>
@@ -207,7 +238,7 @@ export default function TrailCard({
         </div>
       </dl>
 
-          
+
       <div className={styles.cardFooter}>
         <p className={styles.away}>
           <PinIcon />
@@ -222,8 +253,8 @@ export default function TrailCard({
         <p role="status" className={styles.cardNotice}>{saveMessage}</p>
       )}
 
-      {saveStatus === 'error' && (
-        <p role="alert" className={styles.cardError}>Could not save the trail. Try again.</p>
+      {saveError && (
+        <p role="alert" className={styles.cardError}>{SAVE_ERRORS[saveError]}</p>
       )}
 
       {hasError && (

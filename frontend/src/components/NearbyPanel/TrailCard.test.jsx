@@ -59,20 +59,55 @@ test('the bookmark saves the trail: Save → Saving... → Saved and shows "Trai
   expect(screen.getByRole('status')).toHaveTextContent('Trail saved');
 });
 
-test('saving the same trail again shows "Trail already saved"', async () => {
-  const onSave = vi.fn().mockResolvedValueOnce('saved').mockResolvedValueOnce('already-saved');
-  render(<TrailCard trail={TRAIL} onSave={onSave} />);
+test('clicking the bookmark again removes the trail: Saved → Removing... → Save', async () => {
+  const onSave = vi.fn().mockResolvedValue('saved');
+  let finishUnsave;
+  const onUnsave = vi.fn(() => new Promise((resolve) => { finishUnsave = resolve; }));
+  render(<TrailCard trail={TRAIL} onSave={onSave} onUnsave={onUnsave} />);
 
   fireEvent.click(screen.getByRole('button', { name: 'Save Sentiero del Crati' }));
   await act(async () => {});
   expect(screen.getByRole('status')).toHaveTextContent('Trail saved');
 
   fireEvent.click(screen.getByRole('button', { name: 'Saved Sentiero del Crati' }));
+
+  expect(onUnsave).toHaveBeenCalledWith('t1');
+  expect(onSave).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole('button', { name: 'Removing... Sentiero del Crati' })).toBeDisabled();
+
+  await act(async () => finishUnsave());
+
+  expect(screen.getByRole('button', { name: 'Save Sentiero del Crati' })).not.toBeDisabled();
+  expect(screen.getByRole('status')).toHaveTextContent('Trail removed from saved');
+});
+
+test('if the trail was already saved on the server it stays Saved and says so', async () => {
+  const onSave = vi.fn().mockResolvedValue('already-saved');
+  render(<TrailCard trail={TRAIL} onSave={onSave} onUnsave={vi.fn()} />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Save Sentiero del Crati' }));
   await act(async () => {});
 
-  expect(onSave).toHaveBeenCalledTimes(2);
   expect(screen.getByRole('status')).toHaveTextContent('Trail already saved');
   expect(screen.getByRole('button', { name: 'Saved Sentiero del Crati' })).toBeInTheDocument();
+});
+
+test('shows an error when removing fails, keeps the trail saved and lets the user retry', async () => {
+  const onUnsave = vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce();
+  render(<TrailCard trail={TRAIL} isSaved onSave={vi.fn()} onUnsave={onUnsave} />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Saved Sentiero del Crati' }));
+  await act(async () => {});
+
+  expect(screen.getByRole('alert')).toHaveTextContent('Could not remove the trail. Try again.');
+  expect(screen.getByRole('button', { name: 'Saved Sentiero del Crati' })).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Saved Sentiero del Crati' }));
+  await act(async () => {});
+
+  expect(onUnsave).toHaveBeenCalledTimes(2);
+  expect(screen.getByRole('button', { name: 'Save Sentiero del Crati' })).toBeInTheDocument();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });
 
 test('the save message disappears after a few seconds', async () => {
@@ -84,7 +119,7 @@ test('the save message disappears after a few seconds', async () => {
     await act(() => vi.advanceTimersByTimeAsync(0));
     expect(screen.getByRole('status')).toHaveTextContent('Trail saved');
 
-    await act(() => vi.advanceTimersByTimeAsync(3000));
+    await act(() => vi.advanceTimersByTimeAsync(6000));
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   } finally {
     vi.useRealTimers();
@@ -109,9 +144,10 @@ test('shows an error when saving fails and lets the user retry', async () => {
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });
 
-test('a trail that is already saved starts as Saved and can still be clicked', async () => {
-  const onSave = vi.fn().mockResolvedValue('already-saved');
-  render(<TrailCard trail={{ ...TRAIL, saved: true }} onSave={onSave} />);
+test('a trail that is already saved starts as Saved and a click removes it', async () => {
+  const onSave = vi.fn();
+  const onUnsave = vi.fn().mockResolvedValue();
+  render(<TrailCard trail={{ ...TRAIL, saved: true }} onSave={onSave} onUnsave={onUnsave} />);
 
   const bookmark = screen.getByRole('button', { name: 'Saved Sentiero del Crati' });
   expect(bookmark).not.toBeDisabled();
@@ -119,7 +155,10 @@ test('a trail that is already saved starts as Saved and can still be clicked', a
   fireEvent.click(bookmark);
   await act(async () => {});
 
-  expect(screen.getByRole('status')).toHaveTextContent('Trail already saved');
+  expect(onUnsave).toHaveBeenCalledWith('t1');
+  expect(onSave).not.toHaveBeenCalled();
+  expect(screen.getByRole('button', { name: 'Save Sentiero del Crati' })).toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('Trail removed from saved');
 });
 
 test('marking a hike as completed: Mark as completed → Completing... → Completed', async () => {
@@ -176,15 +215,17 @@ test('a trail that is already completed starts as Completed', () => {
   expect(screen.getByRole('button', { name: 'Completed Sentiero del Crati' })).toBeInTheDocument();
 });
 
-test('a trail saved in the profile (isSaved) shows the full bookmark and says it is already saved', async () => {
-  const onSave = vi.fn().mockResolvedValue('already-saved');
-  render(<TrailCard trail={TRAIL} isSaved onSave={onSave} />);
+test('a trail saved in the profile (isSaved) shows the full bookmark and a click removes it', async () => {
+  const onSave = vi.fn();
+  const onUnsave = vi.fn().mockResolvedValue();
+  render(<TrailCard trail={TRAIL} isSaved onSave={onSave} onUnsave={onUnsave} />);
 
   fireEvent.click(screen.getByRole('button', { name: 'Saved Sentiero del Crati' }));
   await act(async () => {});
 
-  expect(onSave).toHaveBeenCalledWith('t1');
-  expect(screen.getByRole('status')).toHaveTextContent('Trail already saved');
+  expect(onUnsave).toHaveBeenCalledWith('t1');
+  expect(onSave).not.toHaveBeenCalled();
+  expect(screen.getByRole('button', { name: 'Save Sentiero del Crati' })).toBeInTheDocument();
 });
 
 test('the bookmark fills in when the saved list arrives after the card', () => {

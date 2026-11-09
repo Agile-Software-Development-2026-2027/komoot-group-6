@@ -8,45 +8,46 @@ import {
   getSavedTrails,
   saveTrail,
   uncompleteTrail,
+  unsaveTrail,
 } from '../../services/trailsService.js';
 import { DIFFICULTIES } from './difficulty.js';
 import { CloseIcon, MapPinIcon } from './icons.jsx';
 import TrailCard from './TrailCard.jsx';
 import styles from './NearbyPanel.module.css';
 
-// Raggio di ricerca in km: minimo, massimo e valore iniziale dello slider.
+// Search radius in km: minimum, maximum and initial value of the slider.
 const MIN_RADIUS_KM = 1;
 const MAX_RADIUS_KM = 50;
 const DEFAULT_RADIUS_KM = 25;
 
-// Attesa prima di cercare: mentre si trascina lo slider o la mappa non parte una richiesta a ogni passo
+// Wait before searching: while dragging the slider or the map, no request is sent at every step
 const SEARCH_DELAY_MS = 400;
 
-// Zoom quando la mappa vola su un sentiero scelto dalla lista: si vede la zona attorno (qualche km)
+// Zoom when the map flies to a trail chosen from the list: the surrounding area is visible (a few km)
 const TRAIL_ZOOM = 13;
 
-// Per quanto tempo dopo il click la scelta vince sul GPS
+// How long after the click the selection wins over the GPS
 const GPS_GRACE_MS = 15000;
 
-// Etichetta dei movimenti della mappa fatti dal pannello.
-// MapLibre la passa agli eventi, così sappiamo che non deve ripartire la ricerca.
+// Tag for map movements made by the panel.
+// MapLibre passes it to the events, so we know the search must not restart.
 const FROM_PANEL = { fromNearbyPanel: true };
 const NARROW_SCREEN = '(max-width: 720px)';
 
-// Porta la mappa sul sentiero.
+// Moves the map to the trail.
 function flyToTrail(map, trail) {
   map.jumpTo({}, FROM_PANEL);
   map.flyTo({ center: trail.start, zoom: TRAIL_ZOOM, essential: true }, FROM_PANEL);
 }
 
-// Centro della mappa arrotondato a 3 decimali
-// i piccoli spostamenti, per esempio il GPS che si aggiorna, non rifanno la ricerca.
+// Map center rounded to 3 decimals:
+// small movements, for example the GPS updating, do not repeat the search.
 function readCenter(map) {
   const { lng, lat } = map.getCenter();
   return { lng: Number(lng.toFixed(3)), lat: Number(lat.toFixed(3)) };
 }
 
-// Frase sotto il titolo: ricerca in corso, errore, nessun risultato o quanti sentieri ci sono.
+// Sentence under the title: search in progress, error, no results or how many trails there are.
 function statusMessage(search, shownCount) {
   if (search.status === 'loading') return 'Searching for trails...';
   if (search.status === 'error') return search.error;
@@ -57,8 +58,8 @@ function statusMessage(search, shownCount) {
   return `${shownCount} ${shownCount === 1 ? 'trail' : 'trails'} ${where}`;
 }
 
-// Lista "Trails nearby" a sinistra della mappa: cerca i sentieri entro il raggio scelto attorno
-// al centro della mappa, li filtra per difficoltà e permette di salvarli nel profilo.
+// "Trails nearby" list on the left of the map: searches for trails within the chosen radius around
+// the map center, filters them by difficulty and lets the user save them to the profile.
 export default function NearbyPanel({ isOpen = true, onClose }) {
   const { current } = useMap();
   const { authFetch, user } = useAuth();
@@ -66,22 +67,22 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
 
   const [center, setCenter] = useState(() => (map ? readCenter(map) : null));
   const [radiusKm, setRadiusKm] = useState(DEFAULT_RADIUS_KM);
-  // Difficoltà selezionate; nessuna selezionata = tutte
+  // Selected difficulties; none selected = all
   const [difficulties, setDifficulties] = useState([]);
-  // Risultato dell'ultima ricerca, con il raggio usato per farla
+  // Result of the last search, with the radius used for it
   const [search, setSearch] = useState({ status: 'loading', trails: [], radiusKm, error: null });
-  // Aumenta quando si preme "Try again", così la ricerca riparte
+  // Increases when "Try again" is pressed, so the search restarts
   const [retryCount, setRetryCount] = useState(0);
-  // Sentiero cliccato nella lista: la mappa è volata lì e c'è il segnaposto
+  // Trail clicked in the list: the map flew there and the marker is shown
   const [selectedTrail, setSelectedTrail] = useState(null);
-  // Ultima scelta e quando è stata fatta
+  // Last selection and when it was made
   const selectionRef = useRef(null);
-  // ID dei sentieri già salvati nel profilo: il loro segnalibro è pieno, anche dopo un nuovo login
+  // IDs of the trails already saved in the profile: their bookmark is filled, even after a new login
   const [savedTrailIds, setSavedTrailIds] = useState(() => new Set());
-  // ID dei sentieri completati dall'utente (SCRUM-51)
+  // IDs of the trails completed by the user 
   const [completedTrailIds, setCompletedTrailIds] = useState(() => new Set());
 
-  // Carica i sentieri completati per mantenerne lo stato persistente al reload (SCRUM-51)
+  
   useEffect(() => {
     if (!user) return undefined;
 
@@ -99,7 +100,7 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
     };
   }, [authFetch, user]);
 
-  // Carica i sentieri salvati dall'utente loggato (a ogni login o cambio di utente)
+  // Loads the trails saved by the logged-in user (at every login or user change)
   useEffect(() => {
     if (!user) return undefined;
 
@@ -110,7 +111,7 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
           setSavedTrailIds(new Set(data.map((item) => item.trail_id)));
         }
       })
-      // Se l'elenco non arriva i segnalibri restano vuoti, ma salvare funziona lo stesso
+      // If the list does not arrive the bookmarks stay empty, but saving still works
       .catch(() => {});
 
     return () => {
@@ -118,12 +119,22 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
     };
   }, [authFetch, user]);
 
-  // Salva il sentiero e lo aggiunge ai salvati, così il segnalibro resta pieno
-  // anche se la card viene ricreata (per esempio dopo una nuova ricerca)
+  // Saves the trail and adds it to the saved ones, so the bookmark stays filled
+  // even if the card is recreated (for example after a new search)
   async function handleSave(trailId) {
     const result = await saveTrail(authFetch, trailId);
     setSavedTrailIds((prev) => new Set(prev).add(trailId));
     return result;
+  }
+
+  // Removes the trail from the saved ones, so the bookmark stays empty even if the card is recreated
+  async function handleUnsave(trailId) {
+    await unsaveTrail(authFetch, trailId);
+    setSavedTrailIds((prev) => {
+      const next = new Set(prev);
+      next.delete(trailId);
+      return next;
+    });
   }
 
   const handleToggleComplete = async (trailId, targetDone) => {
@@ -140,15 +151,15 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
     }
   };
 
-  // Quando la mappa si ferma aggiorna il centro della ricerca
+  // When the map stops, updates the search center
   useEffect(() => {
     if (!map) return undefined;
 
     const onMoveEnd = (event) => {
-      // Dopo il click su un sentiero la lista resta com'è: si rifà la ricerca solo quando l'utente sposta la mappa
+      // After clicking a trail the list stays as it is: the search runs again only when the user moves the map
       if (event?.fromNearbyPanel) return;
 
-      // La prima posizione GPS può arrivare dopo il click e spostare la mappa sull'utente
+      // The first GPS position can arrive after the click and move the map to the user
       const selection = selectionRef.current;
       if (event?.geolocateSource && selection && !selection.restored && Date.now() - selection.at < GPS_GRACE_MS) {
         selection.restored = true;
@@ -157,7 +168,7 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
       }
 
       const next = readCenter(map);
-      // Se il centro arrotondato non cambia teniamo lo stesso oggetto: la ricerca non riparte
+      // If the rounded center does not change we keep the same object: the search does not restart
       setCenter((prev) => (prev?.lng === next.lng && prev?.lat === next.lat ? prev : next));
     };
 
@@ -165,7 +176,7 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
     return () => map.off('moveend', onMoveEnd);
   }, [map]);
 
-  // Cerca i sentieri quando cambiano centro o raggio
+  // Searches for trails when the center or radius changes
   useEffect(() => {
     if (!isOpen || !center) return undefined;
     let outdated = false;
@@ -186,13 +197,13 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
     };
   }, [authFetch, center, radiusKm, retryCount, isOpen]);
 
-  // Click su un sentiero: la mappa vola al suo punto di partenza, dove compare il segnaposto
+  // Click on a trail: the map flies to its starting point, where the marker appears
   function showOnMap(trail) {
     setSelectedTrail(trail);
     selectionRef.current = { trail, at: Date.now(), restored: false };
     if (map) flyToTrail(map, trail);
 
-    // Su schermi stretti la lista copre metà mappa: la chiudiamo per far vedere il posto
+    // On narrow screens the list covers half the map: we close it to show the place
     if (window.matchMedia?.(NARROW_SCREEN)?.matches) onClose?.();
   }
 
@@ -202,12 +213,12 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
     );
   }
 
-  // Il filtro per difficoltà lavora sui risultati già arrivati, senza nuove richieste
+  // The difficulty filter works on the results already received, without new requests
   const shownTrails = difficulties.length === 0
     ? search.trails
     : search.trails.filter((trail) => difficulties.includes(trail.difficulty));
 
-  // Segnaposto grigi finché arriva la prima risposta
+  // Grey placeholders until the first response arrives
   const showSkeletons = search.status === 'loading' && search.trails.length === 0;
 
   return (
@@ -298,6 +309,7 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
                     onComplete={(id) => handleToggleComplete(id, true)}
                     onUncomplete={(id) => handleToggleComplete(id, false)}
                     onSave={handleSave}
+                    onUnsave={handleUnsave}
                     onSelect={showOnMap}
                     isSelected={trail.id === selectedTrail?.id}
                   />
