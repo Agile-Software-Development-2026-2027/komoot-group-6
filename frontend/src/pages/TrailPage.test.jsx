@@ -1,7 +1,7 @@
 // Tests for the trail page: the four states (loading, ready, not found, error).
 // The backend is fake: getTrail is mocked.
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ApiError } from '../services/api.js';
 import { getTrail } from '../services/trailsService.js';
@@ -104,7 +104,9 @@ describe('TrailPage', () => {
 
     const hero = (await screen.findByRole('heading', { level: 1 })).closest('header');
     const like = await within(hero).findByRole('button', { name: 'Like this trail' });
-    expect(like.textContent).toBe('12');
+    await waitFor(() => {
+      expect(like.textContent).toBe('12');
+    });
     expect(within(hero).getByText('12 people like this trail')).toBeTruthy();
   });
 
