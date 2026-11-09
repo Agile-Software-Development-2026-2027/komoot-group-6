@@ -11,21 +11,20 @@ Run the files in the **SQL Editor** of Supabase, one at a time, in this order:
 |---|------|-----------------|
 | 1 | `schema.sql` | PostGIS, the `profiles` and `trails` tables, their security rules |
 | 2 | `profiles_birth_date_level.sql` | birth date and level of the profiles, the sign-up trigger that creates the profile |
-| 3 | `profiles_is_public.sql` | public / private profile |
-| 4 | `trails_read.sql` | `get_trail` (one trail) and `trails_in_bounds` (trails of the map area) |
-| 5 | `trails_nearby.sql` | `nearby_trails` (trails near a position) and its indexes |
-| 6 | `saved_trails.sql` | trails saved by the users |
-| 7 | `completed_trails.sql` | trails completed by the users |
-| 8 | `trail_likes.sql` | likes of the trails and `trail_likes_summary` |
-| 9 | `checkpoints.sql` | checkpoints of a trail (not used by the site yet) |
-| 10 | `hikes_social.sql` | hikes, photos, comments on hikes, friendships (not used by the site yet) |
-| 11 | `seed_trails_rende.sql` | *optional*: 8 demo trails around Rende |
+| 3 | `trails_read.sql` | `get_trail` (one trail) and `trails_in_bounds` (trails of the map area) |
+| 4 | `trails_nearby.sql` | `nearby_trails` (trails near a position) and its indexes |
+| 5 | `saved_trails.sql` | trails saved by the users |
+| 6 | `completed_trails.sql` | trails completed by the users |
+| 7 | `trail_likes.sql` | likes of the trails and `trail_likes_summary` |
+| 8 | `checkpoints.sql` | checkpoints of a trail (not used by the site yet) |
+| 9 | `hikes_social.sql` | hikes, photos, comments on hikes, friendships (not used by the site yet) |
+| 10 | `seed_trails_rende.sql` | *optional*: 8 demo trails around Rende |
 
 ## Good to know
 
 - **Safe to run again.** Every file can be run again on the existing database:
   `if not exists` skips what is already there, functions use `create or replace`,
-  policies are dropped and created again. Keep the order: `profiles_is_public.sql`
+  policies are dropped and created again. Keep the order: `profiles_visibility.sql`
   must always run after `profiles_birth_date_level.sql`.
 - **Only the structure.** There are no users and no real data here
   (only the demo trails of `seed_trails_rende.sql`).
