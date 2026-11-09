@@ -13,6 +13,7 @@ import { completedTotals } from '../utils/profileStats.js';
 import { useProfileTrails } from './useProfileTrails.js';
 import { useProfileVisibility } from './useProfileVisibility.js';
 import './ProfilePage.css';
+import HikingInfo from '../components/HikeInfo.jsx';
 
 const EMPTY = '—';
 
@@ -131,6 +132,9 @@ export default function ProfilePage() {
 
               <LogoutButton className="profile-logout" />
             </section>
+
+            {/* Total points and completed routes (hike score) */}
+            <HikingInfo authFetch={authFetch} />
           </aside>
 
           {/* Right column, wide: Saved, Completed and Last route tabs */}

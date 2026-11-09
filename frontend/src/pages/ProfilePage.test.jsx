@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import ProfilePage from './ProfilePage.jsx';
 import { useAuth } from '../context/useAuth.js';
 import { getProfileVisibility, setProfileVisibility } from '../services/profileService.js';
-import { getCompletedTrails, getSavedTrails, getTrail } from '../services/trailsService.js';
+import { getCompletedTrails, getProfilePoints, getSavedTrails, getTrail } from '../services/trailsService.js';
 
 vi.mock('react-router-dom', () => ({
   Link: ({ to, children, ...props }) => <a href={to} {...props}>{children}</a>,
@@ -16,6 +16,7 @@ vi.mock('../services/trailsService.js', () => ({
   getSavedTrails: vi.fn(),
   getCompletedTrails: vi.fn(),
   getTrail: vi.fn(),
+  getProfilePoints: vi.fn(),
 }));
 vi.mock('../services/profileService.js', () => ({
   getProfileVisibility: vi.fn(),
@@ -43,6 +44,7 @@ beforeEach(() => {
   getSavedTrails.mockResolvedValue([]);
   getCompletedTrails.mockResolvedValue([]);
   getTrail.mockImplementation(async (id) => feature(id, `Trail ${id}`));
+  getProfilePoints.mockResolvedValue({ totalPoints: 0, completedRoutes: 0 });
   // By default the profile is private and saving succeeds
   getProfileVisibility.mockResolvedValue(false);
   setProfileVisibility.mockImplementation(async (_authFetch, isPublic) => isPublic);
@@ -264,4 +266,13 @@ it('goes back to the previous value and shows an error when saving fails', async
 
   expect((await screen.findByRole('alert')).textContent).toContain('Could not update visibility');
   expect(visibilitySwitch().getAttribute('aria-checked')).toBe('false');
+});
+
+it('shows the hike score (total points) under the account card', async () => {
+  getProfilePoints.mockResolvedValue({ totalPoints: 120, completedRoutes: 3 });
+
+  render(<ProfilePage />);
+
+  expect(await screen.findByText('120')).toBeTruthy();
+  expect(screen.getByText('Hiking Progress')).toBeTruthy();
 });

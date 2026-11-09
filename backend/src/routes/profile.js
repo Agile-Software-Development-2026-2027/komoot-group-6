@@ -7,6 +7,7 @@ import {
   saveTrail,
   setVisibility,
   uncompleteTrail,
+  getProfilePoints,
 } from '../controllers/profileController.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
 import { validateCompleteTrail } from '../middlewares/validateCompleteTrail.js';
@@ -23,5 +24,6 @@ router.get('/completed-trails', requireAuth, getCompletedTrails);
 router.delete('/completed-trails/:trailId', requireAuth, uncompleteTrail);
 router.get('/visibility', requireAuth, getVisibility);
 router.put('/visibility', requireAuth, validateVisibility, setVisibility);
+router.get('/points', requireAuth, getProfilePoints);
 
 export default router;

@@ -133,3 +133,9 @@ export async function likeTrail(authFetch, trailId) {
 export async function unlikeTrail(authFetch, trailId) {
   return authFetch(`/trails/${encodeURIComponent(trailId)}/likes`, { method: 'DELETE' });
 }
+
+
+//Returns the total points of the logged-in user.
+export async function getProfilePoints(authFetch) {
+  return authFetch('/profile/points');
+}

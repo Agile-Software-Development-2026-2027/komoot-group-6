@@ -11,13 +11,43 @@ import { supabase, supabaseAsUser } from '../src/config/supabase.js';
 
 const TRAIL_ID = '7d3c0b8e-2f7a-4c1e-9a55-0b6f1c2d3e4f';
 
+
+// INSERT completed trail
 const insert = vi.fn();
+
+// GET completed trails
 const order = vi.fn();
 const select = vi.fn(() => ({ order }));
+
+// DELETE completed trail
 const delEq2 = vi.fn();
 const delEq1 = vi.fn(() => ({ eq: delEq2 }));
 const del = vi.fn(() => ({ eq: delEq1 }));
-const from = vi.fn(() => ({ insert, select, delete: del }));
+
+// GET trail difficulty and distance
+const trailSingle = vi.fn();
+const trailEq = vi.fn(() => ({ single: trailSingle }));
+const trailSelect = vi.fn(() => ({ eq: trailEq }));
+
+// Return different query objects depending on table
+const from = vi.fn((table) => {
+  if (table === 'trails') {
+    return {
+      select: trailSelect
+    };
+  }
+
+  if (table === 'completed_trails') {
+    return {
+      insert,
+      select,
+      delete: del
+    };
+  }
+
+  throw new Error(`Unexpected table: ${table}`);
+});
+
 
 function complete(body) {
   return request(app)
@@ -38,17 +68,50 @@ function uncomplete(trailId) {
     .set('Authorization', 'Bearer access-123');
 }
 
+
 beforeEach(() => {
   vi.clearAllMocks();
+
+  // Mock authenticated user
   supabase.auth.getUser.mockResolvedValue({
-    data: { user: { id: 'abc-123', email: 'mario@esempio.it' } },
+    data: {
+      user: {
+        id: 'abc-123',
+        email: 'mario@esempio.it'
+      }
+    },
     error: null,
   });
+
+  // Mock Supabase client
   supabaseAsUser.mockReturnValue({ from });
-  insert.mockResolvedValue({ error: null });
-  order.mockResolvedValue({ data: [], error: null });
-  delEq2.mockResolvedValue({ error: null });
+
+  // Mock trail metadata
+  trailSingle.mockResolvedValue({
+    data: {
+      difficulty: 'E',
+      length_m: 6400
+    },
+    error: null
+  });
+
+  // Mock successful insertion
+  insert.mockResolvedValue({
+    error: null
+  });
+
+  // Mock completed trails GET
+  order.mockResolvedValue({
+    data: [],
+    error: null
+  });
+
+  // Mock completed trails DELETE
+  delEq2.mockResolvedValue({
+    error: null
+  });
 });
+
 
 describe('POST /api/profile/completed-trails', () => {
   it('segna il sentiero come completato per l\'utente (201)', async () => {
@@ -58,8 +121,40 @@ describe('POST /api/profile/completed-trails', () => {
     expect(res.body).toEqual({ trailId: TRAIL_ID });
     expect(supabaseAsUser).toHaveBeenCalledWith('access-123');
     expect(from).toHaveBeenCalledWith('completed_trails');
-    expect(insert).toHaveBeenCalledWith({ user_id: 'abc-123', trail_id: TRAIL_ID });
+    //expect(insert).toHaveBeenCalledWith({ user_id: 'abc-123', trail_id: TRAIL_ID });
+    expect(insert).toHaveBeenCalledWith({user_id: 'abc-123',trail_id: TRAIL_ID,points_earned: 75});
+    expect(trailSelect).toHaveBeenCalledWith(
+  'difficulty, length_m'
+);
+
+expect(trailEq).toHaveBeenCalledWith(
+  'id',
+  TRAIL_ID
+);
+
   });
+
+  
+it('returns 404 when the trail does not exist', async () => {
+  trailSingle.mockResolvedValue({
+    data: null,
+    error: {
+      code: 'PGRST116',
+      message: 'No rows found'
+    }
+  });
+
+  const res = await complete({
+    trailId: TRAIL_ID
+  });
+
+  expect(res.status).toBe(404);
+  expect(res.body.error).toBe('Trail not found');
+
+  // No completion should be inserted
+  expect(insert).not.toHaveBeenCalled();
+});
+
 
   it('risponde 401 senza token e non scrive nulla', async () => {
     const res = await request(app).post('/api/profile/completed-trails').send({ trailId: TRAIL_ID });
