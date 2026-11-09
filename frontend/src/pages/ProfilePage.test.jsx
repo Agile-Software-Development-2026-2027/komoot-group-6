@@ -224,7 +224,7 @@ it('shows the profile as private by default, with the switch ready once loaded',
 
   await waitFor(() => expect(visibilitySwitch().disabled).toBe(false));
   expect(visibilitySwitch().getAttribute('aria-checked')).toBe('false');
-  expect(screen.getByText('Private: only you can see your profile.')).toBeTruthy();
+  expect(screen.getByText('Private: only your basic info is visible to others.')).toBeTruthy();
 });
 
 it('reads the saved visibility from the backend', async () => {
@@ -233,7 +233,7 @@ it('reads the saved visibility from the backend', async () => {
   render(<ProfilePage />);
 
   await waitFor(() => expect(visibilitySwitch().getAttribute('aria-checked')).toBe('true'));
-  expect(screen.getByText(/Public: other users can see your profile/)).toBeTruthy();
+  expect(screen.getByText('Public: others can see your basic info and your activity.')).toBeTruthy();
 });
 
 it('keeps the switch disabled while the visibility is loading', async () => {

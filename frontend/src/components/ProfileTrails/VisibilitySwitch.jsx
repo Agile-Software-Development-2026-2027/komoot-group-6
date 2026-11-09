@@ -24,8 +24,8 @@ export default function VisibilitySwitch({ isPublic, disabled = false, onChange,
 
       <p id="visibility-hint" className="visibility-hint">
         {isPublic
-          ? 'Public: other users can see your profile.'
-          : 'Private: only you can see your profile.'}
+          ? 'Public: others can see your basic info and your activity.'
+          : 'Private: only your basic info is visible to others.'}
       </p>
 
       {error && (
