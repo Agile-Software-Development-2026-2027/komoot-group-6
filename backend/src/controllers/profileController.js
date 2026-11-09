@@ -133,6 +133,51 @@ export async function getCompletedTrails(req, res) {
 }
 
 
+// PostgREST answers PGRST116 when .single() finds no row:
+// the profile does not exist, or the RLS policies do not let the user touch it.
+const NO_ROWS = 'PGRST116';
+
+// Returns whether the logged-in user's profile is public: { isPublic } (column profiles.is_public,
+// see database/profiles_visibility.sql). Profiles are private by default.
+export async function getVisibility(req, res) {
+  const { data, error } = await supabaseAsUser(req.token)
+    .from('profiles')
+    .select('is_public')
+    .eq('id', req.user.id)
+    .single();
+
+  if (error) {
+    if (error.code === NO_ROWS) return res.status(404).json({ error: 'Profile not found' });
+    // Unexpected error: errorHandler takes care of it (500)
+    throw error;
+  }
+
+  return res.json({ isPublic: data.is_public });
+}
+
+
+// Makes the logged-in user's profile public or private. The body { isPublic } has already been checked
+// by validateVisibility. Answers with the saved value.
+export async function setVisibility(req, res) {
+  const { isPublic } = req.body;
+
+  const { data, error } = await supabaseAsUser(req.token)
+    .from('profiles')
+    .update({ is_public: isPublic })
+    .eq('id', req.user.id)
+    .select('is_public')
+    .single();
+
+  if (error) {
+    if (error.code === NO_ROWS) return res.status(404).json({ error: 'Profile not found' });
+    // Unexpected error: errorHandler takes care of it (500)
+    throw error;
+  }
+
+  return res.json({ isPublic: data.is_public });
+}
+
+
 // Removes a completed trail from the logged-in user's profile.
 export async function uncompleteTrail(req, res) {
   const { trailId } = req.params;

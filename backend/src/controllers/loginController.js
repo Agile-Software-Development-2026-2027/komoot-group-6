@@ -1,23 +1,25 @@
 import { supabase } from '../config/supabase.js';
 
-// Prepara l'utente da mandare al frontend: gli stessi campi della registrazione
-// (id, email) più username e nome visualizzato, salvati al momento dell'iscrizione.
+// Prepares the user to send to the frontend: the same fields as registration
+// (id, email) plus username and display name, saved at sign-up.
 function toPublicUser(user) {
   return {
     id: user.id,
     email: user.email,
     username: user.user_metadata?.username ?? null,
     displayName: user.user_metadata?.display_name ?? null,
+    birthDate: user.user_metadata?.birth_date ?? null,
+    createdAt: user.created_at ?? null,
   };
 }
 
-// Durata della sessione senza "Remember me": 1 minuto dal login, come l'access token
-// (su Supabase la scadenza del JWT è impostata a 60 secondi). Poi bisogna rifare il login.
+// Session length without "Remember me": 1 minute from login, like the access token
+// (on Supabase the JWT expiry is set to 60 seconds). After that the user has to log in again.
 const SESSION_MAX_AGE_SECONDS = 60;
 
-// Con "Remember me" il frontend rinnova il token col refresh token e l'utente resta loggato,
-// anche chiudendo il browser, ma non oltre 30 giorni dal login.
-// Da solo Supabase rinnoverebbe la sessione all'infinito.
+// With "Remember me" the frontend renews the token with the refresh token and the user stays logged in,
+// even after closing the browser, but not beyond 30 days from login.
+// On its own, Supabase would renew the session forever.
 const REMEMBER_ME_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
 
@@ -25,8 +27,8 @@ function nowInSeconds() {
   return Math.floor(Date.now() / 1000);
 }
 
-// Restituisce il momento del login (in secondi) scritto nell'access token, che è un JWT.
-// Restituisce null se il token non si riesce a leggere.
+// Returns the login time (in seconds) written in the access token, which is a JWT.
+// Returns null if the token cannot be read.
 function getLoginTime(accessToken) {
   try {
     const payload = JSON.parse(Buffer.from(accessToken.split('.')[1], 'base64url').toString());
@@ -37,8 +39,8 @@ function getLoginTime(accessToken) {
   }
 }
 
-// Tiene solo i dati della sessione che servono al frontend.
-// remember_me dice al frontend dove salvare la sessione e se può rinnovarla.
+// Keeps only the session data the frontend needs.
+// remember_me tells the frontend where to store the session and whether it can renew it.
 function toPublicSession(session, loggedInAt, rememberMe) {
   const maxAge = rememberMe ? REMEMBER_ME_MAX_AGE_SECONDS : SESSION_MAX_AGE_SECONDS;
   return {
@@ -50,8 +52,8 @@ function toPublicSession(session, loggedInAt, rememberMe) {
   };
 }
 
-// Fa controllare email e password a Supabase. 
-// Se sono giuste restituisce l'utente e i token della sessione; altrimenti un errore con lo status adatto.
+// Has Supabase check the email and password.
+// If they are right it returns the user and the session tokens; otherwise an error with the right status.
 export async function login(req, res) {
   const { email, password, rememberMe = false } = req.body;
 
@@ -72,22 +74,22 @@ export async function login(req, res) {
 
   return res.json({
     user: toPublicUser(data.user),
-    // Il login è appena avvenuto: la durata massima parte da adesso.
+    // The login has just happened: the maximum duration starts now.
     session: toPublicSession(data.session, nowInSeconds(), rememberMe),
   });
 }
 
 
-// Restituisce l'utente a cui appartiene il token.
+// Returns the user the token belongs to.
 export async function me(req, res) {
   return res.json({ user: toPublicUser(req.user) });
 }
 
 
-// L'access token scade dopo 1 minuto: con il refresh token se ne ottiene
-// uno nuovo, senza che l'utente debba rifare il login.
-// Il frontend lo chiama solo per le sessioni con "Remember me" (senza, dopo 1 minuto si torna al login),
-// e non oltre REMEMBER_ME_MAX_AGE_SECONDS dal login: a quel punto bisogna rifare il login.
+// The access token expires after 1 minute: with the refresh token a new one is obtained,
+// without the user having to log in again.
+// The frontend calls it only for sessions with "Remember me" (without it, after 1 minute the user goes back to login),
+// and not beyond REMEMBER_ME_MAX_AGE_SECONDS from login: at that point the user has to log in again.
 export async function refresh(req, res) {
   const { refresh_token: refreshToken } = req.body;
 
@@ -97,7 +99,7 @@ export async function refresh(req, res) {
     return res.status(401).json({ error: 'Session expired. Please log in again.' });
   }
 
-  // Se non si riesce a sapere quando è avvenuto il login, per sicurezza la sessione non viene rinnovata.
+  // If we cannot tell when the login happened, the session is not renewed, to be safe.
   const loggedInAt = getLoginTime(data.session.access_token);
   if (!loggedInAt || nowInSeconds() - loggedInAt >= REMEMBER_ME_MAX_AGE_SECONDS) {
     return res.status(401).json({ error: 'Session expired. Please log in again.' });
@@ -110,8 +112,8 @@ export async function refresh(req, res) {
 }
 
 
-// scope=local chiude solo la sessione di questo dispositivo: senza, Supabase chiuderebbe
-// quelle dell'utente su tutti i dispositivi (anche quando qui la sessione scade per inattività).
+// scope=local closes only the session of this device: without it, Supabase would close
+// the user's sessions on all devices (even when the session here expires from inactivity).
 export async function logout(req, res) {
   const response = await fetch(`${process.env.SUPABASE_URL}/auth/v1/logout?scope=local`, {
     method: 'POST',
@@ -121,7 +123,7 @@ export async function logout(req, res) {
     },
   });
 
-  // 401 vuol dire che il token era già scaduto o revocato: l'utente è comunque fuori.
+  // 401 means the token had already expired or been revoked: the user is logged out anyway.
   if (!response.ok && response.status !== 401) {
     return res.status(502).json({ error: 'Could not log out. Please try again.' });
   }
@@ -130,8 +132,8 @@ export async function logout(req, res) {
 }
 
 
-// Chiede a Supabase di mandare all'utente l'email con il link per reimpostare
-// la password. Il link riporta alla pagina /auth/reset-password del frontend.
+// Asks Supabase to email the user the link to reset the password.
+// The link leads back to the frontend page /auth/reset-password.
 export async function forgotPassword(req, res) {
   const { email } = req.body;
 
@@ -143,16 +145,16 @@ export async function forgotPassword(req, res) {
     console.error(error);
   }
 
-  // Risponde sempre allo stesso modo, che l'email sia registrata o no:
-  // altrimenti chiunque potrebbe usare questa rotta per scoprire quali email esistono.
+  // Always answers the same way, whether the email is registered or not:
+  // otherwise anyone could use this route to find out which emails exist.
   return res.json({
     message: 'If the email is registered, you will receive a link to reset your password.',
   });
 }
 
 
-// Imposta la nuova password. Il frontend prende l'access_token dal link
-// arrivato per email e lo manda qui insieme alla password nuova.
+// Sets the new password. The frontend takes the access_token from the link
+// received by email and sends it here together with the new password.
 export async function resetPassword(req, res) {
   const { access_token: accessToken, password } = req.body;
 
@@ -167,12 +169,12 @@ export async function resetPassword(req, res) {
   });
 
   if (!response.ok) {
-    // 401 o 403 vuol dire che il link è scaduto o è già stato usato.
+    // 401 or 403 means the link has expired or has already been used.
     if (response.status === 401 || response.status === 403) {
       return res.status(401).json({ error: 'The reset link has expired. Request a new one.' });
     }
     const body = await response.json().catch(() => null);
-    // Supabase può rifiutare una password troppo debole.
+    // Supabase may reject a password that is too weak.
     if (body?.error_code === 'weak_password') {
       return res.status(400).json({ error: body.msg });
     }

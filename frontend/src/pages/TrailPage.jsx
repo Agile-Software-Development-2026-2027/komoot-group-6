@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import SideMenu from '../components/SideMenu.jsx';
 import TrailComments from '../components/TrailPage/TrailComments.jsx';
 import TrailDifficulty from '../components/TrailPage/TrailDifficulty.jsx';
 import TrailHeader from '../components/TrailPage/TrailHeader.jsx';
@@ -29,7 +28,6 @@ export default function TrailPage() {
   // TrailContent from scratch, so it starts again from "loading"
   return (
     <main className={styles.page}>
-      <SideMenu />
       <TrailContent key={`${id}-${attempt}`} id={id} onRetry={() => setAttempt((n) => n + 1)} />
     </main>
   );

@@ -1,50 +1,293 @@
-.profile-card {
-  max-width: 420px;
-  align-items: center;
-  gap: 16px;
+/* Colors and sizes of the profile page only: the rest of the app does not change.
+   Spacing: multiples of 4/8px. Text: 4 sizes (0.875, 1, 1.5, 2rem). */
+.profile-page {
+  --profile-paper: #eef1ea;
+  --profile-ink: #1d3527;
+  --profile-muted: #58705f;
+  --profile-rule: #d3dbcf;
+  /* trail-marker orange: 3.5:1 on the paper, above the 3:1 required for lines and focus */
+  --profile-accent: #d9560b;
+  /* card background: the paper lightened towards the app's white */
+  --profile-card: color-mix(in srgb, var(--profile-paper) 45%, var(--color-surface));
+
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--profile-paper);
+  color: var(--profile-ink);
 }
 
+.profile-content {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: calc(16px + env(safe-area-inset-top, 0px)) 24px 64px;
+}
+
+.profile-bar {
+  display: flex;
+}
+
+/* Links and text buttons of the page */
+.profile-back,
+.profile-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 8px;
+  font: inherit;
+  color: var(--profile-ink);
+  background: none;
+  border: 0;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.profile-back {
+  font-weight: 600;
+}
+
+.profile-back:hover,
+.profile-logout:hover {
+  text-decoration: underline;
+}
+
+.profile-logout:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Log out: discreet, at the bottom of the Account card */
+.profile-logout {
+  margin-top: 16px;
+  padding-left: 0;
+  font-size: 0.875rem;
+  color: var(--profile-muted);
+}
+
+.profile-back:focus-visible,
+.profile-logout:focus-visible,
+.profile-tab:focus-visible,
+.profile-outline:focus-visible,
+.profile-add:focus-visible {
+  outline: 3px solid var(--profile-accent);
+  outline-offset: 2px;
+}
+
+/* Header: avatar on the left, name and username beside it */
 .profile-heading {
-  text-align: center;
-  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 24px 0 32px;
+}
+
+/* The profile avatar: forest green with light text (the rule is more specific than the one in Avatar.css) */
+.profile-avatar .avatar {
+  color: var(--profile-paper);
+  background: var(--profile-ink);
+}
+
+.profile-heading-text {
+  min-width: 0;
 }
 
 .profile-heading h1 {
   margin: 0;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
   overflow-wrap: anywhere;
 }
 
-.profile-card .profile-username {
-  color: var(--color-muted);
+.profile-username {
+  margin: 4px 0 0;
+  color: var(--profile-muted);
   overflow-wrap: anywhere;
+}
+
+/* Statistics: two per row on mobile, four from tablet up */
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0 0 48px;
+}
+
+@media (min-width: 700px) {
+  .profile-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Label below the number, but first in the code (so it reads "Completed trails: 3") */
+.profile-stat {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 4px;
+  padding: 16px 24px;
+  background: var(--profile-card);
+  border: 1px solid var(--profile-rule);
+  border-radius: 16px;
+}
+
+.profile-stat dt {
+  font-size: 0.875rem;
+  color: var(--profile-muted);
+}
+
+.profile-stat dd {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* One column on mobile, two from 900px: narrow sticky Account on the left, wide Trails on the right */
+.profile-columns {
+  display: grid;
+  gap: 48px;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .profile-columns {
+    grid-template-columns: minmax(300px, 1fr) minmax(0, 2fr);
+    gap: 48px;
+  }
+
+  .profile-side {
+    position: sticky;
+    top: 24px;
+  }
+}
+
+.profile-section-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* Account card */
+.profile-card {
+  padding: 24px;
+  background: var(--profile-card);
+  border: 1px solid var(--profile-rule);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--profile-ink) 8%, transparent);
+}
+
+.profile-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
 }
 
 .profile-list {
-  width: 100%;
   margin: 0;
+}
+
+/* Label on the left, value on the right */
+.profile-row {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  min-height: 48px;
+  padding: 8px 0;
+  border-top: 1px solid var(--profile-rule);
 }
 
-.profile-list > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 10px 0;
-  border-top: 1px solid var(--color-border);
+.profile-row dt {
+  flex-shrink: 0;
+  font-size: 0.875rem;
+  color: var(--profile-muted);
 }
 
-.profile-list dt {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--color-muted);
-}
-
-.profile-list dd {
+.profile-row dd {
   margin: 0;
+  min-width: 0;
+  text-align: right;
   overflow-wrap: anywhere;
 }
 
-.profile-card button {
-  align-self: stretch;
+/* Outline button: the orange shows on mouse hover */
+.profile-outline {
+  min-height: 44px;
+  padding: 8px 16px;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--profile-ink);
+  background: none;
+  border: 1px solid var(--profile-ink);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.profile-outline:not(:disabled):hover {
+  color: var(--profile-accent);
+  border-color: var(--profile-accent);
+}
+
+.profile-outline:disabled,
+.profile-add:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* "Add" in place of a missing date: discreet, like a link */
+.profile-add {
+  min-height: 44px;
+  padding: 0 0 0 8px;
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--profile-accent);
+  text-decoration: underline;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+/* Tabs: the active one has the orange line; hover and tab changes are smooth */
+.profile-tabs {
+  display: flex;
+  gap: 24px;
+  margin: 8px 0 16px;
+  border-bottom: 1px solid var(--profile-rule);
+}
+
+.profile-tab {
+  min-height: 44px;
+  margin-bottom: -1px;
+  padding: 8px 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--profile-muted);
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.profile-tab:hover {
+  color: var(--profile-ink);
+  border-bottom-color: color-mix(in srgb, var(--profile-accent) 35%, transparent);
+}
+
+.profile-tab[aria-selected='true'] {
+  color: var(--profile-ink);
+  border-bottom-color: var(--profile-accent);
+}
+
+.profile-status {
+  margin: 0;
+  padding: 16px 0;
+  color: var(--profile-muted);
 }

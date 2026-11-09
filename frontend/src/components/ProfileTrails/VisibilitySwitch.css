@@ -1,0 +1,82 @@
+/* Uses only the profile page colors (--profile-*, defined in ProfilePage.css) */
+.visibility {
+  padding-top: 8px;
+  border-top: 1px solid var(--profile-rule);
+}
+
+.visibility-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  min-height: 48px;
+}
+
+.visibility-label {
+  font-size: 0.875rem;
+  color: var(--profile-muted);
+}
+
+/* The touch area is 44px tall; the drawn track is smaller, inside a transparent border */
+.visibility-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 56px;
+  height: 44px;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.visibility-switch::before {
+  content: '';
+  position: absolute;
+  inset: 10px 0;
+  border-radius: 999px;
+  background: var(--profile-muted);
+  transition: background-color 0.2s ease;
+}
+
+.visibility-switch[aria-checked='true']::before {
+  background: var(--profile-ink);
+}
+
+.visibility-thumb {
+  position: absolute;
+  top: 14px;
+  left: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  transition: transform 0.2s ease;
+}
+
+.visibility-switch[aria-checked='true'] .visibility-thumb {
+  transform: translateX(32px);
+}
+
+.visibility-switch:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.visibility-switch:focus-visible {
+  outline: 3px solid var(--profile-accent);
+  outline-offset: 2px;
+  border-radius: 999px;
+}
+
+.visibility-hint {
+  margin: 0 0 8px;
+  font-size: 0.875rem;
+  color: var(--profile-muted);
+}
+
+.visibility-error {
+  margin: 0 0 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--profile-accent);
+}

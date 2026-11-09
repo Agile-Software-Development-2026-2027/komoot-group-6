@@ -1,0 +1,61 @@
+.route-hero {
+  margin: 0;
+}
+
+.route-hero svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 320px;
+}
+
+/* The only animation on the page: the route draws itself once on load */
+.route-hero-line {
+  fill: none;
+  stroke: var(--profile-accent);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: route-draw 1.6s ease-out;
+}
+
+@keyframes route-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+.route-hero-start {
+  fill: var(--profile-ink);
+}
+
+.route-hero-end {
+  fill: var(--profile-paper);
+  stroke: var(--profile-ink);
+  stroke-width: 3;
+}
+
+.route-hero figcaption {
+  margin-top: 8px;
+  color: var(--profile-muted);
+  font-size: 0.9rem;
+}
+
+.route-hero figcaption a {
+  color: var(--profile-ink);
+  font-weight: 600;
+}
+
+.route-hero-date {
+  margin-left: 12px;
+}
+
+.route-hero-empty {
+  margin: 0;
+  padding: 32px 0;
+  max-width: 28ch;
+  color: var(--profile-muted);
+  border-top: 2px dashed var(--profile-rule);
+}
