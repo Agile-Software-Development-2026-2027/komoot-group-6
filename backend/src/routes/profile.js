@@ -5,6 +5,7 @@ import {
   getSavedTrails,
   saveTrail,
   uncompleteTrail,
+  unsaveTrail,
   getProfilePoints,
 } from '../controllers/profileController.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
@@ -13,9 +14,10 @@ import { validateSaveTrail } from '../middlewares/validateSaveTrail.js';
 
 const router = Router();
 
-// Rotte del profilo.
+// Profile routes.
 router.post('/saved-trails', requireAuth, validateSaveTrail, saveTrail);
 router.get('/saved-trails', requireAuth, getSavedTrails);
+router.delete('/saved-trails/:trailId', requireAuth, unsaveTrail);
 router.post('/completed-trails', requireAuth, validateCompleteTrail, completeTrail);
 router.get('/completed-trails', requireAuth, getCompletedTrails);
 router.delete('/completed-trails/:trailId', requireAuth, uncompleteTrail);

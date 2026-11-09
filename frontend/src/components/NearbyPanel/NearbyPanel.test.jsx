@@ -5,24 +5,25 @@ import '@testing-library/jest-dom/vitest';
 import { ApiError } from '../../services/api.js';
 import NearbyPanel from './NearbyPanel.jsx';
 
-// Test di questo file:
-// 1 Cerca attorno al centro della mappa con il raggio iniziale e mostra le card
-// 2 Lo slider rifà la ricerca una sola volta, quando smette di muoversi
-// 3 Quando la mappa si sposta cerca attorno al nuovo centro (ma non per pochi metri)
-// 4 Il filtro difficoltà (a scelta multipla) lavora sui risultati, senza nuove richieste
-// 5 Se la ricerca fallisce mostra l'errore e "Try again" la ripete
-// 6 Il segnalibro salva il sentiero nel profilo
+// Tests in this file:
+// 1 Searches around the map center with the initial radius and shows the cards
+// 2 The slider repeats the search only once, when it stops moving
+// 3 When the map moves it searches around the new center (but not for a few meters)
+// 4 The difficulty filter (multiple choice) works on the results, without new requests
+// 5 If the search fails it shows the error and "Try again" repeats it
+// 6 The bookmark saves the trail to the profile
 // 7 The arrow hides and shows the list, but the number of trails remains visible
-// 8 Cliccando un sentiero la mappa vola lì, compare il segnaposto e la lista non cambia
-// 9 Se la prima posizione GPS arriva dopo il click, la mappa torna sul sentiero (una volta sola)
+// 8 Clicking a trail the map flies there, the marker appears and the list does not change
+// 9 If the first GPS position arrives after the click, the map goes back to the trail (only once)
 // 10 With closed panel, the search still works and the number of trails is shown
-// 11 Con l'utente loggato i sentieri già salvati nel profilo hanno il segnalibro pieno
+// 11 With a logged-in user, trails already saved in the profile have a filled bookmark
+// 12 Clicking the filled bookmark removes the trail from the saved ones
 
 const mock = vi.hoisted(() => ({ map: null, authFetch: null, user: null }));
 
 vi.mock('react-map-gl/maplibre', () => ({
   useMap: () => ({ current: { getMap: () => mock.map } }),
-  // Il segnaposto finto mostra dove è stato messo
+  // The fake marker shows where it was placed
   Marker: ({ longitude, latitude, children }) => (
     <div data-testid="trail-marker" data-lng={longitude} data-lat={latitude}>{children}</div>
   ),
@@ -37,7 +38,7 @@ const TRAILS = [
   { id: 't2', name: 'Monte Cocuzzo', difficulty: 'hard', lengthM: 14200, elevationGainM: 1150, distanceM: 6300, start: [16.3, 39.4] },
 ];
 
-// Come risponde il backend: una FeatureCollection, con la difficoltà nella scala CAI
+// How the backend answers: a FeatureCollection, with the difficulty in the CAI scale
 const CAI = { easy: 'T', moderate: 'E', hard: 'EE' };
 function nearbyResponse(trails) {
   return {
@@ -50,8 +51,7 @@ function nearbyResponse(trails) {
   };
 }
 
-// Mappa finta: ha centro e zoom e permette di simulare la fine di uno spostamento (moveend).
-// moveTo è l'utente che sposta la mappa; jumpTo e flyTo passano a moveend i dati dell'evento, come MapLibre.
+
 function createFakeMap(center) {
   const handlers = {};
   const map = {
@@ -65,7 +65,7 @@ function createFakeMap(center) {
       map.center = next;
       handlers.moveend?.({});
     },
-    // Come moveTo, ma è il GPS a spostare la mappa (MapLibre lo segnala con geolocateSource)
+    // Like moveTo, but the GPS moves the map (MapLibre signals it with geolocateSource)
     gpsMoveTo: (next) => {
       map.center = next;
       handlers.moveend?.({ geolocateSource: true });
@@ -79,7 +79,7 @@ function createFakeMap(center) {
   return map;
 }
 
-// Fa passare l'attesa prima della ricerca e lascia arrivare la risposta
+// Lets the wait before the search pass and lets the response arrive
 async function waitForSearch() {
   await act(() => vi.advanceTimersByTimeAsync(1000));
 }
@@ -88,7 +88,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   mock.map = createFakeMap({ lng: 16.2281, lat: 39.3562 });
   mock.authFetch = vi.fn().mockResolvedValue(nearbyResponse(TRAILS));
-  // Di default nessun utente: i salvati e i completati non vengono caricati
+  // By default no user: saved and completed trails are not loaded
   mock.user = null;
 });
 
@@ -104,7 +104,7 @@ test('searches around the map center with the default radius and shows the cards
 
   await waitForSearch();
 
-  // Centro arrotondato a 3 decimali, raggio iniziale di 25 km in metri
+  // Center rounded to 3 decimals, initial radius of 25 km in meters
   expect(mock.authFetch).toHaveBeenCalledTimes(1);
   expect(mock.authFetch).toHaveBeenCalledWith('/trails/nearby?lat=39.356&lng=16.228&radius=25000');
   expect(screen.getByRole('status')).toHaveTextContent('2 trails within 25 km of the map center');
@@ -139,7 +139,7 @@ test('searches around the new center when the map moves (but not for a few meter
   render(<NearbyPanel />);
   await waitForSearch();
 
-  // Pochi metri: dopo l'arrotondamento il centro è lo stesso
+  // A few meters: after rounding the center is the same
   act(() => mock.map.moveTo({ lng: 16.22812, lat: 39.35618 }));
   await waitForSearch();
   expect(mock.authFetch).toHaveBeenCalledTimes(1);
@@ -158,18 +158,18 @@ test('the multi-select difficulty filter works on the results without new reques
   expect(screen.getAllByRole('article')).toHaveLength(1);
   expect(screen.getByRole('heading', { name: 'Monte Cocuzzo' })).toBeInTheDocument();
 
-  // Le difficoltà si sommano
+  // Difficulties add up
   fireEvent.click(screen.getByRole('checkbox', { name: 'Easy' }));
   expect(screen.getAllByRole('article')).toHaveLength(2);
 
-  // Solo Intermediate: nessun sentiero
+  // Only Intermediate: no trails
   fireEvent.click(screen.getByRole('checkbox', { name: 'Difficult' }));
   fireEvent.click(screen.getByRole('checkbox', { name: 'Easy' }));
   fireEvent.click(screen.getByRole('checkbox', { name: 'Intermediate' }));
   expect(screen.queryAllByRole('article')).toHaveLength(0);
   expect(screen.getByRole('status')).toHaveTextContent('No trails with the selected difficulty within 25 km');
 
-  // Nessuna selezionata = tutte
+  // None selected = all
   fireEvent.click(screen.getByRole('checkbox', { name: 'Intermediate' }));
   expect(screen.getAllByRole('article')).toHaveLength(2);
 
@@ -210,7 +210,7 @@ test('the bookmark saves the trail to the profile', async () => {
 
 test('with a logged-in user, trails already saved in the profile show the full bookmark', async () => {
   mock.user = { id: 'u1' };
-  // Il backend finto risponde in base all'indirizzo
+  // The fake backend answers based on the path
   mock.authFetch = vi.fn((path) => {
     if (path === '/profile/saved-trails') return Promise.resolve([{ trail_id: 't2', created_at: '2026-11-06T10:00:00Z' }]);
     if (path === '/profile/completed-trails') return Promise.resolve([]);
@@ -223,6 +223,27 @@ test('with a logged-in user, trails already saved in the profile show the full b
   expect(mock.authFetch).toHaveBeenCalledWith('/profile/saved-trails');
   expect(screen.getByRole('button', { name: 'Save Sentiero del Crati' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Saved Monte Cocuzzo' })).toBeInTheDocument();
+});
+
+test('clicking the full bookmark removes the trail from the saved ones', async () => {
+  mock.user = { id: 'u1' };
+  // The fake backend answers based on the path
+  mock.authFetch = vi.fn((path) => {
+    if (path === '/profile/saved-trails') return Promise.resolve([{ trail_id: 't2', created_at: '2026-11-06T10:00:00Z' }]);
+    if (path === '/profile/completed-trails') return Promise.resolve([]);
+    if (path === '/profile/saved-trails/t2') return Promise.resolve(null);
+    return Promise.resolve(nearbyResponse(TRAILS));
+  });
+
+  render(<NearbyPanel />);
+  await waitForSearch();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Saved Monte Cocuzzo' }));
+  await act(() => vi.advanceTimersByTimeAsync(0));
+
+  expect(mock.authFetch).toHaveBeenLastCalledWith('/profile/saved-trails/t2', { method: 'DELETE' });
+  expect(screen.getByRole('button', { name: 'Save Monte Cocuzzo' })).toBeInTheDocument();
+  expect(screen.getByText('Trail removed from saved')).toBeInTheDocument();
 });
 
 test('the close button calls onClose', async () => {
@@ -247,12 +268,12 @@ test('clicking a trail flies the map there, shows the pin and keeps the list', a
   render(<NearbyPanel />);
   await waitForSearch();
   expect(screen.queryByTestId('trail-marker')).not.toBeInTheDocument();
-  // La mappa è molto vicina (come quando segue il GPS): il volo usa comunque lo zoom 13
+  // The map is zoomed in a lot 
   mock.map.zoom = 16;
 
   fireEvent.click(screen.getByRole('button', { name: 'Monte Cocuzzo' }));
 
-  // Prima sblocca l'eventuale inseguimento del GPS, poi vola al punto di partenza
+  // First it stops any GPS tracking, then it flies to the starting point
   expect(mock.map.jumpTo).toHaveBeenCalledWith({}, expect.anything());
   expect(mock.map.flyTo).toHaveBeenCalledWith(
     expect.objectContaining({ center: [16.3, 39.4], zoom: 13 }),
@@ -265,12 +286,12 @@ test('clicking a trail flies the map there, shows the pin and keeps the list', a
   expect(marker).toHaveAttribute('data-lat', '39.4');
   expect(screen.getByRole('button', { name: 'Monte Cocuzzo' })).toHaveAttribute('aria-current', 'true');
 
-  // Il volo fatto dal pannello non rifà la ricerca: la lista resta uguale
+  // The flight made by the panel does not repeat the search: the list stays the same
   await waitForSearch();
   expect(mock.authFetch).toHaveBeenCalledTimes(1);
   expect(screen.getAllByRole('article')).toHaveLength(2);
 
-  // Se poi è l'utente a spostare la mappa, la ricerca riparte dal nuovo centro
+  // If the user then moves the map, the search restarts from the new center
   act(() => mock.map.moveTo({ lng: 16.5, lat: 39.5 }));
   await waitForSearch();
   expect(mock.authFetch).toHaveBeenCalledTimes(2);
@@ -283,14 +304,14 @@ test('if the first GPS fix arrives after the click, the map goes back to the tra
   fireEvent.click(screen.getByRole('button', { name: 'Monte Cocuzzo' }));
   expect(mock.map.flyTo).toHaveBeenCalledTimes(1);
 
-  // Il GPS trova l'utente e sposta la mappa su di lui: la mappa torna sul sentiero, la lista non cambia
+  // The GPS finds the user and moves the map to them: the map goes back to the trail, the list does not change
   act(() => mock.map.gpsMoveTo({ lng: 16.2, lat: 39.3 }));
   expect(mock.map.flyTo).toHaveBeenCalledTimes(2);
   expect(mock.map.flyTo).toHaveBeenLastCalledWith(expect.objectContaining({ center: [16.3, 39.4] }), expect.anything());
   await waitForSearch();
   expect(mock.authFetch).toHaveBeenCalledTimes(1);
 
-  // Un altro movimento del GPS (per esempio l'utente preme il pulsante della posizione) vale normalmente
+  // Another GPS movement (for example the user presses the location button) counts normally
   act(() => mock.map.gpsMoveTo({ lng: 16.2, lat: 39.3 }));
   expect(mock.map.flyTo).toHaveBeenCalledTimes(2);
   await waitForSearch();

@@ -1,21 +1,21 @@
 import { supabaseAsUser } from '../config/supabase.js';
 import { calculateHikeScore } from '../utils/calculateHikeScore.js';
-// Errori di Postgres che possono arrivare dall'insert, con la risposta da dare.
+// Postgres errors that can come from the insert, with the response to send.
 const INSERT_ERRORS = {
-  '23505': { status: 409, error: 'Trail already saved' }, // chiave duplicata: l'utente l'ha già salvato
-  '23503': { status: 404, error: 'Trail not found' }, // il sentiero non esiste nella tabella trails
-  '22P02': { status: 400, error: 'Invalid trail id' }, // l'id non è un uuid
+  '23505': { status: 409, error: 'Trail already saved' }, // duplicate key: the user has already saved it
+  '23503': { status: 404, error: 'Trail not found' }, // the trail does not exist in the trails table
+  '22P02': { status: 400, error: 'Invalid trail id' }, // the id is not a uuid
 };
 
 const COMPLETE_ERRORS = {
-  '23505': { status: 409, error: 'Trail already completed' }, // chiave duplicata: l'utente l'ha già completato
-  '23503': { status: 404, error: 'Trail not found' }, // il sentiero non esiste nella tabella trails
-  '22P02': { status: 400, error: 'Invalid trail id' }, // l'id non è un uuid
+  '23505': { status: 409, error: 'Trail already completed' }, // duplicate key: the user has already completed it
+  '23503': { status: 404, error: 'Trail not found' }, // the trail does not exist in the trails table
+  '22P02': { status: 400, error: 'Invalid trail id' }, // the id is not a uuid
 };
 
 
-// Salva un sentiero nel profilo dell'utente loggato (tabella saved_trails, vedi database/saved_trails.sql).
-// requireAuth ha già messo l'utente in req.user e il token in req.token.
+// Saves a trail to the logged-in user's profile (saved_trails table, see database/saved_trails.sql).
+// requireAuth has already put the user in req.user and the token in req.token.
 export async function saveTrail(req, res) {
   const { trailId } = req.body;
 
@@ -26,7 +26,7 @@ export async function saveTrail(req, res) {
   if (error) {
     const known = INSERT_ERRORS[error.code];
     if (known) return res.status(known.status).json({ error: known.error });
-    // Errore inatteso: ci pensa errorHandler (500)
+    // Unexpected error: errorHandler takes care of it (500)
     throw error;
   }
 
@@ -34,8 +34,8 @@ export async function saveTrail(req, res) {
 }
 
 
-// Restituisce i sentieri salvati dall'utente loggato, dal più recente: [{ trail_id, created_at }, ...].
-// Il frontend li usa per mostrare il segnalibro pieno sulle card dei sentieri già salvati.
+// Returns the trails saved by the logged-in user, most recent first: [{ trail_id, created_at }, ...].
+// The frontend uses them to show the filled bookmark on the cards of trails already saved.
 export async function getSavedTrails(req, res) {
   const { data, error } = await supabaseAsUser(req.token)
     .from('saved_trails')
@@ -43,15 +43,36 @@ export async function getSavedTrails(req, res) {
     .eq('user_id', req.user.id)
     .order('created_at', { ascending: false });
 
-  // Errore inatteso: ci pensa errorHandler (500)
+  // Unexpected error: errorHandler takes care of it (500)
   if (error) throw error;
 
   return res.json(data ?? []);
 }
 
 
-// Segna un sentiero come completato nel profilo dell'utente loggato (tabella completed_trails, vedi database/completed_trails.sql).
-// requireAuth ha già messo l'utente in req.user e il token in req.token.
+// Removes a trail from the logged-in user's saved trails (the bookmark becomes empty again).
+// If the trail was not saved it is not an error: the result for the user is the same (204).
+export async function unsaveTrail(req, res) {
+  const { trailId } = req.params;
+
+  const { error } = await supabaseAsUser(req.token)
+    .from('saved_trails')
+    .delete()
+    .eq('user_id', req.user.id)
+    .eq('trail_id', trailId);
+
+  if (error) {
+    if (error.code === '22P02') return res.status(400).json({ error: 'Invalid trail id' }); // the id is not a uuid
+    // Unexpected error: errorHandler takes care of it (500)
+    throw error;
+  }
+
+  return res.status(204).end();
+}
+
+
+// Marks a trail as completed in the logged-in user's profile (completed_trails table, see database/completed_trails.sql).
+// requireAuth has already put the user in req.user and the token in req.token.
 export async function completeTrail(req, res) {
   const { trailId } = req.body;
 
@@ -89,7 +110,7 @@ export async function completeTrail(req, res) {
   if (error) {
     const known = COMPLETE_ERRORS[error.code];
     if (known) return res.status(known.status).json({ error: known.error });
-    // Errore inatteso: ci pensa errorHandler (500)
+    // Unexpected error: errorHandler takes care of it (500)
     throw error;
   }
 
@@ -97,7 +118,7 @@ export async function completeTrail(req, res) {
 }
 
 
-// Restituisce l'elenco dei sentieri completati dall'utente loggato.
+// Returns the list of trails completed by the logged-in user.
 export async function getCompletedTrails(req, res) {
   const { data, error } = await supabaseAsUser(req.token)
     .from('completed_trails')
@@ -112,7 +133,7 @@ export async function getCompletedTrails(req, res) {
 }
 
 
-// Rimuove un sentiero completato nel profilo dell'utente loggato.
+// Removes a completed trail from the logged-in user's profile.
 export async function uncompleteTrail(req, res) {
   const { trailId } = req.params;
   console.log(`Uncompleting trail ${trailId} for user ${req.user.id}`);

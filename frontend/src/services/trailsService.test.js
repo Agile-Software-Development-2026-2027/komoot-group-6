@@ -9,15 +9,15 @@ import {
   getTrailsInBounds,
   saveTrail,
   uncompleteTrail,
+  unsaveTrail,
 } from './trailsService.js';
 import { buildElevationProfile, calculateTrailStats } from '../utils/trailStats.js';
 
-// Cartella delle immagini finta: c'è solo l'immagine dell'"Anello del Campus UniCal"
 vi.mock('../utils/trailImages.js', () => ({
   trailImageUrl: (name) => (name === 'Anello del Campus UniCal' ? '/assets/anello.jpg' : null),
 }));
 
-// apiRequest usa fetch: lo si simula per vedere l'indirizzo richiesto
+// apiRequest uses fetch: we mock it to see the requested path
 function mockFetch(body, { ok = true, status = 200 } = {}) {
   const fetchMock = vi.fn().mockResolvedValue({ ok, status, json: async () => body });
   vi.stubGlobal('fetch', fetchMock);
@@ -63,7 +63,7 @@ describe('trailsService', () => {
   });
 });
 
-// Risposta del backend: una FeatureCollection con il punto di partenza come geometria
+// Backend response: a FeatureCollection with the starting point as geometry
 function nearbyResponse(...features) {
   return { type: 'FeatureCollection', features };
 }
@@ -91,8 +91,8 @@ describe('getNearbyTrails', () => {
     const trails = await getNearbyTrails(authFetch, { lat: 39.356, lng: 16.228, radiusKm: 2.5 });
 
     expect(authFetch).toHaveBeenCalledWith('/trails/nearby?lat=39.356&lng=16.228&radius=2500');
-    // Solo i campi usati dalle card: start viene dalla geometria, ascentM diventa elevationGainM,
-    // la difficoltà CAI diventa easy/moderate/hard, senza foto imageUrl è null, saved è sempre un booleano
+    // Only the fields used by the cards: start comes from the geometry, ascentM becomes elevationGainM,
+    // the CAI difficulty becomes easy/moderate/hard, without a photo imageUrl is null, saved is always a boolean
     expect(trails).toEqual([
       {
         id: 't1',
@@ -116,7 +116,7 @@ describe('getNearbyTrails', () => {
 
     const trails = await getNearbyTrails(authFetch, { lat: 0, lng: 0, radiusKm: 1 });
 
-    // Un livello sconosciuto resta com'è, uno mancante diventa null
+    // An unknown level stays as it is, a missing one becomes null
     expect(trails.map((trail) => trail.difficulty)).toEqual(['easy', 'moderate', 'hard', 'hard', 'X', null]);
   });
 
@@ -180,6 +180,21 @@ describe('getSavedTrails', () => {
     await expect(getSavedTrails(authFetch)).resolves.toEqual(savedList);
 
     expect(authFetch).toHaveBeenCalledWith('/profile/saved-trails');
+  });
+});
+
+describe('unsaveTrail', () => {
+  it('removes the trail from the saved ones in the profile', async () => {
+    const authFetch = vi.fn().mockResolvedValue(null);
+
+    await unsaveTrail(authFetch, 't1');
+
+    expect(authFetch).toHaveBeenCalledWith('/profile/saved-trails/t1', { method: 'DELETE' });
+  });
+
+  it('throws if the server answers with an error', async () => {
+    const serverDown = vi.fn().mockRejectedValue(new ApiError('Cannot reach the server.', 0));
+    await expect(unsaveTrail(serverDown, 't1')).rejects.toThrow('Cannot reach the server.');
   });
 });
 
