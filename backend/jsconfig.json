@@ -1,0 +1,10 @@
+// this file is used by the IDE to understand the project structure and provide better autocompletion and type checking it's different from the frontend one
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2024"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
+  },
+  "include": ["src", "tests"]
+}
