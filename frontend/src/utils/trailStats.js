@@ -1,10 +1,8 @@
 import length from '@turf/length';
 import turfDistance from '@turf/distance';
+import { ELEV_THRESHOLD } from '../config/trails.config.js';
 
 const DISTANCE_OPTIONS = { units: 'kilometers' };
-
-//Filter for GPS jitter
-const ELEV_THRESHOLD = 5;
 
 function calculateElevationStats(coordinates) {
   let elevationGain = 0;

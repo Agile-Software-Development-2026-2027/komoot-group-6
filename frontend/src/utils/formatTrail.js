@@ -1,3 +1,5 @@
+import { CLIMB_SPEED_MH, FLAT_SPEED_KMH } from '../config/trails.config.js';
+
 // Distanze e lunghezze: 850 → "850 m", 8400 → "8.4 km", 10000 → "10 km".
 export function formatDistance(meters) {
   if (!Number.isFinite(meters)) return '—';
@@ -13,8 +15,8 @@ export function formatElevation(meters) {
 // 4 km/h in piano e 300 m/h in salita; il tempo totale è il maggiore dei due più metà del minore.
 export function estimateDurationMin(lengthM, elevationGainM) {
   if (!Number.isFinite(lengthM)) return null;
-  const flatHours = lengthM / 1000 / 4;
-  const climbHours = Number.isFinite(elevationGainM) ? elevationGainM / 300 : 0;
+  const flatHours = lengthM / 1000 / FLAT_SPEED_KMH;
+  const climbHours = Number.isFinite(elevationGainM) ? elevationGainM / CLIMB_SPEED_MH : 0;
   const hours = Math.max(flatHours, climbHours) + Math.min(flatHours, climbHours) / 2;
   return Math.round(hours * 60);
 }

@@ -21,6 +21,7 @@ vi.mock('../../config/map.config.js', () => ({
     { id: 'other', label: 'Other', url: 'other.json' },
   ],
   HIDDEN_BASE_LAYERS: ['Country border'],
+  RECENTER_DURATION_MS: 1000,
 }));
 
 const mock = vi.hoisted(() => ({ mapProps: null, easeTo: null, jumpTo: null }));

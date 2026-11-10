@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Popup, useMap } from 'react-map-gl/maplibre';
+import { EDGE_MARGIN, POPUP_PAN_DURATION_MS } from '../../config/map.config.js';
 import { getPanOffset } from '../../utils/panToFit.js';
 import TrailDetailsLink from '../TrailPage/TrailDetailsLink.jsx';
 import './TrackPopup.css';
@@ -22,9 +23,6 @@ function formatMeters(value) {
 function formatType(type) {
   return type.replaceAll('_', ' ');
 }
-
-// Distanza minima tra il popup e il bordo della mappa dopo lo spostamento
-const EDGE_MARGIN = 12;
 
 // Piccola scheda con i dettagli di un sentiero, attaccata al suo punto di partenza sulla mappa.
 // "trail" sono le proprietà del sentiero restituite da /api/trails e "lngLat" è il suo punto di partenza: se manca uno dei due non compare.
@@ -57,7 +55,7 @@ export default function TrackPopup({ trail, lngLat, onClose }) {
         map.getContainer().getBoundingClientRect(),
         EDGE_MARGIN
       );
-      if (x !== 0 || y !== 0) map.panBy([x, y], { duration: 300 });
+      if (x !== 0 || y !== 0) map.panBy([x, y], { duration: POPUP_PAN_DURATION_MS });
     });
 
     return () => cancelAnimationFrame(frame);

@@ -1,7 +1,5 @@
 import turfDistance from '@turf/distance';
-
-// If the end of a route is farther than this from its start, the route is "one way"
-export const LOOP_TOLERANCE_M = 100;
+import { LOOP_TOLERANCE_M } from '../config/trails.config.js';
 
 // Last [lng, lat] of a LineString or MultiLineString, null for anything else
 export function lastPoint(geometry) {

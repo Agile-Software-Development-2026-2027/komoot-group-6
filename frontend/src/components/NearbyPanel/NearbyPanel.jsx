@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Marker, useMap } from 'react-map-gl/maplibre';
+import { GPS_GRACE_MS, TRAIL_ZOOM } from '../../config/map.config.js';
+import {
+  DEFAULT_RADIUS_KM,
+  MAX_RADIUS_KM,
+  MIN_RADIUS_KM,
+  SEARCH_DELAY_MS,
+} from '../../config/trails.config.js';
 import { useAuth } from '../../context/useAuth.js';
 import {
   completeTrail,
@@ -14,20 +21,6 @@ import { DIFFICULTIES } from './difficulty.js';
 import { CloseIcon, MapPinIcon } from './icons.jsx';
 import TrailCard from './TrailCard.jsx';
 import styles from './NearbyPanel.module.css';
-
-// Search radius in km: minimum, maximum and initial value of the slider.
-const MIN_RADIUS_KM = 1;
-const MAX_RADIUS_KM = 50;
-const DEFAULT_RADIUS_KM = 25;
-
-// Wait before searching: while dragging the slider or the map, no request is sent at every step
-const SEARCH_DELAY_MS = 400;
-
-// Zoom when the map flies to a trail chosen from the list: the surrounding area is visible (a few km)
-const TRAIL_ZOOM = 13;
-
-// How long after the click the selection wins over the GPS
-const GPS_GRACE_MS = 15000;
 
 // Tag for map movements made by the panel.
 // MapLibre passes it to the events, so we know the search must not restart.
