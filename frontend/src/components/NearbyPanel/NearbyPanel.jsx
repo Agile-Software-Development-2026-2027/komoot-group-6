@@ -198,7 +198,7 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
     if (map) flyToTrail(map, trail);
 
     // On narrow screens the list covers half the map: we close it to show the place
-    if (window.matchMedia?.(NARROW_SCREEN_WIDTH)?.matches) onClose?.();
+    if (window.matchMedia?.(`(max-width: ${NARROW_SCREEN_WIDTH}px)`)?.matches) onClose?.();
   }
 
   function toggleDifficulty(value) {
