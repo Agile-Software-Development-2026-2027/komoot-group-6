@@ -20,6 +20,7 @@ import { useLayerEvents } from '../map/useLayerEvents.js';
 import { getTrail, getTrailsInBounds } from '../services/trailsService.js';
 import { buildElevationProfile } from '../utils/trailStats.js';
 import './HomePage.css';
+import { ELEVATION_CHART_LINE_COLOR } from '../config/theme.js';
 
 // Keeps the trails of the visible area up to date: it asks for them at start and after every map move.
 // It must be placed inside <MapView> so it can use useMap().
@@ -189,7 +190,7 @@ export default function HomePage() {
               longitude={hoveredPoint.coordinates[0]}
               latitude={hoveredPoint.coordinates[1]}
               anchor="center"
-              color="#16803c"
+              color={ELEVATION_CHART_LINE_COLOR}
               style={{ pointerEvents: 'none' }}
             />
           )}

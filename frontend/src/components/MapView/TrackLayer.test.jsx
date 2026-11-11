@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import TrackLayer from './TrackLayer.jsx';
 import { useFirstLabelLayerId } from '../../map/useFirstLabelLayerId.js';
+import { LAYER_PAINT_COLOR, LAYER_PAINT_WIDTH} from '../../config/theme.js';
 
 // Mock react-map-gl/maplibre Source and Layer components
 vi.mock('react-map-gl/maplibre', () => ({
@@ -61,8 +62,8 @@ describe('TrackLayer - Rendering and Styling', () => {
         id: 'track-layer',
         type: 'line',
         paint: {
-          'line-color': '#E63946',
-          'line-width': 4,
+          'line-color': LAYER_PAINT_COLOR,
+          'line-width': LAYER_PAINT_WIDTH,
         },
         layout: {
           'line-cap': 'round',

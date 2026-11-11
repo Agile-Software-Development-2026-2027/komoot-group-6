@@ -21,11 +21,12 @@ import { DIFFICULTIES } from './difficulty.js';
 import { CloseIcon, MapPinIcon } from './icons.jsx';
 import TrailCard from './TrailCard.jsx';
 import styles from './NearbyPanel.module.css';
+import { NARROW_SCREEN_WIDTH } from '../../config/theme.js';
 
 // Tag for map movements made by the panel.
 // MapLibre passes it to the events, so we know the search must not restart.
 const FROM_PANEL = { fromNearbyPanel: true };
-const NARROW_SCREEN = '(max-width: 720px)';
+
 
 // Moves the map to the trail.
 function flyToTrail(map, trail) {
@@ -197,7 +198,7 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
     if (map) flyToTrail(map, trail);
 
     // On narrow screens the list covers half the map: we close it to show the place
-    if (window.matchMedia?.(NARROW_SCREEN)?.matches) onClose?.();
+    if (window.matchMedia?.(`(max-width: ${NARROW_SCREEN_WIDTH}px)`)?.matches) onClose?.();
   }
 
   function toggleDifficulty(value) {

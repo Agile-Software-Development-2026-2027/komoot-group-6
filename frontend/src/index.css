@@ -11,6 +11,18 @@
   --color-background: #eef4f4;
   --color-error: #b3261e;
   --color-error-bg: #fdecea;
+  --color-success: #1f6b3a;
+  --color-success-bg: #e3f3e8;
+
+  /* Also in config/theme.js, for the map, the chart and the share image */
+  --color-green: #16803c;
+  --color-start: #1f6b3a;
+  --color-end: #b4232c;
+  --color-like: #e5374f;
+  --color-like-spark: #f5a524;
+
+  /* Top of the map toolbar: below the profile icon (46px + 12px + gap) */
+  --toolbar-top: 68px;
 
   --radius: 12px;
 

@@ -1,6 +1,5 @@
 // color of the layer when the user is drawing a new route
 export const LAYER_PAINT_COLOR = '#E63946';
-
 // width of the layer when the user is drawing a new route
 export const LAYER_PAINT_WIDTH = 4;
 
@@ -9,7 +8,6 @@ export const STARTING_POINT_COLOR = '#E63946';
 
 // THE COLOR OF THE LINE IN THE ELEVATION PROFILE CHART
 export const ELEVATION_CHART_LINE_COLOR = '#16803c';
-
 // THE COLOR OF THE AREA UNDER THE LINE IN THE ELEVATION PROFILE CHART
 export const ELEVATION_CHART_AREA_COLOR = '#86efac';
 
@@ -28,3 +26,6 @@ export const SHARE_PAD = 60;
 export const SHARE_PHOTO_HEIGHT = 640;
 export const SHARE_ROUTE_BOX = { x: SHARE_PAD, y: 690, width: SHARE_CARD_WIDTH - SHARE_PAD * 2, height: 380 };
 export const SHARE_FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+
+// the width below which the screen is considered narrow (for responsive design)
+export const NARROW_SCREEN_WIDTH = 720;

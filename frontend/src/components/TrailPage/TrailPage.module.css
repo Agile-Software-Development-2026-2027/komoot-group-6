@@ -133,8 +133,8 @@
 
 /* Difficulty colors: used by the badge and by the difficulty scale */
 .easy {
-  color: #1f6b3a;
-  background: #e3f3e8;
+  color: var(--color-success);
+  background: var(--color-success-bg);
 }
 
 .moderate {
@@ -296,11 +296,11 @@
 }
 
 .startMarker {
-  border-color: #1f6b3a; /* green: start */
+  border-color: var(--color-green); /* green: start */
 }
 
 .endMarker {
-  border-color: #b4232c; /* dark red: end */
+  border-color: var(--color-end); /* dark red: end */
 }
 
 /* Legend in the top-left corner of the map */

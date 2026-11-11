@@ -301,7 +301,7 @@
 }
 
 .completeBtn:hover:not(:disabled) {
-  color: #16803c;
+  color: var(--color-green);
   transform: scale(1.08);
 }
 
@@ -311,7 +311,7 @@
 
 .completeBtn.isCompleted {
   color: #fff;
-  background: #16803c;
+  background: var(--color-green);
 }
 
 .cardTitle {
@@ -473,7 +473,7 @@
    (così il centro della mappa, dove si cerca, resta visibile) e le card diventano righe compatte */
 @media (max-width: 720px) {
   .panel {
-    top: 68px;
+    top: var(--toolbar-top);
     right: 66px;
     bottom: auto;
     left: 8px;
