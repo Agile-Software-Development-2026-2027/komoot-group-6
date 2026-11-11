@@ -64,7 +64,7 @@ export const FIT_TRACK_PADDING = 40;
 //pixels left around the route when the map zooms on it
 export const ROUTE_PADDING = 64;
 
-// distance min tra il popup e il bordo della mappa dopo lo spostamento
+// min distance between the popup and the edge of the map after panning
 export const EDGE_MARGIN = 12;
 
 // ms of the animation when recentering the map to the initial view
