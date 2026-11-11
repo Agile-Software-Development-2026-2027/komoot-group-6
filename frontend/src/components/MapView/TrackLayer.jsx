@@ -1,5 +1,6 @@
 import { Layer, Source } from 'react-map-gl/maplibre';
 import { useFirstLabelLayerId } from '../../map/useFirstLabelLayerId.js';
+import { LAYER_PAINT_COLOR, LAYER_PAINT_WIDTH } from '../../config/theme.js';
 
 /**
  * Renders a GeoJSON track line on the map beneath text labels.
@@ -20,8 +21,8 @@ export default function TrackLayer({ data, id = 'track' }) {
   const hitLayerId = `${id}-hit`;
 
   const layerPaint = {
-    'line-color': '#E63946',
-    'line-width': 4,
+    'line-color': LAYER_PAINT_COLOR,
+    'line-width': LAYER_PAINT_WIDTH,
   };
 
   const layerLayout = {
