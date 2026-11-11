@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import styles from './ElevationChart.module.css';
+import {ELEVATION_CHART_LINE_COLOR, ELEVATION_CHART_AREA_COLOR} from '../../config/theme.js';
 
 const tooltipValue = (value) => [`${Number(value).toFixed(1)} m`, 'Elevation'];
 const tooltipDistance = (value) => `${Number(value).toFixed(2)} km`;
@@ -34,8 +35,8 @@ export default function ElevationProfile({ data = [], onHover }) {
                 tickFormatter={(n) => `${n}`} width={52}
                 label={{ value: 'Elevation (m)', angle: -90, position: 'insideLeft' }} />
               <Tooltip formatter={tooltipValue} labelFormatter={tooltipDistance} />
-              <Area type="linear" dataKey="elevation" stroke="#16803c"
-                fill="#86efac" fillOpacity={0.25} strokeWidth={2.5} dot={false}
+              <Area type="linear" dataKey="elevation" stroke={ELEVATION_CHART_LINE_COLOR}
+                fill={ELEVATION_CHART_AREA_COLOR} fillOpacity={0.25} strokeWidth={2.5} dot={false}
                 activeDot={{ r: 5 }} isAnimationActive={false} />
             </AreaChart>
           </ResponsiveContainer>

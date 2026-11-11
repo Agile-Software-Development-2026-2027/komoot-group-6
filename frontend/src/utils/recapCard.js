@@ -1,23 +1,20 @@
 import { projectRoute } from './shareRecap.js';
-
-export const CARD_WIDTH = 1080;
-export const CARD_HEIGHT = 1350;
-
-const PAD = 64;
-const PHOTO_HEIGHT = 640;
-const ROUTE_BOX = { x: PAD, y: 690, width: CARD_WIDTH - PAD * 2, height: 380 };
-const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+import {LAYER_PAINT_COLOR, SHARE_BACKGROUND_COLOR, SHARE_BACKGROUND_DARK_COLOR, 
+        SHARE_START_COLOR, SHARE_END_COLOR, SHARE_MAIN_TEXT_COLOR,
+        SHARE_MUTED_TEXT_COLOR, SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT,
+        SHARE_PAD, SHARE_PHOTO_HEIGHT, SHARE_ROUTE_BOX, SHARE_FONT
+        } from '../config/theme.js';
 
 // Background: the primary color of the site (--color-primary in index.css).
 // Route and start/end dots: the same colors as on the trail map (TrackLayer.jsx, .startMarker, .endMarker).
 const COLORS = {
-  background: '#0f5257',
-  backgroundDark: '#082426',
-  route: '#E63946',
-  start: '#1f6b3a',
-  end: '#b4232c',
-  text: '#ffffff',
-  muted: 'rgba(255, 255, 255, 0.72)',
+  background: SHARE_BACKGROUND_COLOR,
+  backgroundDark: SHARE_BACKGROUND_DARK_COLOR,
+  route: LAYER_PAINT_COLOR,
+  start: SHARE_START_COLOR,
+  end: SHARE_END_COLOR,
+  text: SHARE_MAIN_TEXT_COLOR,
+  muted: SHARE_MUTED_TEXT_COLOR,
 };
 
 // Loads a picture; resolves with null if it cannot be loaded (the card is drawn without it)
@@ -78,43 +75,43 @@ function roundedRect(ctx, x, y, width, height, radius) {
 // Top part: the photo (or soft mountains when there is none), the kicker and the name
 function drawHeader(ctx, { name, kicker }, photo) {
   if (photo) {
-    drawCover(ctx, photo, 0, 0, CARD_WIDTH, PHOTO_HEIGHT);
+    drawCover(ctx, photo, 0, 0, SHARE_CARD_WIDTH, SHARE_PHOTO_HEIGHT);
   } else {
     // No photo: two lines of mountains on a lighter background
-    const sky = ctx.createLinearGradient(0, 0, 0, PHOTO_HEIGHT);
+    const sky = ctx.createLinearGradient(0, 0, 0, SHARE_PHOTO_HEIGHT);
     sky.addColorStop(0, '#2f8f95');
     sky.addColorStop(1, COLORS.background);
     ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, CARD_WIDTH, PHOTO_HEIGHT);
+    ctx.fillRect(0, 0, SHARE_CARD_WIDTH, SHARE_PHOTO_HEIGHT);
     ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
     ctx.beginPath();
     ctx.moveTo(0, 420);
-    [[200, 250], [380, 360], [600, 180], [820, 330], [1080, 220], [1080, PHOTO_HEIGHT], [0, PHOTO_HEIGHT]]
+    [[200, 250], [380, 360], [600, 180], [820, 330], [1080, 220], [1080, SHARE_PHOTO_HEIGHT], [0, SHARE_PHOTO_HEIGHT]]
       .forEach(([x, y]) => ctx.lineTo(x, y));
     ctx.fill();
   }
 
   // Dark shade at the bottom of the photo: the white text is readable on any picture,
   // and the photo fades into the background of the card
-  const shade = ctx.createLinearGradient(0, PHOTO_HEIGHT * 0.35, 0, PHOTO_HEIGHT);
+  const shade = ctx.createLinearGradient(0, SHARE_PHOTO_HEIGHT * 0.35, 0, SHARE_PHOTO_HEIGHT);
   shade.addColorStop(0, 'rgba(15, 82, 87, 0)');
   shade.addColorStop(1, COLORS.background);
   ctx.fillStyle = shade;
-  ctx.fillRect(0, 0, CARD_WIDTH, PHOTO_HEIGHT);
+  ctx.fillRect(0, 0, SHARE_CARD_WIDTH, SHARE_PHOTO_HEIGHT);
 
   ctx.fillStyle = COLORS.text;
   ctx.textBaseline = 'alphabetic';
-  ctx.font = `800 76px ${FONT}`;
-  const lines = wrapText(ctx, name, CARD_WIDTH - PAD * 2, 2);
+  ctx.font = `800 76px ${SHARE_FONT}`;
+  const lines = wrapText(ctx, name, SHARE_CARD_WIDTH - SHARE_PAD * 2, 2);
   const lineHeight = 84;
-  const lastLineY = PHOTO_HEIGHT - 24;
+  const lastLineY = SHARE_PHOTO_HEIGHT - 24;
   lines.forEach((line, i) => {
-    ctx.fillText(line, PAD, lastLineY - (lines.length - 1 - i) * lineHeight);
+    ctx.fillText(line, SHARE_PAD, lastLineY - (lines.length - 1 - i) * lineHeight);
   });
 
   ctx.fillStyle = COLORS.muted;
-  ctx.font = `700 30px ${FONT}`;
-  ctx.fillText(kicker.toUpperCase(), PAD, lastLineY - (lines.length - 1) * lineHeight - 92);
+  ctx.font = `700 30px ${SHARE_FONT}`;
+  ctx.fillText(kicker.toUpperCase(), SHARE_PAD, lastLineY - (lines.length - 1) * lineHeight - 92);
 }
 
 // A dot with a white ring: start (green) and end (red) of the route
@@ -131,23 +128,23 @@ function drawDot(ctx, [x, y], color) {
 
 // Middle part: the shape of the route on a light panel (no map tiles: only the line)
 function drawRoute(ctx, geometry) {
-  roundedRect(ctx, ROUTE_BOX.x, ROUTE_BOX.y, ROUTE_BOX.width, ROUTE_BOX.height, 32);
+  roundedRect(ctx, SHARE_ROUTE_BOX.x, SHARE_ROUTE_BOX.y, SHARE_ROUTE_BOX.width, SHARE_ROUTE_BOX.height, 32);
   ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
   ctx.fill();
 
   const inner = 44;
   const lines = projectRoute(geometry, {
-    x: ROUTE_BOX.x + inner,
-    y: ROUTE_BOX.y + inner,
-    width: ROUTE_BOX.width - inner * 2,
-    height: ROUTE_BOX.height - inner * 2,
+    x: SHARE_ROUTE_BOX.x + inner,
+    y: SHARE_ROUTE_BOX.y + inner,
+    width: SHARE_ROUTE_BOX.width - inner * 2,
+    height: SHARE_ROUTE_BOX.height - inner * 2,
   });
 
   if (lines.length === 0) {
     ctx.fillStyle = COLORS.muted;
-    ctx.font = `600 32px ${FONT}`;
+    ctx.font = `600 32px ${SHARE_FONT}`;
     ctx.textAlign = 'center';
-    ctx.fillText('Route not available', CARD_WIDTH / 2, ROUTE_BOX.y + ROUTE_BOX.height / 2);
+    ctx.fillText('Route not available', SHARE_CARD_WIDTH / 2, SHARE_ROUTE_BOX.y + SHARE_ROUTE_BOX.height / 2);
     ctx.textAlign = 'left';
     return;
   }
@@ -175,28 +172,28 @@ function drawRoute(ctx, geometry) {
 // Bottom part: the numbers in columns separated by thin lines, then the footer
 function drawStats(ctx, stats, footer) {
   const top = 1120;
-  const columnWidth = (CARD_WIDTH - PAD * 2) / stats.length;
+  const columnWidth = (SHARE_CARD_WIDTH - SHARE_PAD * 2) / stats.length;
   // Room for a value: the column minus the space around the separator lines
   const room = columnWidth - 56;
 
   // One font size for all the values: the biggest one (max 50px) with which even the
   // longest value (e.g. "12:30 h") does not touch the next column
   let size = 50;
-  ctx.font = `800 ${size}px ${FONT}`;
+  ctx.font = `800 ${size}px ${SHARE_FONT}`;
   while (size > 30 && stats.some(({ value }) => ctx.measureText(value).width > room)) {
     size -= 2;
-    ctx.font = `800 ${size}px ${FONT}`;
+    ctx.font = `800 ${size}px ${SHARE_FONT}`;
   }
-  const valueFont = `800 ${size}px ${FONT}`;
+  const valueFont = `800 ${size}px ${SHARE_FONT}`;
 
   stats.forEach(({ label, value }, i) => {
-    const x = PAD + i * columnWidth + (i === 0 ? 0 : 28);
+    const x = SHARE_PAD + i * columnWidth + (i === 0 ? 0 : 28);
     if (i > 0) {
       ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
-      ctx.fillRect(PAD + i * columnWidth, top - 6, 2, 104);
+      ctx.fillRect(SHARE_PAD + i * columnWidth, top - 6, 2, 104);
     }
     ctx.fillStyle = COLORS.muted;
-    ctx.font = `700 26px ${FONT}`;
+    ctx.font = `700 26px ${SHARE_FONT}`;
     ctx.fillText(label.toUpperCase(), x, top + 24);
     ctx.fillStyle = COLORS.text;
     ctx.font = valueFont;
@@ -204,10 +201,10 @@ function drawStats(ctx, stats, footer) {
   });
 
   ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
-  ctx.fillRect(PAD, 1250, CARD_WIDTH - PAD * 2, 2);
+  ctx.fillRect(SHARE_PAD, 1250, SHARE_CARD_WIDTH - SHARE_PAD * 2, 2);
   ctx.fillStyle = COLORS.muted;
-  ctx.font = `600 28px ${FONT}`;
-  ctx.fillText(footer, PAD, 1302);
+  ctx.font = `600 28px ${SHARE_FONT}`;
+  ctx.fillText(footer, SHARE_PAD, 1302);
 }
 
 // Draws the whole card on a 2D context. "photo" is an already loaded image (or null).
@@ -215,11 +212,11 @@ function drawStats(ctx, stats, footer) {
 export function drawRecapCard(ctx, data, photo) {
   // The gradient starts under the photo: there the color is the same as the end of the
   // shade on the photo, so photo and background join without a visible line
-  const background = ctx.createLinearGradient(0, PHOTO_HEIGHT, 0, CARD_HEIGHT);
+  const background = ctx.createLinearGradient(0,SHARE_PHOTO_HEIGHT, 0, SHARE_CARD_HEIGHT);
   background.addColorStop(0, COLORS.background);
   background.addColorStop(1, COLORS.backgroundDark);
   ctx.fillStyle = background;
-  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+  ctx.fillRect(0, 0, SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT);
 
   drawHeader(ctx, data, photo);
   drawRoute(ctx, data.geometry);
@@ -231,8 +228,8 @@ export function drawRecapCard(ctx, data, photo) {
 export async function createRecapImage({ imageUrl, ...data }) {
   const photo = await loadImage(imageUrl);
   const canvas = document.createElement('canvas');
-  canvas.width = CARD_WIDTH;
-  canvas.height = CARD_HEIGHT;
+  canvas.width = SHARE_CARD_WIDTH;
+  canvas.height = SHARE_CARD_HEIGHT;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas is not available');
 

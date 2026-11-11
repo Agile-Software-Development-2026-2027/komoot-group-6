@@ -1,5 +1,5 @@
 import { Layer, Source } from 'react-map-gl/maplibre';
-
+import { STARTING_POINT_COLOR } from '../../config/theme.js';
 /**
  * Draws a dot on the map for the start point of each trail.
  *
@@ -19,7 +19,7 @@ export default function TrailStartsLayer({ data, id = 'trail-starts' }) {
         type="circle"
         paint={{
           'circle-radius': 10,
-          'circle-color': '#E63946',
+          'circle-color': STARTING_POINT_COLOR,
           'circle-stroke-color': '#FFFFFF',
           'circle-stroke-width': 3,
         }}
