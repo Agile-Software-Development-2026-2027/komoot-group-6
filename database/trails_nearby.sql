@@ -32,6 +32,7 @@ as $$
       ST_SetSRID(ST_MakePoint(origin_lng, origin_lat), 4326)::geography as origin,  -- longitude first!
       -- The backend already checks these; they are limited here too because the
       -- function can be called directly through the Supabase API.
+      -- Same numbers as backend/src/config/trails.config.js: keep them equal.
       least(greatest(coalesce(radius_m, 5000), 1), 50000) as radius,
       least(greatest(coalesce(max_results, 50), 1), 100) as max_rows
   )
