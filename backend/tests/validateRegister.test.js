@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
-import { validateRegister, birthDateError, PASSWORD_MAX_LENGTH } from '../src/middlewares/validateRegister.js';
+import { validateRegister, birthDateError } from '../src/middlewares/validateRegister.js';
+import { PASSWORD_LENGTH } from '../src/config/auth.config.js';
 
 function createRes() {
   const res = {};
@@ -63,12 +64,12 @@ describe('validateRegister', () => {
   });
 
   it('responds 400 when the password is too long', () => {
-    const tooLong = '!'.repeat(PASSWORD_MAX_LENGTH + 1);
-    expectRejected(run({ ...VALID, password: tooLong }), new RegExp(`at most ${PASSWORD_MAX_LENGTH}`));
+    const tooLong = '!'.repeat(PASSWORD_LENGTH.max + 1);
+    expectRejected(run({ ...VALID, password: tooLong }), new RegExp(`at most ${PASSWORD_LENGTH.max}`));
   });
 
   it('accepts a password of exactly the maximum length', () => {
-    const { next } = run({ ...VALID, password: 'a!'.repeat(PASSWORD_MAX_LENGTH / 2) });
+    const { next } = run({ ...VALID, password: 'a!'.repeat(PASSWORD_LENGTH.max / 2) });
     expect(next).toHaveBeenCalledOnce();
   });
 

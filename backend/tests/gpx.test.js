@@ -7,7 +7,7 @@ vi.mock('../src/config/supabase.js', () => ({
 
 import app from '../src/app.js';
 import { supabase } from '../src/config/supabase.js';
-import { MAX_GPX_SIZE } from '../src/middlewares/uploadGpx.js';
+import { MAX_GPX_SIZE_BYTES } from '../src/config/gpx.config.js';
 
 const VALID_GPX = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="tests" xmlns="http://www.topografix.com/GPX/1/1">
@@ -110,7 +110,7 @@ describe('POST /api/gpx/parse', () => {
   });
 
   it('responds 413 when the file is larger than 5 MB', async () => {
-    const res = await upload('a'.repeat(MAX_GPX_SIZE + 1));
+    const res = await upload('a'.repeat(MAX_GPX_SIZE_BYTES + 1));
 
     expect(res.status).toBe(413);
   });
