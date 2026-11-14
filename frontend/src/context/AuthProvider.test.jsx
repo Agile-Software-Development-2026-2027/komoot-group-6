@@ -4,7 +4,7 @@ import '@testing-library/jest-dom/vitest';
 import { AuthProvider } from './AuthProvider.jsx';
 import { useAuth } from './useAuth.js';
 import { getCurrentUser, loginUser, logoutUser, refreshSession } from '../services/loginService.js';
-import { IDLE_TIMEOUT_MS } from '../config/auth.config.js';
+import { ACTIVITY_KEY, IDLE_TIMEOUT_MS, STORAGE_KEY } from '../config/auth.config.js';
 
 vi.mock('../services/loginService.js', () => ({
   getCurrentUser: vi.fn(),
@@ -32,8 +32,8 @@ function Status() {
 
 // Simula il refresh della pagina.
 function reloadPage({ session = SESSION, lastActivity }) {
-  localStorage.setItem('auth.session', JSON.stringify(session));
-  localStorage.setItem('auth.lastActivity', String(lastActivity));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+  localStorage.setItem(ACTIVITY_KEY, String(lastActivity));
   render(
     <AuthProvider>
       <Status />
@@ -78,8 +78,8 @@ test('con "Remember me" la sessione va in localStorage, senza in sessionStorage'
     expect(loginUser).toHaveBeenCalledWith({ email: 'mario@esempio.it', password: 'password123', rememberMe });
     const saved = rememberMe ? localStorage : sessionStorage;
     const other = rememberMe ? sessionStorage : localStorage;
-    expect(JSON.parse(saved.getItem('auth.session')).remember_me).toBe(rememberMe);
-    expect(other.getItem('auth.session')).toBeNull();
+    expect(JSON.parse(saved.getItem(STORAGE_KEY)).remember_me).toBe(rememberMe);
+    expect(other.getItem(STORAGE_KEY)).toBeNull();
 
     cleanup();
     localStorage.clear();
@@ -108,7 +108,7 @@ test('al refresh, con il token scaduto, "Remember me" rinnova la sessione', asyn
 
   expect(await screen.findByText('logged in')).toBeInTheDocument();
   expect(refreshSession).toHaveBeenCalledWith('refresh-123');
-  expect(JSON.parse(localStorage.getItem('auth.session')).access_token).toBe('access-456');
+  expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).access_token).toBe('access-456');
 });
 
 test('al refresh, con il token scaduto e senza "Remember me", bisogna rifare il login', async () => {
@@ -133,8 +133,8 @@ test('al refresh una sessione inattiva da più di 30 minuti non viene ripristina
   expect(await screen.findByText('session expired')).toBeInTheDocument();
   expect(getCurrentUser).not.toHaveBeenCalled();
   expect(logoutUser).toHaveBeenCalledWith('access-123');
-  expect(localStorage.getItem('auth.session')).toBeNull();
-  expect(localStorage.getItem('auth.lastActivity')).toBeNull();
+  expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+  expect(localStorage.getItem(ACTIVITY_KEY)).toBeNull();
 });
 
 test('al refresh una sessione oltre la durata massima non viene ripristinata', async () => {
