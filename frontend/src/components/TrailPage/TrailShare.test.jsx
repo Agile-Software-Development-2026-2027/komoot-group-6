@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
+import { NOTICE_MS } from '../../config/ui.config.js';
 import { getCompletedTrails } from '../../services/trailsService.js';
 import { createRecapImage } from '../../utils/recapCard.js';
 import TrailShare from './TrailShare.jsx';
@@ -197,7 +198,7 @@ describe('TrailShare', () => {
     expect(writeText).toHaveBeenCalledWith(`${TEXT}\n${LINK}`);
     expect(within(dialog).getByText('Text copied')).toBeInTheDocument();
 
-    act(() => vi.advanceTimersByTime(3000));
+    act(() => vi.advanceTimersByTime(NOTICE_MS));
     expect(within(dialog).queryByText('Text copied')).not.toBeInTheDocument();
   });
 

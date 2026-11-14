@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { NOTICE_MS } from '../../config/ui.config.js';
 import { useAuth } from '../../context/useAuth.js';
 import { getTrailLikes, likeTrail, unlikeTrail } from '../../services/trailsService.js';
 import { formatLikes, likesText } from '../../utils/formatLikes.js';
 import { HeartIcon } from './icons.jsx';
 import styles from './TrailLikeButton.module.css';
-
-// How many milliseconds the error message stays visible
-const ERROR_MESSAGE_MS = 3000;
 
 // Like button of the trail, over the cover photo.
 // Shows the heart (filled if the user has already liked the trail) and the total likes.
@@ -44,7 +42,7 @@ export default function TrailLikeButton({ trailId }) {
   // The error message disappears by itself after a few seconds
   useEffect(() => {
     if (!error) return undefined;
-    const timer = setTimeout(() => setError(null), ERROR_MESSAGE_MS);
+    const timer = setTimeout(() => setError(null), NOTICE_MS);
     return () => clearTimeout(timer);
   }, [error]);
 

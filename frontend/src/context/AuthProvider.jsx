@@ -1,24 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ACTIVITY_EVENTS,
+  ACTIVITY_KEY,
+  ACTIVITY_SAVE_INTERVAL_MS,
+  EXPIRY_CHECK_INTERVAL_MS,
+  MAX_TIMEOUT_MS,
+  STORAGE_KEY,
+} from '../config/auth.config.js';
 import { ApiError, apiRequest } from '../services/api.js';
 import { getCurrentUser, loginUser, logoutUser, refreshSession } from '../services/loginService.js';
 import { isSessionExpired } from '../utils/sessionExpiry.js';
 import { AuthContext } from './AuthContext.js';
-
-// Nome con cui la sessione viene salvata nel browser.
-// Con "Remember me" sta in localStorage (resta anche chiudendo il browser),
-// altrimenti in sessionStorage (si cancella quando si chiude il browser).
-const STORAGE_KEY = 'auth.session';
-// Momento dell'ultima attività dell'utente. È salvato a parte perché cambia spesso:
-// così resta dopo un refresh della pagina ed è condiviso tra le schede aperte sul sito.
-const ACTIVITY_KEY = 'auth.lastActivity';
-// Gli eventi che contano come attività dell'utente.
-const ACTIVITY_EVENTS = ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'];
-// L'attività viene salvata al massimo una volta ogni 15 secondi.
-const ACTIVITY_SAVE_INTERVAL_MS = 15 * 1000;
-// Ogni quanto controllare, mentre l'app è aperta, se la sessione è scaduta.
-const EXPIRY_CHECK_INTERVAL_MS = 30 * 1000;
-// Il ritardo più lungo che setTimeout accetta (circa 24 giorni): oltre, il timer partirebbe subito.
-const MAX_TIMEOUT_MS = 2_147_483_647;
 
 // Legge la sessione salvata (prima con "Remember me", poi senza).
 // Restituisce null se non c'è o non si riesce a leggerla.
@@ -232,7 +224,7 @@ export function AuthProvider({ children }) {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     const timer = setInterval(checkExpiry, EXPIRY_CHECK_INTERVAL_MS);
 
-    // Senza "Remember me" la sessione dura 1 minuto: un timer la chiude proprio alla scadenza,
+    // Un timer chiude la sessione proprio alla scadenza (session_expires_at),
     // senza aspettare il controllo periodico.
     const expiresAt = sessionRef.current?.session_expires_at;
     const delay = expiresAt ? expiresAt * 1000 - Date.now() : null;

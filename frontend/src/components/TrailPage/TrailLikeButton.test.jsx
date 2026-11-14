@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
+import { NOTICE_MS } from '../../config/ui.config.js';
 import { getTrailLikes, likeTrail, unlikeTrail } from '../../services/trailsService.js';
 import TrailLikeButton from './TrailLikeButton.jsx';
 
@@ -115,7 +116,7 @@ describe('TrailLikeButton', () => {
     expect(button).toHaveAttribute('aria-pressed', 'false');
     expect(button).toHaveTextContent('5');
 
-    act(() => vi.advanceTimersByTime(3000));
+    act(() => vi.advanceTimersByTime(NOTICE_MS));
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 

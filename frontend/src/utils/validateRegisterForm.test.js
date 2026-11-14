@@ -1,5 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { birthDateError, birthDateLimits, PASSWORD_MAX_LENGTH, validateRegisterForm } from './validateRegisterForm.js';
+import {
+  MAX_AGE,
+  MIN_AGE,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+} from '../config/auth.config.js';
+import { birthDateError, birthDateLimits, validateRegisterForm } from './validateRegisterForm.js';
 
 
 const VALID = {
@@ -33,9 +41,9 @@ describe('validateRegisterForm', () => {
     expect(validateRegisterForm({ ...VALID, email: 'ciao' }).email).toMatch(/valid email/);
   });
 
-  it('requires a password of at least 8 characters', () => {
+  it('requires a password of at least the minimum length', () => {
     expect(validateRegisterForm(withPassword('')).password).toBe('Password is required');
-    expect(validateRegisterForm(withPassword('ab!')).password).toMatch(/at least 8/);
+    expect(validateRegisterForm(withPassword('ab!')).password).toMatch(`at least ${PASSWORD_MIN_LENGTH}`);
   });
 
   it('rejects a password longer than the maximum', () => {
@@ -63,8 +71,12 @@ describe('validateRegisterForm', () => {
   });
 
   it('rejects a username with invalid characters or length', () => {
-    for (const username of ['ab', 'mario!', 'a'.repeat(31)]) {
-      expect(validateRegisterForm({ ...VALID, username }).username).toMatch(/3-30 characters/);
+    const tooShort = 'a'.repeat(USERNAME_MIN_LENGTH - 1);
+    const tooLong = 'a'.repeat(USERNAME_MAX_LENGTH + 1);
+    for (const username of [tooShort, 'mario!', tooLong]) {
+      expect(validateRegisterForm({ ...VALID, username }).username).toMatch(
+        `${USERNAME_MIN_LENGTH}-${USERNAME_MAX_LENGTH} characters`
+      );
     }
   });
 });
@@ -83,13 +95,14 @@ describe('birthDateError', () => {
     expect(birthDateError('2026-11-06')).toMatch(/future/);
   });
 
-  it('requires at least 14 years', () => {
+  it('requires at least MIN_AGE years', () => {
     expect(birthDateError('2012-11-05')).toBeNull();
-    expect(validateRegisterForm({ ...VALID, birthDate: '2012-11-06' }).birthDate).toMatch(/at least 14/);
+    expect(validateRegisterForm({ ...VALID, birthDate: '2012-11-06' }).birthDate).toMatch(`at least ${MIN_AGE}`);
   });
 
-  it('rejects ages over 120 (typing mistakes)', () => {
-    expect(birthDateError('1095-05-14')).toBe('Enter a valid date');
+  it('rejects ages over MAX_AGE (typing mistakes)', () => {
+    const overMaxYear = 2026 - MAX_AGE - 1;
+    expect(birthDateError(`${overMaxYear}-05-14`)).toBe('Enter a valid date');
   });
 
   it('gives the date picker the first and last day allowed', () => {

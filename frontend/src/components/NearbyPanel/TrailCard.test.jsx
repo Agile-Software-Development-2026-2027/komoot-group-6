@@ -2,6 +2,7 @@ import { afterEach, expect, test, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 
+import { SAVE_MESSAGE_MS } from '../../config/ui.config.js';
 import TrailCard from './TrailCard.jsx';
 
 const TRAIL = {
@@ -119,7 +120,7 @@ test('the save message disappears after a few seconds', async () => {
     await act(() => vi.advanceTimersByTimeAsync(0));
     expect(screen.getByRole('status')).toHaveTextContent('Trail saved');
 
-    await act(() => vi.advanceTimersByTimeAsync(6000));
+    await act(() => vi.advanceTimersByTimeAsync(SAVE_MESSAGE_MS));
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   } finally {
     vi.useRealTimers();

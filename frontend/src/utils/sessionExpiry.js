@@ -1,9 +1,8 @@
-// Dopo quanto tempo senza attività (clic, tasti, movimenti del mouse) la sessione scade.
-export const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+import { IDLE_TIMEOUT_MS } from '../config/auth.config.js';
 
 // Dice se una sessione non va più usata. Succede se:
 // - è passata la durata massima dal login decisa dal backend (session_expires_at, in secondi):
-//   1 minuto senza "Remember me", 30 giorni con "Remember me";
+//   8 ore senza "Remember me" (o quanto impostato nel backend), 30 giorni con "Remember me";
 // - senza "Remember me": non si sa quando l'utente è stato attivo l'ultima volta,
 //   oppure l'ultima attività è più vecchia di IDLE_TIMEOUT_MS.
 // Con "Remember me" l'inattività non conta: l'utente resta loggato.
