@@ -1,17 +1,19 @@
+import {
+  MAX_AGE,
+  MIN_AGE,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+} from '../config/auth.config.js';
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 
-const USERNAME_RE = /^[a-zA-Z0-9_]{3,30}$/;
+const USERNAME_RE = new RegExp(`^[a-zA-Z0-9_]{${USERNAME_MIN_LENGTH},${USERNAME_MAX_LENGTH}}$`);
 
 
 const SPECIAL_CHAR_RE = /[^\p{L}\p{N}\s]/u;
-
-export const PASSWORD_MIN_LENGTH = 8;
-
-export const PASSWORD_MAX_LENGTH = 20;
-
-export const MIN_AGE = 14; 
-export const MAX_AGE = 120; 
 
 
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -95,7 +97,7 @@ export function validateRegisterForm(values) {
   if (!username) {
     errors.username = 'Username is required';
   } else if (!USERNAME_RE.test(username)) {
-    errors.username = '3-30 characters: letters, numbers or underscore';
+    errors.username = `${USERNAME_MIN_LENGTH}-${USERNAME_MAX_LENGTH} characters: letters, numbers or underscore`;
   }
 
  

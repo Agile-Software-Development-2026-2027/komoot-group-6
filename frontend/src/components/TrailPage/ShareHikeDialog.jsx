@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { NOTICE_MS } from '../../config/ui.config.js';
 import { CAI_TO_DIFFICULTY } from '../../services/trailsService.js';
 import { createRecapImage } from '../../utils/recapCard.js';
 import {
@@ -13,9 +14,6 @@ import { trailImageUrl } from '../../utils/trailImages.js';
 import { DIFFICULTY_LABELS } from '../NearbyPanel/difficulty.js';
 import { ChatIcon, CloseIcon, CopyIcon, DownloadIcon, GlobeIcon, PostIcon, SendIcon, ShareIcon } from './shareIcons.jsx';
 import styles from './ShareHike.module.css';
-
-// How many milliseconds the small confirmation / error message stays visible
-const NOTICE_MS = 3000;
 
 // Elements of the window that the Tab key can reach
 const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';

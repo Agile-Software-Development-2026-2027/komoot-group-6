@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { SAVE_MESSAGE_MS } from '../../config/ui.config.js';
 import {
   estimateDurationMin,
   formatDistance,
@@ -25,9 +26,6 @@ const SAVE_ERRORS = {
   save: 'Could not save the trail. Try again.',
   remove: 'Could not remove the trail. Try again.',
 };
-
-// How many milliseconds the message stays visible
-const SAVE_MESSAGE_MS = 6000;
 
 // Cover drawing colors by difficulty: sky, far mountains, near mountains
 const ART_COLORS = {

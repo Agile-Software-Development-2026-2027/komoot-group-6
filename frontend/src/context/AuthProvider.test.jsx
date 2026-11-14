@@ -4,7 +4,7 @@ import '@testing-library/jest-dom/vitest';
 import { AuthProvider } from './AuthProvider.jsx';
 import { useAuth } from './useAuth.js';
 import { getCurrentUser, loginUser, logoutUser, refreshSession } from '../services/loginService.js';
-import { IDLE_TIMEOUT_MS } from '../utils/sessionExpiry.js';
+import { IDLE_TIMEOUT_MS } from '../config/auth.config.js';
 
 vi.mock('../services/loginService.js', () => ({
   getCurrentUser: vi.fn(),
@@ -87,7 +87,7 @@ test('con "Remember me" la sessione va in localStorage, senza in sessionStorage'
   }
 });
 
-test('senza "Remember me" la sessione si chiude dopo 1 minuto', async () => {
+test('senza "Remember me" la sessione si chiude a session_expires_at', async () => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval'] });
   reloadPage({ session: { ...SESSION, session_expires_at: NOW / 1000 + 60, remember_me: false }, lastActivity: NOW });
   await act(() => vi.advanceTimersByTimeAsync(0));

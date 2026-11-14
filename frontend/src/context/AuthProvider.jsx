@@ -232,7 +232,7 @@ export function AuthProvider({ children }) {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     const timer = setInterval(checkExpiry, EXPIRY_CHECK_INTERVAL_MS);
 
-    // Senza "Remember me" la sessione dura 1 minuto: un timer la chiude proprio alla scadenza,
+    // Un timer chiude la sessione proprio alla scadenza (session_expires_at),
     // senza aspettare il controllo periodico.
     const expiresAt = sessionRef.current?.session_expires_at;
     const delay = expiresAt ? expiresAt * 1000 - Date.now() : null;

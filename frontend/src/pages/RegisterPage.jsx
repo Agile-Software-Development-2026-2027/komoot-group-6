@@ -1,8 +1,15 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import FormField from '../components/FormField.jsx';
+import {
+  MIN_AGE,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+} from '../config/auth.config.js';
 import { registerUser } from '../services/authService.js';
-import {birthDateLimits,MIN_AGE,PASSWORD_MAX_LENGTH,PASSWORD_MIN_LENGTH,validateRegisterForm,} from '../utils/validateRegisterForm.js';
+import { birthDateLimits, validateRegisterForm } from '../utils/validateRegisterForm.js';
 import './AuthPages.css';
 
 
@@ -124,7 +131,7 @@ export default function RegisterPage() {
             value={values.username}
             onChange={handleChange}
             error={errors.username}
-            info="3-30 characters: letters, numbers or underscore"
+            info={`${USERNAME_MIN_LENGTH}-${USERNAME_MAX_LENGTH} characters: letters, numbers or underscore`}
             autoComplete="username"
           />
           <FormField

@@ -9,7 +9,7 @@ import './AuthPages.css';
 const EMPTY_FORM = {
   email: '',
   password: '',
-  // "Remember me": se spuntato l'utente resta loggato, altrimenti la sessione dura 1 minuto
+  // "Remember me": se spuntato l'utente resta loggato (30 giorni), altrimenti la sessione scade per inattività o a fine giornata (8 ore di default)
   rememberMe: false,
 };
 

@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
-import { IDLE_TIMEOUT_MS, isSessionExpired } from './sessionExpiry.js';
+import { IDLE_TIMEOUT_MS } from '../config/auth.config.js';
+import { isSessionExpired } from './sessionExpiry.js';
 
 const NOW = 1_800_000_000_000;
 // Sessione che per il backend scade fra un'ora (session_expires_at è in secondi)

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { birthDateError, birthDateLimits, PASSWORD_MAX_LENGTH, validateRegisterForm } from './validateRegisterForm.js';
+import { PASSWORD_MAX_LENGTH } from '../config/auth.config.js';
+import { birthDateError, birthDateLimits, validateRegisterForm } from './validateRegisterForm.js';
 
 
 const VALID = {
