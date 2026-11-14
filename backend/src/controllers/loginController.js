@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase.js';
+import { SESSION_MAX_AGE_SECONDS, REMEMBER_ME_MAX_AGE_SECONDS } from '../config/auth.config.js';
 
 // Prepares the user to send to the frontend: the same fields as registration
 // (id, email) plus username and display name, saved at sign-up.
@@ -12,16 +13,6 @@ function toPublicUser(user) {
     createdAt: user.created_at ?? null,
   };
 }
-
-// Session length without "Remember me": 1 minute from login, like the access token
-// (on Supabase the JWT expiry is set to 60 seconds). After that the user has to log in again.
-const SESSION_MAX_AGE_SECONDS = 60;
-
-// With "Remember me" the frontend renews the token with the refresh token and the user stays logged in,
-// even after closing the browser, but not beyond 30 days from login.
-// On its own, Supabase would renew the session forever.
-const REMEMBER_ME_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
-
 
 function nowInSeconds() {
   return Math.floor(Date.now() / 1000);
@@ -86,9 +77,9 @@ export async function me(req, res) {
 }
 
 
-// The access token expires after 1 minute: with the refresh token a new one is obtained,
-// without the user having to log in again.
-// The frontend calls it only for sessions with "Remember me" (without it, after 1 minute the user goes back to login),
+// The access token expires after the time set in Supabase (JWT expiry): with the refresh token
+// a new one is obtained, without the user having to log in again.
+// The frontend calls it only for sessions with "Remember me" (without it, an expired token ends the session),
 // and not beyond REMEMBER_ME_MAX_AGE_SECONDS from login: at that point the user has to log in again.
 export async function refresh(req, res) {
   const { refresh_token: refreshToken } = req.body;

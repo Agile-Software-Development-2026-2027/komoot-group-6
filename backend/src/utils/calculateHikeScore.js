@@ -1,4 +1,4 @@
-import { DIFFICULTY_BASE_POINTS, METERS_PER_KM, POINTS_PER_STARTED_KM } from '../constants/points.js';
+import { DIFFICULTY_BASE_POINTS, METERS_PER_KM, POINTS_PER_STARTED_KM } from '../config/points.js';
 
 export function calculateHikeScore(difficulty, lengthM) {
   if (!Object.hasOwn(DIFFICULTY_BASE_POINTS, difficulty) || !Number.isInteger(lengthM) || lengthM <= 0) {
