@@ -7,6 +7,7 @@ vi.mock('../src/config/supabase.js', () => ({
 
 import app from '../src/app.js';
 import { supabase } from '../src/config/supabase.js';
+import { REMEMBER_ME_MAX_AGE_SECONDS, SESSION_MAX_AGE_SECONDS } from '../src/config/auth.config.js';
 
 const validBody = {
   email: 'mario@esempio.it',
@@ -54,7 +55,7 @@ describe('POST /api/auth/login', () => {
       access_token: 'access-123',
       refresh_token: 'refresh-123',
       expires_at: 1900000000,
-      session_expires_at: NOW + 60,
+      session_expires_at: NOW + SESSION_MAX_AGE_SECONDS,
       remember_me: false,
     });
     expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith(validBody);
@@ -72,7 +73,7 @@ describe('POST /api/auth/login', () => {
     const res = await request(app).post('/api/auth/login').send({ ...validBody, rememberMe: true });
 
     expect(res.status).toBe(200);
-    expect(res.body.session.session_expires_at).toBe(NOW + 30 * 24 * 60 * 60);
+    expect(res.body.session.session_expires_at).toBe(NOW + REMEMBER_ME_MAX_AGE_SECONDS);
     expect(res.body.session.remember_me).toBe(true);
     expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith(validBody);
   });

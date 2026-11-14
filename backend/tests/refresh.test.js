@@ -7,13 +7,13 @@ vi.mock('../src/config/supabase.js', () => ({
 
 import app from '../src/app.js';
 import { supabase } from '../src/config/supabase.js';
+import { REMEMBER_ME_MAX_AGE_SECONDS as MAX_AGE } from '../src/config/auth.config.js';
 
 const validBody = {
   refresh_token: 'refresh-123',
 };
 
 const NOW = 1_800_000_000;
-const MAX_AGE = 30 * 24 * 60 * 60;
 
 function fakeAccessToken(loginTime) {
   const payload = { amr: [{ method: 'password', timestamp: loginTime }] };

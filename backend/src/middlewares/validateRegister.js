@@ -1,23 +1,17 @@
+import { MAX_AGE, MIN_AGE, PASSWORD_LENGTH, USERNAME_LENGTH } from '../config/auth.config.js';
+
 // Checks the body of POST /api/auth/register before calling Supabase.
-// The same rules are in frontend/src/utils/validateRegisterForm.js:
+// The limits are in config/auth.config.js. The same rules are in frontend/src/utils/validateRegisterForm.js:
 // if you change a rule here, change it there too.
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// 3-30 characters: letters, numbers or underscore
-const USERNAME_RE = /^[a-zA-Z0-9_]{3,30}$/;
+// Letters, numbers or underscore, with the length of USERNAME_LENGTH
+const USERNAME_RE = new RegExp(`^[a-zA-Z0-9_]{${USERNAME_LENGTH.min},${USERNAME_LENGTH.max}}$`);
 
 // At least one character that is NOT a letter, a number or a space (e.g. ! ? # @ . -)
 // \p{L} = any letter (also à, é...), \p{N} = any number, the "u" flag enables \p{...}
 const SPECIAL_CHAR_RE = /[^\p{L}\p{N}\s]/u;
-
-export const PASSWORD_MIN_LENGTH = 8;
-// Our choice: at most 20 characters (it must stay <= 72, the limit of bcrypt used by Supabase)
-export const PASSWORD_MAX_LENGTH = 20;
-
-// Age limits for the birth date
-export const MIN_AGE = 14; // minimum age to sign up to an online service by yourself in Italy
-export const MAX_AGE = 120; // older than this = typing mistake (e.g. 1095 instead of 1995)
 
 // The birth date arrives as text 'YYYY-MM-DD' (the format of <input type="date">)
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -65,11 +59,11 @@ export function validateRegister(req, res, next) {
     return fail('Invalid email');
   }
 
-  if (typeof password !== 'string' || password.length < PASSWORD_MIN_LENGTH) {
-    return fail(`The password must be at least ${PASSWORD_MIN_LENGTH} characters long`);
+  if (typeof password !== 'string' || password.length < PASSWORD_LENGTH.min) {
+    return fail(`The password must be at least ${PASSWORD_LENGTH.min} characters long`);
   }
-  if (password.length > PASSWORD_MAX_LENGTH) {
-    return fail(`The password must be at most ${PASSWORD_MAX_LENGTH} characters long`);
+  if (password.length > PASSWORD_LENGTH.max) {
+    return fail(`The password must be at most ${PASSWORD_LENGTH.max} characters long`);
   }
   if (!SPECIAL_CHAR_RE.test(password)) {
     return fail('The password must contain at least one special character (e.g. ! ? # @)');
@@ -80,7 +74,9 @@ export function validateRegister(req, res, next) {
     return fail('The username is required');
   }
   if (!USERNAME_RE.test(username)) {
-    return fail('The username must be 3–30 characters long: letters, numbers, or underscores');
+    return fail(
+      `The username must be ${USERNAME_LENGTH.min}–${USERNAME_LENGTH.max} characters long: letters, numbers, or underscores`,
+    );
   }
 
   // The birth date is required and the user must be old enough
