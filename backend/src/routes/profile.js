@@ -5,6 +5,7 @@ import {
   getSavedTrails,
   getVisibility,
   saveTrail,
+  searchPublicProfiles,
   setVisibility,
   uncompleteTrail,
   unsaveTrail,
@@ -27,5 +28,6 @@ router.delete('/completed-trails/:trailId', requireAuth, uncompleteTrail);
 router.get('/visibility', requireAuth, getVisibility);
 router.put('/visibility', requireAuth, validateVisibility, setVisibility);
 router.get('/points', requireAuth, getProfilePoints);
+router.get('/search', requireAuth, searchPublicProfiles);
 
 export default router;

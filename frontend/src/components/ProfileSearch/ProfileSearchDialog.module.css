@@ -1,0 +1,261 @@
+.dialog {
+  width: min(34rem, calc(100% - 1.5rem));
+  max-height: min(42rem, calc(100dvh - 1.5rem));
+  margin: auto;
+  padding: 0;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  box-shadow: 0 20px 56px rgb(20 41 43 / 0.28);
+}
+
+.dialog[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dialog::backdrop {
+  background: rgb(20 41 43 / 0.52);
+}
+
+.header {
+  flex: 0 0 auto;
+  padding: 1rem clamp(0.75rem, 4vw, 1.375rem);
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.625rem;
+}
+
+.heading h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+.close {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--color-primary);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--color-primary-light);
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0 0.75rem;
+  color: var(--color-primary);
+  background: var(--color-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.search svg {
+  flex-shrink: 0;
+}
+
+.search input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font: inherit;
+}
+
+.search:focus-within,
+.dialog button:focus-visible,
+.summary:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.results {
+  min-height: 0;
+  padding: 3px clamp(0.75rem, 4vw, 1.375rem) 1rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profile {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.375rem, 2vw, 0.75rem);
+  padding: 0.625rem;
+}
+
+.summary {
+  border-radius: var(--radius);
+  cursor: pointer;
+  list-style: none;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary:hover {
+  background: var(--color-input);
+}
+
+.identity {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.identity strong {
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+
+.profileName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem 0.4rem;
+}
+
+.youBadge {
+  padding: 0.1rem 0.45rem;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.points {
+  display: grid;
+  flex-shrink: 0;
+  grid-template-columns: auto auto;
+  align-items: center;
+  column-gap: 0.375rem;
+  padding: 0.375rem 0.5rem;
+  color: white;
+  background: var(--color-primary);
+  border-radius: 9px;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+
+.star {
+  display: grid;
+  grid-row: span 2;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  background: rgb(255 255 255 / 0.16);
+  border-radius: 6px;
+}
+
+.pointsLabel {
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.chevron {
+  display: grid;
+  flex-shrink: 0;
+  color: var(--color-primary);
+  transform: rotate(90deg);
+}
+
+.profile details[open] .chevron {
+  transform: rotate(-90deg);
+}
+
+.bio {
+  margin: 0;
+  padding: 0.625rem 0.875rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.status,
+.status p {
+  margin: 0;
+}
+
+.status {
+  padding: 0.5rem 0;
+  color: var(--color-muted);
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.status [role='alert'] {
+  color: var(--color-error);
+}
+
+.more,
+.status button {
+  display: block;
+  min-height: 44px;
+  margin: 0.625rem auto 0;
+  padding: 0 1rem;
+  color: var(--color-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.more:hover,
+.status button:hover {
+  background: var(--color-primary-light);
+}
+
+@media (max-width: 480px) {
+  .star {
+    grid-row: auto;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .pointsLabel {
+    grid-column: 1 / -1;
+  }
+}

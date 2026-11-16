@@ -1,7 +1,13 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import HomePage from './HomePage.jsx';
 import { getTrail, getTrailsInBounds } from '../services/trailsService.js';
+
+// jsdom does not implement the native modal methods.
+if (!HTMLDialogElement.prototype.showModal) {
+  HTMLDialogElement.prototype.showModal = function () { this.open = true; };
+  HTMLDialogElement.prototype.close = function () { this.open = false; };
+}
 
 const map = vi.hoisted(() => ({
   onSelect: null,
@@ -33,7 +39,8 @@ vi.mock('../components/MapView/TrackPopup.jsx', () => ({
   default: ({ trail, onClose }) => trail ? <button onClick={onClose}>Close selected trail</button> : null,
 }));
 vi.mock('../components/NearbyPanel/NearbyPanel.jsx', () => ({ default: () => null }));
-vi.mock('../context/useAuth.js', () => ({ useAuth: () => ({ user: { username: 'mario.rossi' } }) }));
+const authFetch = vi.fn();
+vi.mock('../context/useAuth.js', () => ({ useAuth: () => ({ user: { username: 'mario.rossi' }, authFetch }) }));
 vi.mock('react-router-dom', () => ({
   Link: ({ to, children, ...props }) => <a href={to} {...props}>{children}</a>,
 }));
@@ -88,4 +95,57 @@ it('places the marker at the hovered route coordinate and clears it on leave, ro
 it('shows the profile icon in the top-right, linking to the profile page', () => {
   render(<HomePage />);
   expect(screen.getByRole('link', { name: 'Profile' }).getAttribute('href')).toBe('/profile');
+});
+
+it('waits for a username and shows the current public profiles', async () => {
+  let finishOlderSearch;
+  authFetch
+    .mockImplementationOnce(() => new Promise((resolve) => { finishOlderSearch = resolve; }))
+    .mockResolvedValueOnce({
+      profiles: [{ username: 'alba_trek', displayName: 'Alba', level: 2, bio: 'Weekend hiker', isMine: true, totalPoints: 205 }],
+      nextCursor: 'alba_trek',
+    })
+    .mockResolvedValueOnce({
+      profiles: [{ username: 'alba_walker', displayName: null, level: 0, bio: null, isMine: false, totalPoints: null }],
+      nextCursor: null,
+    });
+  render(<HomePage />);
+
+  const trigger = screen.getByRole('button', { name: 'Find public profiles' });
+  fireEvent.click(trigger);
+  const input = screen.getByRole('searchbox', { name: 'Search by username' });
+  expect(document.activeElement).toBe(input);
+  expect(screen.queryByRole('list', { name: 'Public profiles' })).toBeNull();
+  expect(authFetch).not.toHaveBeenCalled();
+
+  fireEvent.change(input, { target: { value: 'older' } });
+  await waitFor(() => expect(authFetch).toHaveBeenCalledWith('/profile/search?q=older'));
+  fireEvent.change(input, { target: { value: ' Alba ' } });
+  const result = await screen.findByText('@alba_trek');
+  expect(within(result.closest('li')).getByText('You')).toBeTruthy();
+  const details = result.closest('details');
+  fireEvent.click(result.closest('summary'));
+  expect(details.open).toBe(true);
+  expect(screen.getByText('Weekend hiker')).toBeTruthy();
+  expect(within(result.closest('li')).getByText('Points earned')).toBeTruthy();
+  expect(within(result.closest('li')).getByText('205')).toBeTruthy();
+
+  await act(async () => finishOlderSearch({ profiles: [], nextCursor: null }));
+  expect(screen.getByText('@alba_trek')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
+  const otherResult = await screen.findByText('@alba_walker');
+  expect(within(otherResult.closest('li')).queryByText('You')).toBeNull();
+  expect(within(otherResult.closest('li')).queryByText('Points earned')).toBeNull();
+  expect(screen.getByText('@alba_trek')).toBeTruthy();
+  expect(authFetch).toHaveBeenLastCalledWith('/profile/search?q=Alba&after=alba_trek');
+
+  fireEvent.change(input, { target: { value: ' ' } });
+  expect(screen.queryByRole('list', { name: 'Public profiles' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Close search' }));
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(trigger.getAttribute('aria-expanded')).toBe('false');
+
+  fireEvent.click(trigger);
+  fireEvent.keyDown(screen.getByRole('searchbox'), { key: 'Escape' });
+  expect(screen.queryByRole('dialog')).toBeNull();
 });
