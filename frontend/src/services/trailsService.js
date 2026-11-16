@@ -45,6 +45,22 @@ export async function getTrail(id) {
   return structuredClone(trail);
 }
 
+export function getTrailComments(trailId, cursor, request = apiRequest) {
+  const path = `/trails/${encodeURIComponent(trailId)}/comments`;
+  const query = cursor && new URLSearchParams({ beforeAt: cursor.createdAt, beforeId: cursor.id });
+  return request(query ? `${path}?${query}` : path);
+}
+
+export function postTrailComment(authFetch, trailId, body) {
+  return authFetch(`/trails/${encodeURIComponent(trailId)}/comments`, { method: 'POST', body: { body } });
+}
+
+export function deleteTrailComment(authFetch, trailId, commentId) {
+  return authFetch(`/trails/${encodeURIComponent(trailId)}/comments/${encodeURIComponent(commentId)}`, {
+    method: 'DELETE',
+  });
+}
+
 // The backend uses the CAI scale (T, E, EE, EEA); cards and filters use easy / moderate / hard.
 export const CAI_TO_DIFFICULTY = { T: 'easy', E: 'moderate', EE: 'hard', EEA: 'hard' };
 

@@ -1,6 +1,6 @@
 import { NEARBY_LIMIT, NEARBY_RADIUS_M } from '../config/trails.config.js';
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // GET /api/trails?bbox=minLng,minLat,maxLng,maxLat
 // The visible area of the map. If valid, it is saved in req.bbox as numbers.

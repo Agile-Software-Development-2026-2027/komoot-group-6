@@ -415,32 +415,6 @@
   outline-offset: 2px;
 }
 
-/* ---------- Comments (placeholder) ---------- */
-
-.emptyComments {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 22px 24px;
-  color: var(--color-muted);
-  border: 1.5px dashed var(--color-border);
-  border-radius: 16px;
-}
-
-.emptyComments svg {
-  flex-shrink: 0;
-  color: var(--color-primary);
-}
-
-.emptyComments p {
-  margin: 0;
-}
-
-.emptyComments strong {
-  display: block;
-  color: var(--color-text);
-}
-
 /* ---------- Loading / not found / error ---------- */
 
 .message {

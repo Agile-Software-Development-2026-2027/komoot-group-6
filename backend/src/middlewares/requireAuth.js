@@ -25,3 +25,8 @@ export async function requireAuth(req, res, next) {
   req.token = token;
   next();
 }
+
+export function requireAuthIfPresent(req, res, next) {
+  if (req.headers.authorization === undefined) return next();
+  return requireAuth(req, res, next);
+}
