@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { validateBbox, validateTrailId, validateNearbyQuery } from '../middlewares/validateTrailQuery.js';
 import { listTrails, getTrail, nearbyTrails } from '../controllers/trailsController.js';
 import { getTrailLikes, likeTrail, unlikeTrail } from '../controllers/likesController.js';
-import { requireAuth } from '../middlewares/requireAuth.js';
+import { deleteTrailComment, getTrailComments, postTrailComment } from '../controllers/trailCommentsController.js';
+import { requireAuth, requireAuthIfPresent } from '../middlewares/requireAuth.js';
 
 const router = Router();
 
@@ -13,6 +14,10 @@ router.get('/', validateBbox, listTrails);
 // otherwise Express would treat "nearby" as a trail id.
 router.get('/nearby', validateNearbyQuery, nearbyTrails);
 router.get('/:id', validateTrailId, getTrail);
+
+router.get('/:id/comments', validateTrailId, requireAuthIfPresent, getTrailComments);
+router.post('/:id/comments', requireAuth, validateTrailId, postTrailComment);
+router.delete('/:id/comments/:commentId', requireAuth, validateTrailId, deleteTrailComment);
 
 // Likes of the trail: they need login (to know who is liking the trail)
 // and a valid id. They all answer with { trailId, count, liked },

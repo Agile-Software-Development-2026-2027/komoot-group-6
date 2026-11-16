@@ -8,7 +8,7 @@ function getInitials(name) {
 }
 
 // Cerchio con le iniziali, in attesa che gli utenti possano caricare una foto.
-// size: 'md' (menu) o 'lg' (pagina profilo).
+// size: 'sm' (commenti), 'md' (menu) o 'lg' (pagina profilo).
 export default function Avatar({ name, size = 'md' }) {
   return (
     <div className={`avatar avatar--${size}`} aria-hidden="true">

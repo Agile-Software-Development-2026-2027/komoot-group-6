@@ -9,6 +9,7 @@ import TrailShare from '../components/TrailPage/TrailShare.jsx';
 import TrailStart from '../components/TrailPage/TrailStart.jsx';
 import TrailStats from '../components/TrailPage/TrailStats.jsx';
 import { ChevronLeftIcon } from '../components/TrailPage/icons.jsx';
+import { useAuth } from '../context/useAuth.js';
 import { getTrail } from '../services/trailsService.js';
 import { estimateDurationMin } from '../utils/formatTrail.js';
 import { isLoop } from '../utils/routeShape.js';
@@ -35,6 +36,7 @@ export default function TrailPage() {
 
 // Loads the trail and shows one of four states: loading, ready, not found, error
 function TrailContent({ id, onRetry }) {
+  const { isAuthenticated, user } = useAuth();
   const [state, setState] = useState({ status: 'loading' });
 
   useEffect(() => {
@@ -103,12 +105,12 @@ function TrailContent({ id, onRetry }) {
           <ChevronLeftIcon />
           Back to map
         </Link>
-        <TrailShare feature={feature} durationMin={durationMin} />
+        {isAuthenticated && <TrailShare feature={feature} durationMin={durationMin} />}
       </div>
 
       {/* On the cover, bottom right: heart with the total likes (SCRUM-15) */}
       <TrailHeader trail={trail}>
-        <TrailLikeButton trailId={trail.id} />
+        {isAuthenticated && <TrailLikeButton trailId={trail.id} />}
       </TrailHeader>
 
       {/* The trail at a glance: numbers and one sentence built from them */}
@@ -134,8 +136,7 @@ function TrailContent({ id, onRetry }) {
         </aside>
       </div>
 
-      {/* Placeholder: the colleague of SCRUM-16 develops the comments here */}
-      <TrailComments trailId={trail.id} />
+      <TrailComments key={user?.id ?? 'guest'} trailId={trail.id} />
     </article>
   );
 }

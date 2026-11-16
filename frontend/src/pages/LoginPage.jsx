@@ -28,7 +28,8 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // La pagina che l'utente voleva aprire prima di essere mandato qui. Se non c'è, dopo il login va alla home.
-  const destination = location.state?.from?.pathname || '/';
+  const { pathname = '/', search = '', hash = '' } = location.state?.from ?? {};
+  const destination = { pathname, search, hash };
 
   // Un solo gestore per tutti i campi: l'attributo "name" dice quale è cambiato.
   // Per la casella "Remember me" conta se è spuntata (checked), non il valore.
