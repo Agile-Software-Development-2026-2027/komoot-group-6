@@ -78,6 +78,15 @@ export function TrailsIcon() {
   );
 }
 
+export function SearchIcon({ size = 22 }) {
+  return (
+    <svg {...LINE} width={size} height={size}>
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="m15.1 15.1 4.4 4.4" />
+    </svg>
+  );
+}
+
 // Cross of the button that closes the panel
 export function CloseIcon() {
   return (

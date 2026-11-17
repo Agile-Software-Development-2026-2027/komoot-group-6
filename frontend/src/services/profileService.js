@@ -1,4 +1,4 @@
-// Backend calls about the logged-in user's profile settings.
+// Backend calls for profile settings and public profile search.
 // As in trailsService.js, authFetch comes from useAuth(): it adds the token and renews it if it has expired.
 
 // true if the profile is public, false if it is private (the initial value is private).
@@ -11,4 +11,10 @@ export async function getProfileVisibility(authFetch) {
 export async function setProfileVisibility(authFetch, isPublic) {
   const data = await authFetch('/profile/visibility', { method: 'PUT', body: { isPublic } });
   return Boolean(data?.isPublic);
+}
+
+export function searchPublicProfiles(authFetch, username, after = null) {
+  const query = new URLSearchParams({ q: username });
+  if (after !== null) query.set('after', after);
+  return authFetch(`/profile/search?${query}`);
 }

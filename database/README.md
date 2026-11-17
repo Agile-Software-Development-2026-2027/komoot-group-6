@@ -20,7 +20,8 @@ Run the files in the **SQL Editor** of Supabase, one at a time, in this order:
 | 9 | `hikes_social.sql` | hikes, photos, comments on hikes, friendships (not used by the site yet) |
 | 10 | `profiles_visibility.sql` | the public/private setting on user profiles |
 | 11 | `trail_comments.sql` | comments on the public trail page |
-| 12 | `seed_trails_rende.sql` | *optional*: 8 demo trails around Rende |
+| 12 | `public_profile_points.sql` | *optional*: public profile score totals on databases with `completed_trails.points_earned` |
+| 13 | `seed_trails_rende.sql` | *optional*: 8 demo trails around Rende |
 
 ## Good to know
 

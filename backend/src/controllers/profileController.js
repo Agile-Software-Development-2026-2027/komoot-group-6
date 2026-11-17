@@ -1,5 +1,8 @@
 import { supabaseAsUser } from '../config/supabase.js';
 import { calculateHikeScore } from '../utils/calculateHikeScore.js';
+
+const PROFILE_SEARCH_PAGE_SIZE = 20;
+
 // Postgres errors that can come from the insert, with the response to send.
 const INSERT_ERRORS = {
   '23505': { status: 409, error: 'Trail already saved' }, // duplicate key: the user has already saved it
@@ -132,6 +135,60 @@ export async function getCompletedTrails(req, res) {
   return res.json(data ?? []);
 }
 
+
+export async function searchPublicProfiles(req, res) {
+  const { q, after } = req.query;
+  const query = typeof q === 'string' ? q.trim() : '';
+  if (!query || query.includes('\0')) {
+    return res.status(400).json({ error: 'Enter a username to search for.' });
+  }
+  if (after !== undefined && (typeof after !== 'string' || !after || after.includes('\0'))) {
+    return res.status(400).json({ error: 'Invalid profile search cursor.' });
+  }
+
+  // Escape regex operators to match the typed text literally within the username.
+  const literalQuery = query.replace(/[.*+?^{}$()|[\]\\]/g, '\\$&');
+  const db = supabaseAsUser(req.token);
+  const matches = db
+    .from('profiles')
+    .select('id, username, display_name, bio, level')
+    .eq('is_public', true)
+    .regexIMatch('username', literalQuery)
+    .order('username')
+    .limit(PROFILE_SEARCH_PAGE_SIZE + 1);
+  if (after !== undefined) matches.gt('username', after);
+
+  const { data, error } = await matches;
+  if (error) throw error;
+
+  const rows = data ?? [];
+  const page = rows.slice(0, PROFILE_SEARCH_PAGE_SIZE);
+  const pointsByProfile = new Map();
+
+  if (page.length > 0) {
+    const { data: totals, error: pointsError } = await db.rpc('get_public_profile_points', {
+      p_profile_ids: page.map((row) => row.id),
+    });
+    // A database without the optional points function can still serve profile search.
+    if (pointsError && pointsError.code !== 'PGRST202') {
+      console.error('Could not load public profile points', pointsError);
+    }
+    for (const row of totals ?? []) {
+      pointsByProfile.set(row.profile_id, row.total_points);
+    }
+  }
+
+  const profiles = page.map((row) => ({
+    username: row.username,
+    displayName: row.display_name,
+    bio: row.bio,
+    level: row.level,
+    isMine: row.id === req.user.id,
+    totalPoints: pointsByProfile.get(row.id) ?? null,
+  }));
+  const nextCursor = rows.length > PROFILE_SEARCH_PAGE_SIZE ? profiles.at(-1).username : null;
+  return res.set('Cache-Control', 'no-store').json({ profiles, nextCursor });
+}
 
 // PostgREST answers PGRST116 when .single() finds no row:
 // the profile does not exist, or the RLS policies do not let the user touch it.

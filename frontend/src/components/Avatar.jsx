@@ -11,8 +11,8 @@ function getInitials(name) {
 // size: 'sm' (commenti), 'md' (menu) o 'lg' (pagina profilo).
 export default function Avatar({ name, size = 'md' }) {
   return (
-    <div className={`avatar avatar--${size}`} aria-hidden="true">
+    <span className={`avatar avatar--${size}`} aria-hidden="true">
       {getInitials(name)}
-    </div>
+    </span>
   );
 }
