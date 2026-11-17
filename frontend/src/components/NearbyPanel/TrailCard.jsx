@@ -7,6 +7,8 @@ import {
   formatElevation,
 } from '../../utils/formatTrail.js';
 import TrailDetailsLink from '../TrailPage/TrailDetailsLink.jsx';
+import LevelUpDialog from '../LevelUpDialog/LevelUpDialog.jsx';
+import { MAX_LEVEL } from '../../config/levels.config.js';
 import { DIFFICULTY_LABELS } from './difficulty.js';
 import { BookmarkIcon, CheckIcon, ClimbIcon, ClockIcon, DistanceIcon, PinIcon } from './icons.jsx';
 import styles from './NearbyPanel.module.css';
@@ -100,6 +102,8 @@ export default function TrailCard({
   const [imageFailed, setImageFailed] = useState(false);
   // points earned popup shown next to complete button
   const [earnedPoints, setEarnedPoints] = useState(null);
+  // level up dialog shown when completing a trail triggers a promotion
+  const [levelUpLevel, setLevelUpLevel] = useState(null);
 
   // Until the user clicks, the profile decides:
   // so the bookmark fills in even when the saved list arrives after the card
@@ -167,6 +171,10 @@ export default function TrailCard({
       const earned = result?.pointsEarned ?? (typeof result === 'number' ? result : (trail.pointsEarned ?? trail.points));
       if (targetDone && earned != null) {
         setEarnedPoints(earned);
+      }
+      // show congratulations modal if the completed trail triggered a level up up to max level
+      if (targetDone && result?.levelUp && result?.level != null && result.level <= MAX_LEVEL) {
+        setLevelUpLevel(result.level);
       }
     } catch {
       setHasError(true);
@@ -279,6 +287,13 @@ export default function TrailCard({
 
       {hasError && (
         <p role="alert" className={styles.cardError}>Could not update completed status. Try again.</p>
+      )}
+
+      {levelUpLevel !== null && (
+        <LevelUpDialog
+          level={levelUpLevel}
+          onClose={() => setLevelUpLevel(null)}
+        />
       )}
     </article>
   );

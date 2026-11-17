@@ -204,6 +204,48 @@ test('shows earned points popup when completing hike and hides after timeout', a
   vi.useRealTimers();
 });
 
+test('shows level up congratulations dialog when completed hike triggers a level promotion', async () => {
+  const onToggleComplete = vi.fn().mockResolvedValue({ pointsEarned: 60, level: 3, levelUp: true });
+  render(<TrailCard trail={TRAIL} onSave={vi.fn()} onToggleComplete={onToggleComplete} />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Mark as completed Sentiero del Crati' }));
+  await act(async () => {});
+
+  // level up modal is shown in the screen
+  expect(screen.getByRole('dialog')).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /congratulation/i })).toBeInTheDocument();
+  expect(screen.getByText(/you become a/i)).toHaveTextContent('You become a Explorer !!!');
+
+  // clicking continue button dismisses the dialog
+  fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
+
+test('level up dialog closes when clicking outside on the backdrop', async () => {
+  const onToggleComplete = vi.fn().mockResolvedValue({ pointsEarned: 60, level: 1, levelUp: true });
+  render(<TrailCard trail={TRAIL} onSave={vi.fn()} onToggleComplete={onToggleComplete} />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Mark as completed Sentiero del Crati' }));
+  await act(async () => {});
+
+  expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+  // clicking outside on backdrop dismisses dialog
+  fireEvent.click(screen.getByRole('presentation'));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
+
+test('does not show level up dialog when level is greater than 5', async () => {
+  const onToggleComplete = vi.fn().mockResolvedValue({ pointsEarned: 60, level: 6, levelUp: true });
+  render(<TrailCard trail={TRAIL} onSave={vi.fn()} onToggleComplete={onToggleComplete} />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Mark as completed Sentiero del Crati' }));
+  await act(async () => {});
+
+  // level up modal is not shown
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
+
 test('toggling off a completed hike removes it', async () => {
   const onToggleComplete = vi.fn().mockResolvedValue();
   render(<TrailCard trail={TRAIL} isCompleted onSave={vi.fn()} onToggleComplete={onToggleComplete} />);
