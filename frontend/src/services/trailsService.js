@@ -120,12 +120,14 @@ export async function unsaveTrail(authFetch, trailId) {
 }
 
 
-// If it was already completed (409) the result for the user is the same, so it is not an error.
+// if it was already completed 409 the result for the user is the same, so it is not an error
 export async function completeTrail(authFetch, trailId) {
   try {
-    await authFetch('/profile/completed-trails', { method: 'POST', body: { trailId } });
+    // send completion request and return received points and level data
+    return await authFetch('/profile/completed-trails', { method: 'POST', body: { trailId } });
   } catch (err) {
     if (!(err instanceof ApiError && err.status === 409)) throw err;
+    return undefined;
   }
 }
 

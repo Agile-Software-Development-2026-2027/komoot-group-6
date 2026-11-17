@@ -2,7 +2,7 @@ import { afterEach, expect, test, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 
-import { SAVE_MESSAGE_MS } from '../../config/ui.config.js';
+import { POINTS_POPUP_MS, SAVE_MESSAGE_MS } from '../../config/ui.config.js';
 import TrailCard from './TrailCard.jsx';
 
 const TRAIL = {
@@ -176,6 +176,32 @@ test('marking a hike as completed: Mark as completed → Completing... → Compl
 
   expect(screen.getByRole('button', { name: 'Completed Sentiero del Crati' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Completed Sentiero del Crati' })).not.toBeDisabled();
+});
+
+test('shows earned points popup when completing hike and hides after timeout', async () => {
+  vi.useFakeTimers();
+  const onToggleComplete = vi.fn().mockResolvedValue({ pointsEarned: 45 });
+  render(<TrailCard trail={TRAIL} onSave={vi.fn()} onToggleComplete={onToggleComplete} />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Mark as completed Sentiero del Crati' }));
+  await act(async () => {});
+
+  // points badge is displayed next to checkmark
+  expect(screen.getByText('+45')).toBeInTheDocument();
+
+  // popup remains visible before timeout
+  act(() => {
+    vi.advanceTimersByTime(POINTS_POPUP_MS - 500);
+  });
+  expect(screen.getByText('+45')).toBeInTheDocument();
+
+  // popup disappears after timeout
+  act(() => {
+    vi.advanceTimersByTime(500);
+  });
+  expect(screen.queryByText('+45')).not.toBeInTheDocument();
+
+  vi.useRealTimers();
 });
 
 test('toggling off a completed hike removes it', async () => {

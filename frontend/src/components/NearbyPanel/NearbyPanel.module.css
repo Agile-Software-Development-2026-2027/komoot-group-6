@@ -314,6 +314,40 @@
   background: var(--color-green);
 }
 
+/* points popup next to the checkmark without background */
+.pointsPopup {
+  position: absolute;
+  top: 10px;
+  right: 106px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--color-green);
+  background: transparent;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+  text-shadow: 0 1px 3px rgb(255 255 255 / 0.95), 0 0 6px rgb(255 255 255 / 0.9);
+  animation: pointsPopupIn 0.2s ease-out;
+}
+
+/* smooth appearance animation for earned points popup */
+@keyframes pointsPopupIn {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .cardTitle {
   margin: 6px 0 0;
   font-size: 1.05rem;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { SAVE_MESSAGE_MS } from '../../config/ui.config.js';
+import { POINTS_POPUP_MS, SAVE_MESSAGE_MS } from '../../config/ui.config.js';
 import {
   estimateDurationMin,
   formatDistance,
@@ -98,6 +98,8 @@ export default function TrailCard({
   const [hasError, setHasError] = useState(false);
   const [localDone, setLocalDone] = useState(null);
   const [imageFailed, setImageFailed] = useState(false);
+  // points earned popup shown next to complete button
+  const [earnedPoints, setEarnedPoints] = useState(null);
 
   // Until the user clicks, the profile decides:
   // so the bookmark fills in even when the saved list arrives after the card
@@ -111,6 +113,13 @@ export default function TrailCard({
     const timer = setTimeout(() => setSaveMessage(null), SAVE_MESSAGE_MS);
     return () => clearTimeout(timer);
   }, [saveMessage]);
+
+  // hides points popup after configured milliseconds
+  useEffect(() => {
+    if (earnedPoints === null) return undefined;
+    const timer = setTimeout(() => setEarnedPoints(null), POINTS_POPUP_MS);
+    return () => clearTimeout(timer);
+  }, [earnedPoints]);
 
   // Click on the bookmark: saves the trail if it is not saved, otherwise removes it from the saved ones
   async function handleBookmark() {
@@ -138,20 +147,27 @@ export default function TrailCard({
     }
   }
 
+  // toggles completed status and displays earned points popup when marked done
   async function handleToggle() {
     if (actionLoading || (!onToggleComplete && !onComplete && !onUncomplete)) return;
     const targetDone = !isDone;
     setActionLoading(true);
     setHasError(false);
     try {
+      let result;
       if (onToggleComplete) {
-        await onToggleComplete(trail.id, targetDone);
+        result = await onToggleComplete(trail.id, targetDone);
       } else if (targetDone && onComplete) {
-        await onComplete(trail.id);
+        result = await onComplete(trail.id);
       } else if (!targetDone && onUncomplete) {
-        await onUncomplete(trail.id);
+        result = await onUncomplete(trail.id);
       }
       setLocalDone(targetDone);
+      // read points earned from response or fallback to trail object
+      const earned = result?.pointsEarned ?? (typeof result === 'number' ? result : (trail.pointsEarned ?? trail.points));
+      if (targetDone && earned != null) {
+        setEarnedPoints(earned);
+      }
     } catch {
       setHasError(true);
     } finally {
@@ -170,6 +186,12 @@ export default function TrailCard({
           <img src={trail.imageUrl} alt="" loading="lazy" onError={() => setImageFailed(true)} />
         ) : (
           <TrailArt trail={trail} />
+        )}
+
+        {earnedPoints != null && (
+          <span className={styles.pointsPopup} role="status" aria-label={`+${earnedPoints} points`}>
+            +{earnedPoints}
+          </span>
         )}
 
         {(onToggleComplete || onComplete) && (

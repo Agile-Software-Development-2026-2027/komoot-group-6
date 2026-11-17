@@ -3,3 +3,6 @@ export const SAVE_MESSAGE_MS = 6000;
 
 // how many milliseconds short feedback/error messages stay visible (like error, "Text copied")
 export const NOTICE_MS = 3000;
+
+// how many milliseconds the earned points popup stays visible on a completed trail card
+export const POINTS_POPUP_MS = 3000;
