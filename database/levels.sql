@@ -1,19 +1,7 @@
--- =====================================================================
--- Levels of the users
---
--- 1. Table public.levels: the minimum total points of each level.
---    The backend reads it to show the points missing to the next level.
--- 2. The level of a user is saved in public.profiles.level and updated by
---    a trigger every time a completed trail is added or removed: the
---    leaderboards and the profile search read it from there.
--- 3. The level of the users who already completed trails is calculated.
---    To change a threshold: change it in step 1 and run the file again.
--- =====================================================================
-
-begin;
-
--- 1. Levels ------------------------------------------------------------
 -- The thresholds must grow with the level, and level 0 must start at 0 points.
+-- The points of a trail go down as the level goes up (LEVEL_POINTS_PERCENT in
+-- backend/src/config/points.js): the 8 demo trails give about 440-470 points in all,
+-- depending on the order, so the last threshold must stay below 440.
 create table if not exists public.levels (
   level      integer primary key check (level >= 0),
   min_points integer not null check (min_points >= 0),
@@ -23,10 +11,10 @@ create table if not exists public.levels (
 insert into public.levels (level, min_points, name) values
   (0,   0, 'Beginner'),
   (1,  30, 'Walker'),
-  (2, 120, 'Hiker'),
-  (3, 250, 'Explorer'),
-  (4, 400, 'Mountaineer'),
-  (5, 600, 'Trail master')
+  (2, 100, 'Hiker'),
+  (3, 200, 'Explorer'),
+  (4, 300, 'Mountaineer'),
+  (5, 420, 'Trail master')
 on conflict (level) do update
   set min_points = excluded.min_points, name = excluded.name;
 
