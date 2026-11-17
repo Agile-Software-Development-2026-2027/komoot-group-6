@@ -2,7 +2,7 @@ import { afterEach, expect, test, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 
-import { SAVE_MESSAGE_MS } from '../../config/ui.config.js';
+import { POINTS_POPUP_MS, SAVE_MESSAGE_MS } from '../../config/ui.config.js';
 import TrailCard from './TrailCard.jsx';
 
 const TRAIL = {
@@ -176,6 +176,63 @@ test('marking a hike as completed: Mark as completed → Completing... → Compl
 
   expect(screen.getByRole('button', { name: 'Completed Sentiero del Crati' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Completed Sentiero del Crati' })).not.toBeDisabled();
+});
+
+test('shows earned points popup when completing hike and hides after timeout', async () => {
+  vi.useFakeTimers();
+  const onToggleComplete = vi.fn().mockResolvedValue({ pointsEarned: 45 });
+  render(<TrailCard trail={TRAIL} onSave={vi.fn()} onToggleComplete={onToggleComplete} />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Mark as completed Sentiero del Crati' }));
+  await act(async () => {});
+
+  // points badge is displayed next to checkmark
+  expect(screen.getByText('+45')).toBeInTheDocument();
+
+  // popup remains visible before timeout
+  act(() => {
+    vi.advanceTimersByTime(POINTS_POPUP_MS - 500);
+  });
+  expect(screen.getByText('+45')).toBeInTheDocument();
+
+  // popup disappears after timeout
+  act(() => {
+    vi.advanceTimersByTime(500);
+  });
+  expect(screen.queryByText('+45')).not.toBeInTheDocument();
+
+  vi.useRealTimers();
+});
+
+test('shows level up congratulations dialog when completed hike triggers a level promotion', async () => {
+  const onToggleComplete = vi.fn().mockResolvedValue({ pointsEarned: 60, level: 3, levelName: 'Explorer', levelUp: true });
+  render(<TrailCard trail={TRAIL} onSave={vi.fn()} onToggleComplete={onToggleComplete} />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Mark as completed Sentiero del Crati' }));
+  await act(async () => {});
+
+  // level up modal is shown in the screen
+  expect(screen.getByRole('dialog')).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /^congratulations!$/i })).toBeInTheDocument();
+  expect(screen.getByText(/you are now:/i)).toHaveTextContent('You are now: Explorer');
+
+  // clicking continue button dismisses the dialog
+  fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
+
+test('level up dialog closes when clicking outside on the backdrop', async () => {
+  const onToggleComplete = vi.fn().mockResolvedValue({ pointsEarned: 60, level: 1, levelName: 'Walker', levelUp: true });
+  render(<TrailCard trail={TRAIL} onSave={vi.fn()} onToggleComplete={onToggleComplete} />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Mark as completed Sentiero del Crati' }));
+  await act(async () => {});
+
+  expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+  // clicking outside on backdrop dismisses dialog
+  fireEvent.click(screen.getByRole('presentation'));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
 
 test('toggling off a completed hike removes it', async () => {

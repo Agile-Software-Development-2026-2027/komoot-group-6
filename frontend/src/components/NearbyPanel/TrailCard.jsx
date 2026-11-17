@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { SAVE_MESSAGE_MS } from '../../config/ui.config.js';
+import { POINTS_POPUP_MS, SAVE_MESSAGE_MS } from '../../config/ui.config.js';
 import {
   estimateDurationMin,
   formatDistance,
@@ -7,6 +7,7 @@ import {
   formatElevation,
 } from '../../utils/formatTrail.js';
 import TrailDetailsLink from '../TrailPage/TrailDetailsLink.jsx';
+import LevelUpDialog from '../LevelUpDialog/LevelUpDialog.jsx';
 import { DIFFICULTY_LABELS } from './difficulty.js';
 import { BookmarkIcon, CheckIcon, ClimbIcon, ClockIcon, DistanceIcon, PinIcon } from './icons.jsx';
 import styles from './NearbyPanel.module.css';
@@ -98,6 +99,10 @@ export default function TrailCard({
   const [hasError, setHasError] = useState(false);
   const [localDone, setLocalDone] = useState(null);
   const [imageFailed, setImageFailed] = useState(false);
+  // points earned popup shown next to complete button
+  const [earnedPoints, setEarnedPoints] = useState(null);
+  // level up dialog data shown when completing a trail triggers a promotion
+  const [levelUpData, setLevelUpData] = useState(null);
 
   // Until the user clicks, the profile decides:
   // so the bookmark fills in even when the saved list arrives after the card
@@ -111,6 +116,13 @@ export default function TrailCard({
     const timer = setTimeout(() => setSaveMessage(null), SAVE_MESSAGE_MS);
     return () => clearTimeout(timer);
   }, [saveMessage]);
+
+  // hides points popup after configured milliseconds
+  useEffect(() => {
+    if (earnedPoints === null) return undefined;
+    const timer = setTimeout(() => setEarnedPoints(null), POINTS_POPUP_MS);
+    return () => clearTimeout(timer);
+  }, [earnedPoints]);
 
   // Click on the bookmark: saves the trail if it is not saved, otherwise removes it from the saved ones
   async function handleBookmark() {
@@ -138,20 +150,31 @@ export default function TrailCard({
     }
   }
 
+  // toggles completed status and displays earned points popup when marked done
   async function handleToggle() {
     if (actionLoading || (!onToggleComplete && !onComplete && !onUncomplete)) return;
     const targetDone = !isDone;
     setActionLoading(true);
     setHasError(false);
     try {
+      let result;
       if (onToggleComplete) {
-        await onToggleComplete(trail.id, targetDone);
+        result = await onToggleComplete(trail.id, targetDone);
       } else if (targetDone && onComplete) {
-        await onComplete(trail.id);
+        result = await onComplete(trail.id);
       } else if (!targetDone && onUncomplete) {
-        await onUncomplete(trail.id);
+        result = await onUncomplete(trail.id);
       }
       setLocalDone(targetDone);
+      // read points earned from response
+      const earned = result?.pointsEarned;
+      if (targetDone && earned != null) {
+        setEarnedPoints(earned);
+      }
+      // show congratulations modal if the completed trail triggered a level up
+      if (targetDone && result?.levelUp) {
+        setLevelUpData({ level: result.level, levelName: result.levelName });
+      }
     } catch {
       setHasError(true);
     } finally {
@@ -170,6 +193,12 @@ export default function TrailCard({
           <img src={trail.imageUrl} alt="" loading="lazy" onError={() => setImageFailed(true)} />
         ) : (
           <TrailArt trail={trail} />
+        )}
+
+        {earnedPoints != null && (
+          <span className={styles.pointsPopup} role="status" aria-label={`+${earnedPoints} points`}>
+            +{earnedPoints}
+          </span>
         )}
 
         {(onToggleComplete || onComplete) && (
@@ -257,6 +286,14 @@ export default function TrailCard({
 
       {hasError && (
         <p role="alert" className={styles.cardError}>Could not update completed status. Try again.</p>
+      )}
+
+      {levelUpData !== null && (
+        <LevelUpDialog
+          level={levelUpData.level}
+          levelName={levelUpData.levelName}
+          onClose={() => setLevelUpData(null)}
+        />
       )}
     </article>
   );

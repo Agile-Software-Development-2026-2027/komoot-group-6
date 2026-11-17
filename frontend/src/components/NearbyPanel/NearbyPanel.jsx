@@ -131,17 +131,22 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
     });
   }
 
+  // toggle completed status and return points when completed
   const handleToggleComplete = async (trailId, targetDone) => {
     if (targetDone) {
-      await completeTrail(authFetch, trailId);
+      // complete trail and update local completed set
+      const result = await completeTrail(authFetch, trailId);
       setCompletedTrailIds((prev) => new Set([...prev, trailId]));
+      return result;
     } else {
+      // uncomplete trail and update local completed set
       await uncompleteTrail(authFetch, trailId);
       setCompletedTrailIds((prev) => {
         const next = new Set(prev);
         next.delete(trailId);
         return next;
       });
+      return null;
     }
   };
 

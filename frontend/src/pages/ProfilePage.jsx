@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Avatar from '../components/Avatar.jsx';
 import LogoutButton from '../components/LogoutButton.jsx';
@@ -7,13 +7,14 @@ import RouteHero from '../components/ProfileTrails/RouteHero.jsx';
 import VisibilitySwitch from '../components/ProfileTrails/VisibilitySwitch.jsx';
 import { ChevronLeftIcon } from '../components/TrailPage/icons.jsx';
 import { useAuth } from '../context/useAuth.js';
+import { getProfilePoints } from '../services/trailsService.js';
 import { formatDate } from '../utils/formatDate.js';
 import { formatDistance, formatElevation } from '../utils/formatTrail.js';
 import { completedTotals } from '../utils/profileStats.js';
 import { useProfileTrails } from './useProfileTrails.js';
 import { useProfileVisibility } from './useProfileVisibility.js';
 import './ProfilePage.css';
-import HikingInfo from '../components/HikeInfo.jsx';
+import HikingInfo, { ProfileLevel } from '../components/HikeInfo.jsx';
 
 const EMPTY = '—';
 
@@ -47,6 +48,25 @@ export default function ProfilePage() {
   const visibility = useProfileVisibility(authFetch);
   const [tab, setTab] = useState('saved');
   const tabRefs = useRef({});
+  // state for user points and level loaded from the backend
+  const [pointsState, setPointsState] = useState({ data: null, loading: true, error: null });
+
+  useEffect(() => {
+    let active = true;
+
+    // load total points completed routes and current level info
+    getProfilePoints(authFetch)
+      .then((result) => {
+        if (active) setPointsState({ data: result, loading: false, error: null });
+      })
+      .catch((err) => {
+        if (active) setPointsState({ data: null, loading: false, error: err.message });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authFetch]);
 
   // Statistics: shown only once the data is loaded
   const ready = !loading && !error;
@@ -86,11 +106,21 @@ export default function ProfilePage() {
         </nav>
 
         <header className="profile-heading">
-          <span className="profile-avatar"><Avatar name={name} size="lg" /></span>
-          <div className="profile-heading-text">
-            <h1>{name}</h1>
-            {user.username && <p className="profile-username">@{user.username}</p>}
+          <div className="profile-identity">
+            <span className="profile-avatar"><Avatar name={name} size="lg" /></span>
+            <div className="profile-heading-text">
+              <h1>{name}</h1>
+              {user.username && <p className="profile-username">@{user.username}</p>}
+            </div>
           </div>
+
+          {/* user level progress bar placed in the header next to the profile name */}
+          {pointsState.data?.level && (
+            <ProfileLevel
+              level={pointsState.data.level}
+              totalPoints={pointsState.data.totalPoints ?? 0}
+            />
+          )}
         </header>
 
         <dl className="profile-stats" aria-label="Statistics">
@@ -134,7 +164,7 @@ export default function ProfilePage() {
             </section>
 
             {/* Total points and completed routes (hike score) */}
-            <HikingInfo authFetch={authFetch} />
+            <HikingInfo authFetch={authFetch} pointsData={pointsState} />
           </aside>
 
           {/* Right column, wide: Saved, Completed and Last route tabs */}

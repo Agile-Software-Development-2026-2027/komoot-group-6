@@ -34,6 +34,11 @@ const profileSingle = vi.fn();
 const profileEq = vi.fn(() => ({ single: profileSingle }));
 const profileSelect = vi.fn(() => ({ eq: profileEq }));
 
+// GET the level name from the levels table
+const levelSingle = vi.fn();
+const levelEq = vi.fn(() => ({ single: levelSingle, maybeSingle: levelSingle }));
+const levelSelect = vi.fn(() => ({ eq: levelEq }));
+
 // Return different query objects depending on table
 const from = vi.fn((table) => {
   if (table === 'trails') {
@@ -45,6 +50,12 @@ const from = vi.fn((table) => {
   if (table === 'profiles') {
     return {
       select: profileSelect
+    };
+  }
+
+  if (table === 'levels') {
+    return {
+      select: levelSelect
     };
   }
 
@@ -112,6 +123,16 @@ beforeEach(() => {
     error: null
   });
 
+  // Mock level name query from levels table
+  levelSingle.mockImplementation(() => {
+    const levelNumber = levelEq.mock.calls.at(-1)?.[1];
+    const names = { 0: 'Beginner', 1: 'Walker', 2: 'Hiker' };
+    return Promise.resolve({
+      data: { name: names[levelNumber] ?? 'Beginner' },
+      error: null
+    });
+  });
+
   // Mock successful insertion
   insert.mockResolvedValue({
     error: null
@@ -135,7 +156,7 @@ describe('POST /api/profile/completed-trails', () => {
     const res = await complete({ trailId: TRAIL_ID });
 
     expect(res.status).toBe(201);
-    expect(res.body).toEqual({ trailId: TRAIL_ID, pointsEarned: 75, level: 0, levelUp: false });
+    expect(res.body).toEqual({ trailId: TRAIL_ID, pointsEarned: 75, level: 0, levelName: 'Beginner', levelUp: false });
     expect(profileSelect).toHaveBeenCalledWith('level');
     expect(profileEq).toHaveBeenCalledWith('id', 'abc-123');
     expect(supabaseAsUser).toHaveBeenCalledWith('access-123');
@@ -162,7 +183,7 @@ expect(trailEq).toHaveBeenCalledWith(
     const res = await complete({ trailId: TRAIL_ID });
 
     expect(res.status).toBe(201);
-    expect(res.body).toEqual({ trailId: TRAIL_ID, pointsEarned: 75, level: 1, levelUp: true });
+    expect(res.body).toEqual({ trailId: TRAIL_ID, pointsEarned: 75, level: 1, levelName: 'Walker', levelUp: true });
   });
 
   it('gives fewer points to a user with a higher level', async () => {
@@ -173,7 +194,7 @@ expect(trailEq).toHaveBeenCalledWith(
 
     expect(res.status).toBe(201);
     expect(insert).toHaveBeenCalledWith({ user_id: 'abc-123', trail_id: TRAIL_ID, points_earned: 60 });
-    expect(res.body).toEqual({ trailId: TRAIL_ID, pointsEarned: 60, level: 2, levelUp: false });
+    expect(res.body).toEqual({ trailId: TRAIL_ID, pointsEarned: 60, level: 2, levelName: 'Hiker', levelUp: false });
   });
 
   it('responds 500 when the level cannot be read', async () => {

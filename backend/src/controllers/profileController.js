@@ -88,6 +88,18 @@ async function readLevel(req) {
   return data.level;
 }
 
+// returns level name from the levels table
+async function readLevelName(req, levelNumber) {
+  const { data, error } = await supabaseAsUser(req.token)
+    .from('levels')
+    .select('name')
+    .eq('level', levelNumber)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data?.name ?? null;
+}
+
 // Marks a trail as completed in the logged-in user's profile (completed_trails table, see database/completed_trails.sql).
 // requireAuth has already put the user in req.user and the token in req.token.
 export async function completeTrail(req, res) {
@@ -135,7 +147,9 @@ export async function completeTrail(req, res) {
 
   // The database trigger has already updated the level with the new points
   const level = await readLevel(req);
-  return res.status(201).json({ trailId, pointsEarned, level, levelUp: level > levelBefore });
+  // retrieve level name from database
+  const levelName = await readLevelName(req, level);
+  return res.status(201).json({ trailId, pointsEarned, level, levelName, levelUp: level > levelBefore });
 }
 
 
