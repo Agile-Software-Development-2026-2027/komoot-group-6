@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import { validateBbox, validateTrailId, validateNearbyQuery } from '../middlewares/validateTrailQuery.js';
+import { validateLeaderboardQuery } from '../middlewares/validateLeaderboardQuery.js';
 import { listTrails, getTrail, nearbyTrails } from '../controllers/trailsController.js';
 import { getTrailLikes, likeTrail, unlikeTrail } from '../controllers/likesController.js';
 import { deleteTrailComment, getTrailComments, postTrailComment } from '../controllers/trailCommentsController.js';
+import { getTrailLeaderboard } from '../controllers/leaderboardController.js';
 import { requireAuth, requireAuthIfPresent } from '../middlewares/requireAuth.js';
 
 const router = Router();
@@ -25,5 +27,8 @@ router.delete('/:id/comments/:commentId', requireAuth, validateTrailId, deleteTr
 router.get('/:id/likes', requireAuth, validateTrailId, getTrailLikes);
 router.post('/:id/likes', requireAuth, validateTrailId, likeTrail);
 router.delete('/:id/likes', requireAuth, validateTrailId, unlikeTrail);
+
+// trail leaderboard ordered by points earned on this hike for logged in users
+router.get('/:id/leaderboard', requireAuth, validateTrailId, validateLeaderboardQuery, getTrailLeaderboard);
 
 export default router;
