@@ -1,5 +1,6 @@
 import { supabaseAsUser } from '../config/supabase.js';
 import { calculateHikeScore } from '../utils/calculateHikeScore.js';
+import { describeLevel } from '../utils/describeLevel.js';
 
 const PROFILE_SEARCH_PAGE_SIZE = 20;
 
@@ -74,6 +75,19 @@ export async function unsaveTrail(req, res) {
 }
 
 
+// Returns the level saved in the profile of the logged-in user.
+// The database calculates it from the points (see database/levels.sql).
+async function readLevel(req) {
+  const { data, error } = await supabaseAsUser(req.token)
+    .from('profiles')
+    .select('level')
+    .eq('id', req.user.id)
+    .single();
+
+  if (error) throw error;
+  return data.level;
+}
+
 // Marks a trail as completed in the logged-in user's profile (completed_trails table, see database/completed_trails.sql).
 // requireAuth has already put the user in req.user and the token in req.token.
 export async function completeTrail(req, res) {
@@ -105,6 +119,8 @@ export async function completeTrail(req, res) {
   // Calculate points based on difficulty and length
   const pointsEarned = calculateHikeScore(trail.difficulty, trail.length_m);
   console.log("Points earned::", pointsEarned)
+  // Level before the insert, to tell the frontend if the user goes up a level
+  const levelBefore = await readLevel(req);
   const { data, error } = await supabaseAsUser(req.token)
     .from('completed_trails')
     .insert({ user_id: req.user.id, trail_id: trailId,points_earned: pointsEarned });
@@ -117,7 +133,9 @@ export async function completeTrail(req, res) {
     throw error;
   }
 
-  return res.status(201).json({ trailId });
+  // The database trigger has already updated the level with the new points
+  const level = await readLevel(req);
+  return res.status(201).json({ trailId, pointsEarned, level, levelUp: level > levelBefore });
 }
 
 
@@ -254,38 +272,26 @@ export async function uncompleteTrail(req, res) {
   return res.status(204).end();
 }
 
+// Returns the points of the logged-in user, how many trails they completed and their level.
 export async function getProfilePoints(req, res) {
-  try {
-    const userId = req.user.id;
+  const db = supabaseAsUser(req.token);
 
-    const { data, error } = await supabaseAsUser(req.token)
-      .from('completed_trails')
-      .select('points_earned')
-      .eq('user_id', userId);
+  // The three reads do not depend on each other: they run at the same time
+  const [points, level, levels] = await Promise.all([
+    db.from('completed_trails').select('points_earned').eq('user_id', req.user.id),
+    readLevel(req),
+    db.from('levels').select('level, min_points, name'),
+  ]);
 
-    if (error) {
-      console.error('Failed to fetch points:', error);
+  // Unexpected error: errorHandler takes care of it (500)
+  const error = points.error ?? levels.error;
+  if (error) throw error;
 
-      return res.status(500).json({
-        error: 'Failed to retrieve points'
-      });
-    }
+  const totalPoints = points.data.reduce((sum, row) => sum + row.points_earned, 0);
 
-    const totalPoints = data.reduce(
-      (sum, trail) => sum + trail.points_earned,
-      0
-    );
-    console.log(`User ${userId} has total points: ${totalPoints} from ${data.length} completed routes.`);
-    return res.status(200).json({
-      totalPoints,
-      completedRoutes: data.length
-    });
-
-  } catch (error) {
-    console.error(error);
-
-    return res.status(500).json({
-      error: 'Internal server error'
-    });
-  }
+  return res.json({
+    totalPoints,
+    completedRoutes: points.data.length,
+    level: describeLevel(level, totalPoints, levels.data),
+  });
 }

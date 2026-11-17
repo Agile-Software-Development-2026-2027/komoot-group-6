@@ -29,11 +29,22 @@ const trailSingle = vi.fn();
 const trailEq = vi.fn(() => ({ single: trailSingle }));
 const trailSelect = vi.fn(() => ({ eq: trailEq }));
 
+// GET the level saved in the profile
+const profileSingle = vi.fn();
+const profileEq = vi.fn(() => ({ single: profileSingle }));
+const profileSelect = vi.fn(() => ({ eq: profileEq }));
+
 // Return different query objects depending on table
 const from = vi.fn((table) => {
   if (table === 'trails') {
     return {
       select: trailSelect
+    };
+  }
+
+  if (table === 'profiles') {
+    return {
+      select: profileSelect
     };
   }
 
@@ -95,6 +106,12 @@ beforeEach(() => {
     error: null
   });
 
+  // Mock the level saved in the profile: by default it does not change
+  profileSingle.mockResolvedValue({
+    data: { level: 0 },
+    error: null
+  });
+
   // Mock successful insertion
   insert.mockResolvedValue({
     error: null
@@ -118,7 +135,9 @@ describe('POST /api/profile/completed-trails', () => {
     const res = await complete({ trailId: TRAIL_ID });
 
     expect(res.status).toBe(201);
-    expect(res.body).toEqual({ trailId: TRAIL_ID });
+    expect(res.body).toEqual({ trailId: TRAIL_ID, pointsEarned: 75, level: 0, levelUp: false });
+    expect(profileSelect).toHaveBeenCalledWith('level');
+    expect(profileEq).toHaveBeenCalledWith('id', 'abc-123');
     expect(supabaseAsUser).toHaveBeenCalledWith('access-123');
     expect(from).toHaveBeenCalledWith('completed_trails');
     //expect(insert).toHaveBeenCalledWith({ user_id: 'abc-123', trail_id: TRAIL_ID });
@@ -134,7 +153,29 @@ expect(trailEq).toHaveBeenCalledWith(
 
   });
 
-  
+  it('tells the frontend when the new points reach the next level', async () => {
+    // The level before the insert, then the one updated by the database trigger
+    profileSingle
+      .mockResolvedValueOnce({ data: { level: 0 }, error: null })
+      .mockResolvedValueOnce({ data: { level: 1 }, error: null });
+
+    const res = await complete({ trailId: TRAIL_ID });
+
+    expect(res.status).toBe(201);
+    expect(res.body).toEqual({ trailId: TRAIL_ID, pointsEarned: 75, level: 1, levelUp: true });
+  });
+
+  it('responds 500 when the level cannot be read', async () => {
+    profileSingle.mockResolvedValue({ data: null, error: { code: '42501', message: 'permission denied' } });
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const res = await complete({ trailId: TRAIL_ID });
+
+    expect(res.status).toBe(500);
+    expect(insert).not.toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+
 it('returns 404 when the trail does not exist', async () => {
   trailSingle.mockResolvedValue({
     data: null,
