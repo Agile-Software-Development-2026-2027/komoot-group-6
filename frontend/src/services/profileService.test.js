@@ -1,5 +1,6 @@
 import { expect, it, vi } from 'vitest';
-import { getProfileVisibility, setProfileVisibility } from './profileService.js';
+import { LEADERBOARD_SIZE } from '../config/leaderboard.config.js';
+import { getLeaderboard, getProfileVisibility, setProfileVisibility } from './profileService.js';
 
 it('reads the visibility of the profile', async () => {
   const authFetch = vi.fn().mockResolvedValue({ isPublic: true });
@@ -17,4 +18,16 @@ it('sends the new visibility with PUT and returns the saved value', async () => 
 
   expect(await setProfileVisibility(authFetch, false)).toBe(false);
   expect(authFetch).toHaveBeenCalledWith('/profile/visibility', { method: 'PUT', body: { isPublic: false } });
+});
+
+it('reads the leaderboard with the size of the config', async () => {
+  const entry = { rank: 1, username: 'elena_b' };
+  const authFetch = vi.fn().mockResolvedValue({ leaderboard: [entry] });
+
+  expect(await getLeaderboard(authFetch)).toEqual([entry]);
+  expect(authFetch).toHaveBeenCalledWith(`/leaderboard?limit=${LEADERBOARD_SIZE}`);
+});
+
+it('treats a missing leaderboard as empty', async () => {
+  expect(await getLeaderboard(vi.fn().mockResolvedValue(null))).toEqual([]);
 });
