@@ -7,11 +7,12 @@ import TrackPopup from '../components/MapView/TrackPopup.jsx';
 import TrailStartsLayer from '../components/MapView/TrailStartsLayer.jsx';
 import NearbyPanel from '../components/NearbyPanel/NearbyPanel.jsx';
 import ProfileSearchDialog from '../components/ProfileSearch/ProfileSearchDialog.jsx';
+import LeaderboardDialog from '../components/Leaderboard/LeaderboardDialog.jsx';
 import { Link } from 'react-router-dom';
 import Avatar from '../components/Avatar.jsx';
 import { useAuth } from '../context/useAuth.js';
 import ElevationProfile from '../components/ElevationChart/ElevationChart.jsx';
-import { CloseIcon, SearchIcon, TrailsIcon } from '../components/NearbyPanel/icons.jsx';
+import { CloseIcon, SearchIcon, TrailsIcon, TrophyIcon } from '../components/NearbyPanel/icons.jsx';
 import {
   BOUNDS_DEBOUNCE_MS,
   FIT_TRACK_DURATION_MS,
@@ -218,12 +219,23 @@ export default function HomePage() {
                 togglePanel('profiles');
               }}
             />
+            <ToolbarButton
+              label="Leaderboard"
+              icon={<TrophyIcon />}
+              isActive={openPanel === 'leaderboard'}
+              popup="dialog"
+              onClick={(event) => {
+                event.currentTarget.focus({ preventScroll: true });
+                togglePanel('leaderboard');
+              }}
+            />
           </MapToolbar>
           {/* Trails near the center of the map, with filters and saving to the profile */}
           <NearbyPanel isOpen={openPanel === 'nearby'} onClose={closePanel} />
         </MapView>
       </section>
       {openPanel === 'profiles' && <ProfileSearchDialog onClose={closePanel} />}
+      {openPanel === 'leaderboard' && <LeaderboardDialog onClose={closePanel} />}
       {route && (elevationOpen ? (
         // Elevation chart floating over the bottom of the full-screen map
         <div className="home-elevation">

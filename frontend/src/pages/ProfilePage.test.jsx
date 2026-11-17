@@ -276,3 +276,40 @@ it('shows the hike score (total points) under the account card', async () => {
   expect(await screen.findByText('120')).toBeTruthy();
   expect(screen.getByText('Hiking Progress')).toBeTruthy();
 });
+it('shows the level and how far the next one is', async () => {
+  getProfilePoints.mockResolvedValue({
+    totalPoints: 150,
+    completedRoutes: 2,
+    level: { number: 2, name: 'Hiker', minPoints: 100, nextLevelPoints: 200, nextLevelName: 'Explorer', pointsToNext: 50 },
+  });
+
+  render(<ProfilePage />);
+
+  // 150 points: halfway from 100 (start of Hiker) to 200 (Explorer)
+  const bar = await screen.findByRole('progressbar', { name: 'Progress to the next level' });
+  expect(bar.getAttribute('aria-valuenow')).toBe('50');
+  expect(screen.getByText('Hiker')).toBeTruthy();
+  expect(screen.getByText('50 points to Explorer')).toBeTruthy();
+});
+
+it('shows a full bar at the highest level', async () => {
+  getProfilePoints.mockResolvedValue({
+    totalPoints: 460,
+    completedRoutes: 8,
+    level: { number: 5, name: 'Trail master', minPoints: 420, nextLevelPoints: null, nextLevelName: null, pointsToNext: 0 },
+  });
+
+  render(<ProfilePage />);
+
+  expect((await screen.findByRole('progressbar')).getAttribute('aria-valuenow')).toBe('100');
+  expect(screen.getByText('Highest level reached')).toBeTruthy();
+});
+
+it('does not show the level card when the backend sends no level', async () => {
+  getProfilePoints.mockResolvedValue({ totalPoints: 120, completedRoutes: 3 });
+
+  render(<ProfilePage />);
+
+  expect(await screen.findByText('120')).toBeTruthy();
+  expect(screen.queryByRole('progressbar')).toBeNull();
+});

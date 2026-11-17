@@ -1,4 +1,6 @@
-// Backend calls for profile settings and public profile search.
+import { LEADERBOARD_SIZE } from '../config/leaderboard.config.js';
+
+// Backend calls for profile settings, public profile search and the leaderboard.
 // As in trailsService.js, authFetch comes from useAuth(): it adds the token and renews it if it has expired.
 
 // true if the profile is public, false if it is private (the initial value is private).
@@ -17,4 +19,11 @@ export function searchPublicProfiles(authFetch, username, after = null) {
   const query = new URLSearchParams({ q: username });
   if (after !== null) query.set('after', after);
   return authFetch(`/profile/search?${query}`);
+}
+
+// Global leaderboard: the public profiles with the most points, first place first.
+// Each entry: { rank, username, displayName, level, totalPoints, completedTrails, isMine }.
+export async function getLeaderboard(authFetch, limit = LEADERBOARD_SIZE) {
+  const data = await authFetch(`/leaderboard?limit=${limit}`);
+  return data?.leaderboard ?? [];
 }

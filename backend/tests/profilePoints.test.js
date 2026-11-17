@@ -62,7 +62,7 @@ describe('GET /api/profile/points', () => {
     expect(res.body).toEqual({
       totalPoints: 115,
       completedRoutes: 2,
-      level: { number: 1, name: 'Walker', nextLevelPoints: 120, pointsToNext: 5 },
+      level: { number: 1, name: 'Walker', minPoints: 30, nextLevelPoints: 120, nextLevelName: 'Hiker', pointsToNext: 5 },
     });
     expect(supabaseAsUser).toHaveBeenCalledWith('access-123');
     expect(pointsEq).toHaveBeenCalledWith('user_id', 'abc-123');
@@ -79,7 +79,7 @@ describe('GET /api/profile/points', () => {
     expect(res.body).toEqual({
       totalPoints: 0,
       completedRoutes: 0,
-      level: { number: 0, name: 'Beginner', nextLevelPoints: 30, pointsToNext: 30 },
+      level: { number: 0, name: 'Beginner', minPoints: 0, nextLevelPoints: 30, nextLevelName: 'Walker', pointsToNext: 30 },
     });
   });
 
@@ -89,7 +89,7 @@ describe('GET /api/profile/points', () => {
 
     const res = await getPoints();
 
-    expect(res.body.level).toEqual({ number: 2, name: 'Hiker', nextLevelPoints: null, pointsToNext: 0 });
+    expect(res.body.level).toEqual({ number: 2, name: 'Hiker', minPoints: 120, nextLevelPoints: null, nextLevelName: null, pointsToNext: 0 });
   });
 
   it('never returns negative points to the next level', async () => {
