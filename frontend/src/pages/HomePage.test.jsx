@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import HomePage from './HomePage.jsx';
+import { LEADERBOARD_SIZE } from '../config/leaderboard.config.js';
 import { getTrail, getTrailsInBounds } from '../services/trailsService.js';
 
 // jsdom does not implement the native modal methods.
@@ -148,4 +149,27 @@ it('waits for a username and shows the current public profiles', async () => {
   fireEvent.click(trigger);
   fireEvent.keyDown(screen.getByRole('searchbox'), { key: 'Escape' });
   expect(screen.queryByRole('dialog')).toBeNull();
+});
+it('opens the leaderboard from the toolbar and closes it', async () => {
+  authFetch.mockResolvedValueOnce({
+    leaderboard: [
+      { rank: 1, username: 'elena_b', displayName: 'Elena', level: 5, totalPoints: 450, completedTrails: 8, isMine: false },
+      { rank: 2, username: 'mario.rossi', displayName: null, level: 2, totalPoints: 130, completedTrails: 2, isMine: true },
+    ],
+  });
+  render(<HomePage />);
+
+  const trigger = screen.getByRole('button', { name: 'Leaderboard' });
+  fireEvent.click(trigger);
+  expect(trigger.getAttribute('aria-expanded')).toBe('true');
+
+  const list = await screen.findByRole('list', { name: 'Leaderboard' });
+  const [first, second] = within(list).getAllByRole('listitem');
+  expect(within(first).getByText('Elena')).toBeTruthy();
+  expect(within(second).getByText('You')).toBeTruthy();
+  expect(authFetch).toHaveBeenCalledWith(`/leaderboard?limit=${LEADERBOARD_SIZE}`);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Close leaderboard' }));
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(trigger.getAttribute('aria-expanded')).toBe('false');
 });

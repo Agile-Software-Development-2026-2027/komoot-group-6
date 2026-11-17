@@ -1,0 +1,204 @@
+/* Same window as ProfileSearchDialog.module.css */
+.dialog {
+  width: min(34rem, calc(100% - 1.5rem));
+  max-height: min(42rem, calc(100dvh - 1.5rem));
+  margin: auto;
+  padding: 0;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  box-shadow: 0 20px 56px rgb(20 41 43 / 0.28);
+}
+
+.dialog[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dialog::backdrop {
+  background: rgb(20 41 43 / 0.52);
+}
+
+.header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem clamp(0.75rem, 4vw, 1.375rem) 0.75rem;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+.subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.close {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--color-primary);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--color-primary-light);
+}
+
+.dialog button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.body {
+  min-height: 0;
+  padding: 3px clamp(0.75rem, 4vw, 1.375rem) 1rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.375rem, 2vw, 0.75rem);
+  padding: 0.625rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+/* The row of the logged-in user */
+.mine {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+.rank {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.25rem;
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.podium {
+  color: white;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.identity {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.identity strong {
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+
+.profileName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem 0.4rem;
+}
+
+.youBadge {
+  padding: 0.1rem 0.45rem;
+  color: white;
+  background: var(--color-primary);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.score {
+  display: grid;
+  flex-shrink: 0;
+  justify-items: end;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.score strong {
+  color: var(--color-text);
+  font-size: 1.1rem;
+}
+
+.status,
+.status p {
+  margin: 0;
+}
+
+.status {
+  padding: 0.5rem 0;
+  color: var(--color-muted);
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.status [role='alert'] {
+  color: var(--color-error);
+}
+
+.status button {
+  display: block;
+  min-height: 44px;
+  margin: 0.625rem auto 0;
+  padding: 0 1rem;
+  color: var(--color-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.status button:hover {
+  background: var(--color-primary-light);
+}
+
+.note {
+  margin: 0.75rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  text-align: center;
+}
