@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { getLevelName, MAX_LEVEL } from '../../config/levels.config.js';
 import styles from './LevelUpDialog.module.css';
 
 // modal dialog celebrating level up when completing a hike
@@ -8,8 +7,8 @@ export default function LevelUpDialog({ level, levelName, onClose }) {
   const levelNum = typeof level === 'object' ? level?.number : level;
   // ref to auto-focus continue button
   const continueButtonRef = useRef(null);
-  // display name of the newly achieved level
-  const resolvedName = levelName ?? getLevelName(levelNum);
+  // display name of the newly achieved level from backend or fallback
+  const resolvedName = levelName ?? (levelNum != null ? `Level ${levelNum}` : '');
 
   // auto-focus the continue button when dialog opens
   useEffect(() => {
@@ -28,11 +27,6 @@ export default function LevelUpDialog({ level, levelName, onClose }) {
   // dismiss modal when clicking outside the dialog card
   function handleBackdropClick(event) {
     if (event.target === event.currentTarget) onClose();
-  }
-
-  // do not render popup for progression beyond the max level
-  if (typeof levelNum === 'number' && levelNum > MAX_LEVEL) {
-    return null;
   }
 
   return (
@@ -60,11 +54,11 @@ export default function LevelUpDialog({ level, levelName, onClose }) {
         </div>
 
         <h2 id="levelup-title" className={styles.title}>
-          Congratulation!
+          Congratulations!
         </h2>
 
         <p className={styles.message}>
-          You become a <strong className={styles.levelHighlight}>{resolvedName}</strong> !!!
+          You are now: <strong className={styles.levelHighlight}>{resolvedName}</strong>
         </p>
 
         <button

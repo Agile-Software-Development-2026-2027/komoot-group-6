@@ -1,5 +1,3 @@
-import { useEffect, useState } from 'react';
-import { getProfilePoints } from '../services/trailsService';
 import './HikeInfo.css';
 
 // level progress bar shown in the profile header with level name lvl badge and points ratio
@@ -47,48 +45,12 @@ export function ProfileLevel({ level, totalPoints }) {
   );
 }
 
-export default function HikeInfo({ authFetch, pointsData }) {
-  const [fetchedPoints, setFetchedPoints] = useState(null);
-  const [loadingPoints, setLoadingPoints] = useState(!pointsData);
-  const [pointsError, setPointsError] = useState(null);
-
-  useEffect(() => {
-    // skip fetching when the parent page already provides the points data
-    if (pointsData !== undefined) return undefined;
-    let active = true;
-
-    async function loadPoints() {
-      try {
-        setLoadingPoints(true);
-
-        const result = await getProfilePoints(authFetch);
-
-        if (active) {
-          setFetchedPoints(result);
-          setPointsError(null);
-        }
-      } catch (error) {
-        if (active) {
-          setPointsError(error.message);
-        }
-      } finally {
-        if (active) {
-          setLoadingPoints(false);
-        }
-      }
-    }
-
-    loadPoints();
-
-    return () => {
-      active = false;
-    };
-  }, [authFetch, pointsData]);
-
-  // use data passed by parent when available otherwise fallback to local state
-  const points = pointsData !== undefined ? pointsData.data : fetchedPoints;
-  const isLoading = pointsData !== undefined ? pointsData.loading : loadingPoints;
-  const error = pointsData !== undefined ? pointsData.error : pointsError;
+// renders user hiking stats using points data provided by profile page
+export default function HikeInfo({ pointsData }) {
+  // read points loading and error from props passed by parent
+  const points = pointsData?.data;
+  const isLoading = Boolean(pointsData?.loading);
+  const error = pointsData?.error ?? null;
 
   return (
     <section className="profile-points">

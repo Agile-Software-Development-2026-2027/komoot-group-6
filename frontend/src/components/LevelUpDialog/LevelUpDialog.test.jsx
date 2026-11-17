@@ -8,18 +8,24 @@ afterEach(cleanup);
 describe('LevelUpDialog', () => {
   it('renders trophy, congratulations title, level name and continue button', () => {
     const onClose = vi.fn();
-    render(<LevelUpDialog level={0} onClose={onClose} />);
+    render(<LevelUpDialog level={0} levelName="Beginner" onClose={onClose} />);
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /congratulation/i })).toBeInTheDocument();
-    expect(screen.getByText(/you become a/i)).toHaveTextContent('You become a Beginner !!!');
+    expect(screen.getByRole('heading', { name: /^congratulations!$/i })).toBeInTheDocument();
+    expect(screen.getByText(/you are now:/i)).toHaveTextContent('You are now: Beginner');
     expect(screen.getByRole('button', { name: /continue/i })).toBeInTheDocument();
   });
 
   it('renders custom levelName when provided', () => {
     render(<LevelUpDialog level={3} levelName="Explorer" onClose={vi.fn()} />);
 
-    expect(screen.getByText(/you become a/i)).toHaveTextContent('You become a Explorer !!!');
+    expect(screen.getByText(/you are now:/i)).toHaveTextContent('You are now: Explorer');
+  });
+
+  it('falls back to level number when levelName is not provided', () => {
+    render(<LevelUpDialog level={4} onClose={vi.fn()} />);
+
+    expect(screen.getByText(/you are now:/i)).toHaveTextContent('You are now: Level 4');
   });
 
   it('closes when clicking the continue button', () => {
@@ -54,10 +60,5 @@ describe('LevelUpDialog', () => {
 
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
-  it('does not render popup when level is greater than 5', () => {
-    const { container } = render(<LevelUpDialog level={6} onClose={vi.fn()} />);
-    expect(container.firstChild).toBeNull();
   });
 });
