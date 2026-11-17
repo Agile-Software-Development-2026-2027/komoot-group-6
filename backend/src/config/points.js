@@ -6,3 +6,11 @@ export const POINTS_PER_STARTED_KM = 5;
 
 // Number of meters in a kilometer. This is a constant used for calculations.
 export const METERS_PER_KM = 1000;
+
+// levels are not here, to update them you need to change the database (see database/levels.sql) update the .sql and run it on supabase sql editor. 
+// The backend reads the levels table to show the points missing to the next level.
+
+
+// The percentage of points a hike gives you based on your current level. 
+// For example, if you are at level 1, you will receive 90% of the points for a hike. This is used to scale the points awarded based on the user's level.
+export const LEVEL_POINTS_PERCENTAGE = Object.freeze([100, 90, 80, 70, 60, 50]);

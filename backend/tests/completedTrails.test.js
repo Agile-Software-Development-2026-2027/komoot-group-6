@@ -29,11 +29,22 @@ const trailSingle = vi.fn();
 const trailEq = vi.fn(() => ({ single: trailSingle }));
 const trailSelect = vi.fn(() => ({ eq: trailEq }));
 
+// GET the level saved in the profile
+const profileSingle = vi.fn();
+const profileEq = vi.fn(() => ({ single: profileSingle }));
+const profileSelect = vi.fn(() => ({ eq: profileEq }));
+
 // Return different query objects depending on table
 const from = vi.fn((table) => {
   if (table === 'trails') {
     return {
       select: trailSelect
+    };
+  }
+
+  if (table === 'profiles') {
+    return {
+      select: profileSelect
     };
   }
 
@@ -95,6 +106,12 @@ beforeEach(() => {
     error: null
   });
 
+  // Mock the level saved in the profile: by default it does not change
+  profileSingle.mockResolvedValue({
+    data: { level: 0 },
+    error: null
+  });
+
   // Mock successful insertion
   insert.mockResolvedValue({
     error: null
@@ -114,11 +131,13 @@ beforeEach(() => {
 
 
 describe('POST /api/profile/completed-trails', () => {
-  it('segna il sentiero come completato per l\'utente (201)', async () => {
+  it('marks the trail as completed for the user (201)', async () => {
     const res = await complete({ trailId: TRAIL_ID });
 
     expect(res.status).toBe(201);
-    expect(res.body).toEqual({ trailId: TRAIL_ID });
+    expect(res.body).toEqual({ trailId: TRAIL_ID, pointsEarned: 75, level: 0, levelUp: false });
+    expect(profileSelect).toHaveBeenCalledWith('level');
+    expect(profileEq).toHaveBeenCalledWith('id', 'abc-123');
     expect(supabaseAsUser).toHaveBeenCalledWith('access-123');
     expect(from).toHaveBeenCalledWith('completed_trails');
     //expect(insert).toHaveBeenCalledWith({ user_id: 'abc-123', trail_id: TRAIL_ID });
@@ -134,7 +153,40 @@ expect(trailEq).toHaveBeenCalledWith(
 
   });
 
-  
+  it('tells the frontend when the new points reach the next level', async () => {
+    // The level before the insert, then the one updated by the database trigger
+    profileSingle
+      .mockResolvedValueOnce({ data: { level: 0 }, error: null })
+      .mockResolvedValueOnce({ data: { level: 1 }, error: null });
+
+    const res = await complete({ trailId: TRAIL_ID });
+
+    expect(res.status).toBe(201);
+    expect(res.body).toEqual({ trailId: TRAIL_ID, pointsEarned: 75, level: 1, levelUp: true });
+  });
+
+  it('gives fewer points to a user with a higher level', async () => {
+    // Level 2: 80% of the 75 points of the trail
+    profileSingle.mockResolvedValue({ data: { level: 2 }, error: null });
+
+    const res = await complete({ trailId: TRAIL_ID });
+
+    expect(res.status).toBe(201);
+    expect(insert).toHaveBeenCalledWith({ user_id: 'abc-123', trail_id: TRAIL_ID, points_earned: 60 });
+    expect(res.body).toEqual({ trailId: TRAIL_ID, pointsEarned: 60, level: 2, levelUp: false });
+  });
+
+  it('responds 500 when the level cannot be read', async () => {
+    profileSingle.mockResolvedValue({ data: null, error: { code: '42501', message: 'permission denied' } });
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const res = await complete({ trailId: TRAIL_ID });
+
+    expect(res.status).toBe(500);
+    expect(insert).not.toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+
 it('returns 404 when the trail does not exist', async () => {
   trailSingle.mockResolvedValue({
     data: null,
@@ -156,14 +208,14 @@ it('returns 404 when the trail does not exist', async () => {
 });
 
 
-  it('risponde 401 senza token e non scrive nulla', async () => {
+  it('responds 401 without a token and writes nothing', async () => {
     const res = await request(app).post('/api/profile/completed-trails').send({ trailId: TRAIL_ID });
 
     expect(res.status).toBe(401);
     expect(insert).not.toHaveBeenCalled();
   });
 
-  it('risponde 400 se trailId manca o non è una stringa', async () => {
+  it('responds 400 when trailId is missing or not a string', async () => {
     for (const body of [{}, { trailId: '  ' }, { trailId: 42 }]) {
       const res = await complete(body);
       expect(res.status).toBe(400);
@@ -176,7 +228,7 @@ it('returns 404 when the trail does not exist', async () => {
     ['23505', 409, 'Trail already completed'],
     ['23503', 404, 'Trail not found'],
     ['22P02', 400, 'Invalid trail id'],
-  ])('traduce l\'errore Postgres %s in %i', async (code, status, message) => {
+  ])('turns the Postgres error %s into %i', async (code, status, message) => {
     insert.mockResolvedValue({ error: { code, message: 'db error' } });
 
     const res = await complete({ trailId: TRAIL_ID });
@@ -185,7 +237,7 @@ it('returns 404 when the trail does not exist', async () => {
     expect(res.body.error).toBe(message);
   });
 
-  it('risponde 500 per un errore inatteso del database', async () => {
+  it('responds 500 for an unexpected database error', async () => {
     insert.mockResolvedValue({ error: { code: '42501', message: 'permission denied' } });
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -197,7 +249,7 @@ it('returns 404 when the trail does not exist', async () => {
 });
 
 describe('GET /api/profile/completed-trails', () => {
-  it('restituisce l\'elenco dei sentieri completati per l\'utente (200)', async () => {
+  it('returns the list of trails completed by the user (200)', async () => {
     const mockData = [
       { trail_id: TRAIL_ID, completed_at: '2026-11-05T20:00:00Z' },
     ];
@@ -213,14 +265,14 @@ describe('GET /api/profile/completed-trails', () => {
     expect(order).toHaveBeenCalledWith('completed_at', { ascending: false });
   });
 
-  it('risponde 401 se l\'utente non è autenticato', async () => {
+  it('responds 401 when the user is not logged in', async () => {
     const res = await request(app).get('/api/profile/completed-trails');
 
     expect(res.status).toBe(401);
     expect(from).not.toHaveBeenCalled();
   });
 
-  it('risponde 500 se il database restituisce un errore', async () => {
+  it('responds 500 when the database returns an error', async () => {
     order.mockResolvedValue({ data: null, error: new Error('DB read error') });
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -232,7 +284,7 @@ describe('GET /api/profile/completed-trails', () => {
 });
 
 describe('DELETE /api/profile/completed-trails/:trailId', () => {
-  it('rimuove il sentiero completato per l\'utente (204)', async () => {
+  it('removes the completed trail for the user (204)', async () => {
     const res = await uncomplete(TRAIL_ID);
 
     expect(res.status).toBe(204);
@@ -243,14 +295,14 @@ describe('DELETE /api/profile/completed-trails/:trailId', () => {
     expect(delEq2).toHaveBeenCalledWith('trail_id', TRAIL_ID);
   });
 
-  it('risponde 401 senza token', async () => {
+  it('responds 401 without a token', async () => {
     const res = await request(app).delete(`/api/profile/completed-trails/${TRAIL_ID}`);
 
     expect(res.status).toBe(401);
     expect(from).not.toHaveBeenCalled();
   });
 
-  it('risponde 400 se l\'id non è un UUID valido', async () => {
+  it('responds 400 when the id is not a valid UUID', async () => {
     delEq2.mockResolvedValue({ error: { code: '22P02', message: 'invalid input syntax for type uuid' } });
 
     const res = await uncomplete('not-a-uuid');
@@ -259,7 +311,7 @@ describe('DELETE /api/profile/completed-trails/:trailId', () => {
     expect(res.body.error).toBe('Invalid trail id');
   });
 
-  it('risponde 500 per un errore inatteso del database', async () => {
+  it('responds 500 for an unexpected database error', async () => {
     delEq2.mockResolvedValue({ error: { code: '42501', message: 'permission denied' } });
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 

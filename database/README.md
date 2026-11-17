@@ -22,7 +22,8 @@ Run the files in the **SQL Editor** of Supabase, one at a time, in this order:
 | 11 | `trail_comments.sql` | comments on the public trail page |
 | 12 | `public_profile_points.sql` | *optional*: public profile score totals on databases with `completed_trails.points_earned` |
 | 13 | `leaderboards.sql` | trail leaderboard (`get_trail_leaderboard`) and global leaderboard (`get_global_leaderboard`) |
-| 14 | `seed_trails_rende.sql` | *optional*: 8 demo trails around Rende |
+| 14 | `levels.sql` | the levels (`levels` table) and the trigger that saves the level of each user in `profiles.level` |
+| 15 | `seed_trails_rende.sql` | *optional*: 8 demo trails around Rende |
 
 ## Good to know
 
