@@ -36,7 +36,7 @@ export function validateTrailId(req, res, next) {
 
 // Query values arrive as strings (an array if the parameter is repeated).
 // Number('') is 0, so an empty value has to be rejected by hand.
-function readNumber(value) {
+export function readNumber(value) {
   if (typeof value !== 'string' || value.trim() === '') return NaN;
   return Number(value);
 }
