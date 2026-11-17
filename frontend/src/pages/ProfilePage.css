@@ -73,12 +73,21 @@
   outline-offset: 2px;
 }
 
-/* Header: avatar on the left, name and username beside it */
+/* Header: avatar and name on the left, level progress bar on the right */
 .profile-heading {
   display: flex;
   align-items: center;
-  gap: 24px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 24px 48px;
   padding: 24px 0 32px;
+}
+
+.profile-identity {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-width: 0;
 }
 
 /* The profile avatar: forest green with light text (the rule is more specific than the one in Avatar.css) */

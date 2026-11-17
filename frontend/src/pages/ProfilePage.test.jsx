@@ -290,6 +290,7 @@ it('shows the level and how far the next one is', async () => {
   expect(bar.getAttribute('aria-valuenow')).toBe('50');
   expect(screen.getByText('Hiker')).toBeTruthy();
   expect(screen.getByText('50 points to Explorer')).toBeTruthy();
+  expect(screen.getByText('150/200 pts')).toBeTruthy();
 });
 
 it('shows a full bar at the highest level', async () => {
@@ -303,6 +304,7 @@ it('shows a full bar at the highest level', async () => {
 
   expect((await screen.findByRole('progressbar')).getAttribute('aria-valuenow')).toBe('100');
   expect(screen.getByText('Highest level reached')).toBeTruthy();
+  expect(screen.getByText('460 pts')).toBeTruthy();
 });
 
 it('does not show the level card when the backend sends no level', async () => {
