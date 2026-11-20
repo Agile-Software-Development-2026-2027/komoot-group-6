@@ -1,13 +1,6 @@
 import { trailImageUrl } from '../utils/trailImages.js';
 import { ApiError, apiRequest } from './api.js';
 
-// Only in development and on explicit request: original GPX files to try the chart and the map.
-// Without VITE_USE_LOCAL_GPX=true the service keeps using the backend.
-async function getLocalTrails() {
-  const { default: collection } = await import('../data/gpxTrails.json');
-  return collection.features;
-}
-
 // Backend calls about trails.
 // getTrailsInBounds and getTrail: trails are public data, the endpoints do not require login,
 // so no token. getNearbyTrails and saveTrail instead receive authFetch from useAuth(),
@@ -15,34 +8,13 @@ async function getLocalTrails() {
 
 // Trails that start inside the area [minLng, minLat, maxLng, maxLat].
 // Returns a FeatureCollection of points (the starting points).
-export async function getTrailsInBounds(bbox) {
-  if (!import.meta.env.DEV || import.meta.env.VITE_USE_LOCAL_GPX !== 'true') {
-    return apiRequest(`/trails?bbox=${bbox.join(',')}`);
-  }
-
-  const [minLng, minLat, maxLng, maxLat] = bbox;
-  const trails = await getLocalTrails();
-  const features = trails
-    .filter(({ properties: { startPoint: [lng, lat] } }) =>
-      lng >= minLng && lng <= maxLng && lat >= minLat && lat <= maxLat)
-    .map((trail) => ({
-      ...trail,
-      geometry: { type: 'Point', coordinates: trail.properties.startPoint },
-    }));
-
-  return structuredClone({ type: 'FeatureCollection', features });
+export function getTrailsInBounds(bbox) {
+  return apiRequest(`/trails?bbox=${bbox.join(',')}`);
 }
 
 // A trail with the full route: a Feature whose geometry is the route.
-export async function getTrail(id) {
-  if (!import.meta.env.DEV || import.meta.env.VITE_USE_LOCAL_GPX !== 'true') {
-    return apiRequest(`/trails/${encodeURIComponent(id)}`);
-  }
-
-  const trails = await getLocalTrails();
-  const trail = trails.find((feature) => feature.properties.id === id);
-  if (!trail) throw new ApiError('Trail not found', 404);
-  return structuredClone(trail);
+export function getTrail(id) {
+  return apiRequest(`/trails/${encodeURIComponent(id)}`);
 }
 
 export function getTrailComments(trailId, cursor, request = apiRequest) {

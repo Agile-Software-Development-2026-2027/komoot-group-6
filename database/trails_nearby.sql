@@ -1,10 +1,14 @@
 -- A trail is "near" if ANY point of its route is within the radius, not only its start.
 -- Trails without a route are searched by their start point.
 
--- Spatial indexes for the search. Thanks to ::geography they work
--- whether the columns are geography or geometry(..., 4326).
-create index if not exists trails_route_geog_gix on public.trails using gist ((route::geography));
-create index if not exists trails_start_point_geog_gix on public.trails using gist ((start_point::geography));
+-- Use only longitude and latitude for the spatial search. For GPX geometry,
+-- the original coordinates and elevations stay in route_geojson.
+create index if not exists trails_search_route_idx on public.trails using gist
+  ((coalesce(
+    extensions.st_force2d(extensions.st_geomfromgeojson(route_geojson))::extensions.geography,
+    route::extensions.geography
+  )));
+create index if not exists trails_start_point_geog_gix on public.trails using gist ((start_point::extensions.geography));
 
 -- Returns the same columns as the other list functions (start point as lng, lat, plus image_url),
 -- plus distance_m: meters from the search position to the closest point of the trail.
@@ -41,14 +45,17 @@ as $$
     t.length_m, t.ascent_m, t.descent_m, t.max_elevation_m, t.est_duration_min, t.image_url,
     ST_X(t.start_point::geometry) as lng,
     ST_Y(t.start_point::geometry) as lat,
-    ST_Distance(coalesce(t.route::geography, t.start_point::geography), p.origin) as distance_m
+    ST_Distance(coalesce(path.route, t.start_point::geography), p.origin) as distance_m
   from public.trails as t
   cross join params as p
+  cross join lateral (
+    select coalesce(st_force2d(st_geomfromgeojson(t.route_geojson))::geography, t.route::geography) as route
+  ) as path
   where origin_lat between -90 and 90
     and origin_lng between -180 and 180
     and (
-      ST_DWithin(t.route::geography, p.origin, p.radius)
-      or (t.route is null and ST_DWithin(t.start_point::geography, p.origin, p.radius))
+      ST_DWithin(path.route, p.origin, p.radius)
+      or (path.route is null and ST_DWithin(t.start_point::geography, p.origin, p.radius))
     )
   order by distance_m, t.id
   limit (select max_rows from params);
