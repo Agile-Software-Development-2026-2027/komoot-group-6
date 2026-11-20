@@ -73,7 +73,7 @@ create table if not exists public.trails (
 );
 
 -- Spatial indexes: they make the searches by area and by distance fast.
--- (trails_nearby.sql adds two more on route::geography and start_point::geography.)
+-- (trails_nearby.sql also indexes the geometry used by nearby search.)
 create index if not exists trails_start_point_idx on public.trails using gist (start_point);
 create index if not exists trails_route_idx on public.trails using gist (route);
 
