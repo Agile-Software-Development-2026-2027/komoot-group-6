@@ -151,6 +151,28 @@ export default function HomePage() {
     [trails]
   );
 
+  const handleSelectFromNearby = useCallback((trail) => {
+    if (!trail?.id) return;
+    const id = trail.id;
+    const lngLat = trail.start ? {lng: trail.start[0], lat: trail.start[1]} : null;
+
+    selectedIdRef.current = id;
+    setSelected({id, lngLat, properties: trail});
+    setRoute(null);
+    setHoveredPoint(null);
+    setElevationOpen(true);
+    setPopupOpen(false);
+
+    getTrail(id)
+      .then((detail) => {
+        if (selectedIdRef.current === id) setRoute(detail);
+      })
+      .catch(() => {
+        if (selectedIdRef.current === id)
+          setPopupOpen(true);
+      });
+  }, []);
+
   const handleClose = useCallback(() => {
     selectedIdRef.current = null;
     setSelected(null);
@@ -231,7 +253,10 @@ export default function HomePage() {
             />
           </MapToolbar>
           {/* Trails near the center of the map, with filters and saving to the profile */}
-          <NearbyPanel isOpen={openPanel === 'nearby'} onClose={closePanel} />
+          <NearbyPanel isOpen={openPanel === 'nearby'} 
+          onClose={closePanel} 
+          onSelectTrail={handleSelectFromNearby}
+          />
         </MapView>
       </section>
       {openPanel === 'profiles' && <ProfileSearchDialog onClose={closePanel} />}

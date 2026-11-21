@@ -54,7 +54,7 @@ function statusMessage(search, shownCount) {
 
 // "Trails nearby" list on the left of the map: searches for trails within the chosen radius around
 // the map center, filters them by difficulty and lets the user save them to the profile.
-export default function NearbyPanel({ isOpen = true, onClose }) {
+export default function NearbyPanel({ isOpen = true, onClose, onSelectTrail }) {
   const { current } = useMap();
   const { authFetch, user } = useAuth();
   const map = current?.getMap();
@@ -200,6 +200,9 @@ export default function NearbyPanel({ isOpen = true, onClose }) {
   function showOnMap(trail) {
     setSelectedTrail(trail);
     selectionRef.current = { trail, at: Date.now(), restored: false };
+    
+    //notify the Homepage
+    onSelectTrail?.(trail)
     if (map) flyToTrail(map, trail);
 
     // On narrow screens the list covers half the map: we close it to show the place

@@ -317,3 +317,14 @@ test('if the first GPS fix arrives after the click, the map goes back to the tra
   await waitForSearch();
   expect(mock.authFetch).toHaveBeenCalledTimes(2);
 });
+
+test('clicking a trail calls onSelectTrail with the selected trail', async () => {
+  const onSelectTrail = vi.fn();
+  render(<NearbyPanel onSelectTrail={onSelectTrail} />);
+  await waitForSearch();
+  fireEvent.click(screen.getByRole('button', { name: 'Monte Cocuzzo' }));
+  expect(onSelectTrail).toHaveBeenCalledTimes(1);
+  expect(onSelectTrail).toHaveBeenCalledWith(
+    expect.objectContaining({ name: 'Monte Cocuzzo', id: 't2' })
+  );
+});
