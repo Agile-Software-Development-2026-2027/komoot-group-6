@@ -29,6 +29,16 @@
   outline-offset: 2px;
 }
 
+.trail-row-unavailable {
+  display: flex;
+  justify-content: space-between;
+  color: var(--profile-muted);
+}
+
+.trail-row-unavailable:hover {
+  background: none;
+}
+
 .trail-row-title {
   display: flex;
   flex-basis: 100%;
@@ -74,6 +84,10 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) 72px 88px 96px;
     gap: 16px;
+  }
+
+  .trail-row-unavailable {
+    display: flex;
   }
 
   .trail-row-title {

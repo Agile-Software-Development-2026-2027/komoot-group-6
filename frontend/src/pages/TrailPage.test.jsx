@@ -88,7 +88,7 @@ describe('TrailPage', () => {
 
     expect(screen.getByRole('status').textContent).toMatch(/loading/i);
     expect(await screen.findByRole('heading', { level: 1, name: 'Anello del Campus UniCal' })).toBeTruthy();
-    expect(getTrail).toHaveBeenCalledWith(TRAIL_ID);
+    expect(getTrail).toHaveBeenCalledWith(TRAIL_ID, auth.authFetch, { includeCover: true });
 
     // Type and difficulty over the photo (T = Easy)
     expect(screen.getByText('Easy · T')).toBeTruthy();

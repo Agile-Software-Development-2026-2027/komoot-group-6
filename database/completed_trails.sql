@@ -24,7 +24,10 @@ drop policy if exists "Users mark trails completed for themselves" on public.com
 create policy "Users mark trails completed for themselves"
   on public.completed_trails for insert
   to authenticated
-  with check ((select auth.uid()) = user_id);
+  with check (
+    (select auth.uid()) = user_id
+    and exists (select 1 from public.trails t where t.id = completed_trails.trail_id)
+  );
 
 drop policy if exists "Users remove their completed trails" on public.completed_trails;
 create policy "Users remove their completed trails"

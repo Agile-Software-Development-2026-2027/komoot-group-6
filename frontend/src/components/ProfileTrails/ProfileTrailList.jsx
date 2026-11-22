@@ -30,7 +30,12 @@ export default function ProfileTrailList({ trails, emptyText }) {
 
   return (
     <ul className="trail-list">
-      {trails.map((trail) => (
+      {trails.map((trail) => trail.unavailable ? (
+        <li key={trail.id} className="trail-row trail-row-unavailable">
+          <span className="trail-row-name">Unavailable trail</span>
+          <span className="trail-row-date">{formatDate(trail.date) ?? ''}</span>
+        </li>
+      ) : (
         <li key={trail.id}>
           <Link to={`/trails/${encodeURIComponent(trail.id)}`} className="trail-row">
             <span className="trail-row-title">

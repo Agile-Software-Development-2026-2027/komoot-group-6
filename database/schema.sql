@@ -72,6 +72,10 @@ create table if not exists public.trails (
   constraint trails_image_url_https check (image_url ~ '^https://')
 );
 
+-- Existing trails stay public. GPX uploads explicitly choose their visibility.
+alter table public.trails
+  add column if not exists is_public boolean not null default true;
+
 -- Spatial indexes: they make the searches by area and by distance fast.
 -- (trails_nearby.sql also indexes the geometry used by nearby search.)
 create index if not exists trails_start_point_idx on public.trails using gist (start_point);
@@ -79,11 +83,11 @@ create index if not exists trails_route_idx on public.trails using gist (route);
 
 alter table public.trails enable row level security;
 
--- Everyone, even without login, can read the trails.
+-- Private trails (including the GPX geometry and cover) are visible to their author.
 drop policy if exists trails_select on public.trails;
 create policy trails_select
   on public.trails for select
-  using (true);
+  using (is_public or created_by = (select auth.uid()));
 
 -- A logged-in user can add a trail only as its author,
 -- and change or delete only the trails they created.

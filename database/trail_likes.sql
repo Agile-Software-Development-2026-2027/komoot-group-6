@@ -26,7 +26,10 @@ drop policy if exists "Users like trails for themselves" on public.trail_likes;
 create policy "Users like trails for themselves"
   on public.trail_likes for insert
   to authenticated
-  with check ((select auth.uid()) = user_id);
+  with check (
+    (select auth.uid()) = user_id
+    and exists (select 1 from public.trails t where t.id = trail_likes.trail_id)
+  );
 
 drop policy if exists "Users remove their trail likes" on public.trail_likes;
 create policy "Users remove their trail likes"
@@ -53,7 +56,7 @@ as $$
     coalesce(bool_or(l.user_id = (select auth.uid())), false)
   from public.trails as t
   left join public.trail_likes as l on l.trail_id = t.id
-  where t.id = p_trail_id
+  where t.id = p_trail_id and (t.is_public or t.created_by = (select auth.uid()))
   group by t.id;
 $$;
 

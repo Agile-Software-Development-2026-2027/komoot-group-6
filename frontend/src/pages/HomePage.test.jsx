@@ -82,7 +82,7 @@ it('places the marker at the hovered route coordinate and clears it on leave, ro
   expect(screen.queryByTestId('hover-marker')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Hover profile' }));
   fireEvent.click(screen.getByRole('button', { name: 'Second trail' }));
-  await waitFor(() => expect(getTrail).toHaveBeenLastCalledWith('1'));
+  await waitFor(() => expect(getTrail).toHaveBeenLastCalledWith('1', authFetch));
   expect(screen.queryByTestId('hover-marker')).toBeNull();
 
   fireEvent.click(await screen.findByRole('button', { name: 'Hover profile' }));

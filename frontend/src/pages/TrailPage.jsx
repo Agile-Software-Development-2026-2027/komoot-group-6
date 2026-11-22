@@ -36,14 +36,14 @@ export default function TrailPage() {
 
 // Loads the trail and shows one of four states: loading, ready, not found, error
 function TrailContent({ id, onRetry }) {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, authFetch } = useAuth();
   const [state, setState] = useState({ status: 'loading' });
 
   useEffect(() => {
     // True if the user leaves the page before the answer arrives: the answer is ignored
     let ignore = false;
 
-    getTrail(id)
+    getTrail(id, isAuthenticated ? authFetch : undefined, { includeCover: true })
       .then((feature) => {
         if (!ignore) setState({ status: 'ready', feature });
       })
@@ -57,7 +57,7 @@ function TrailContent({ id, onRetry }) {
     return () => {
       ignore = true;
     };
-  }, [id]);
+  }, [id, authFetch, isAuthenticated]);
 
   if (state.status === 'loading') {
     return (
@@ -71,7 +71,7 @@ function TrailContent({ id, onRetry }) {
     return (
       <section className={styles.message}>
         <h1>Trail not found</h1>
-        <p>This trail does not exist or has been removed.</p>
+        <p>This trail is currently unavailable.</p>
         <Link to="/" className={styles.messageLink}>Back to the map</Link>
       </section>
     );
@@ -105,7 +105,7 @@ function TrailContent({ id, onRetry }) {
           <ChevronLeftIcon />
           Back to map
         </Link>
-        {isAuthenticated && <TrailShare feature={feature} durationMin={durationMin} />}
+        {isAuthenticated && trail.isPublic !== false && <TrailShare feature={feature} durationMin={durationMin} />}
       </div>
 
       {/* On the cover, bottom right: heart with the total likes (SCRUM-15) */}

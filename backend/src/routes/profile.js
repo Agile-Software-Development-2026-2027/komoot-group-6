@@ -15,6 +15,7 @@ import { requireAuth } from '../middlewares/requireAuth.js';
 import { validateCompleteTrail } from '../middlewares/validateCompleteTrail.js';
 import { validateSaveTrail } from '../middlewares/validateSaveTrail.js';
 import { validateVisibility } from '../middlewares/validateVisibility.js';
+import { listUploadedTrails } from '../controllers/uploadedTrailsController.js';
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.delete('/saved-trails/:trailId', requireAuth, unsaveTrail);
 router.post('/completed-trails', requireAuth, validateCompleteTrail, completeTrail);
 router.get('/completed-trails', requireAuth, getCompletedTrails);
 router.delete('/completed-trails/:trailId', requireAuth, uncompleteTrail);
+router.get('/uploaded-trails', requireAuth, listUploadedTrails);
 router.get('/visibility', requireAuth, getVisibility);
 router.put('/visibility', requireAuth, validateVisibility, setVisibility);
 router.get('/points', requireAuth, getProfilePoints);

@@ -106,6 +106,14 @@ export function CloseIcon() {
   );
 }
 
+export function PlusIcon() {
+  return (
+    <svg {...LINE} width="22" height="22">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
 // Spunta per il completamento del sentiero (SCRUM-51)
 export function CheckIcon() {
   return (

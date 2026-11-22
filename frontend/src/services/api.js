@@ -3,10 +3,11 @@ const API_URL = import.meta.env.VITE_API_URL;
 // Errore generato quando una richiesta al backend non va a buon fine.
 // Mantiene lo stato HTTP, consentendo alle pagine di reagire in modo diverso a codici come 400, 409, ecc.
 export class ApiError extends Error {
-  constructor(message, status) {
+  constructor(message, status, data) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.data = data;
   }
 }
 
@@ -14,7 +15,8 @@ export class ApiError extends Error {
 // Genera un ApiError in caso di stati di errore o quando non è possibile raggiungere il server.
 export async function apiRequest(path, { method = 'GET', body, token } = {}) {
   const headers = {};
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  const isForm = body instanceof FormData;
+  if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
   if (token) headers.Authorization = `Bearer ${token}`;
 
   let response;
@@ -22,7 +24,7 @@ export async function apiRequest(path, { method = 'GET', body, token } = {}) {
     response = await fetch(`${API_URL}${path}`, {
       method,
       headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: isForm ? body : JSON.stringify(body),
     });
   } catch {
     // in questo caso fetch non va a buon fine se il backend è spento o se il browser blocca la chiamata.
@@ -34,7 +36,7 @@ export async function apiRequest(path, { method = 'GET', body, token } = {}) {
 
   if (!response.ok) {
     // Il backend risponde sempre agli errori nel formato { error: '...' }
-    throw new ApiError(data?.error ?? 'Something went wrong. Please try again.', response.status);
+    throw new ApiError(data?.error ?? 'Something went wrong. Please try again.', response.status, data);
   }
 
   return data;

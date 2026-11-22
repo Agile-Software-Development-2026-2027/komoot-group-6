@@ -25,6 +25,7 @@ create policy trail_comments_insert_own
   with check (
     author_id = (select auth.uid())
     and not coalesce((select (auth.jwt() ->> 'is_anonymous')::boolean), false)
+    and exists (select 1 from public.trails t where t.id = trail_comments.trail_id)
   );
 
 -- The delete filter can read the IDs of the current user's rows.
@@ -38,7 +39,7 @@ create policy trail_comments_delete_own
   on public.trail_comments for delete to authenticated
   using (author_id = (select auth.uid()));
 
--- Trails are public in schema.sql. Project only the fields a reader needs,
+-- Return comments for visible trails only. Project only the fields a reader needs,
 -- and expose usernames only when the associated profile is public.
 create or replace function public.get_trail_comments(
   p_trail_id uuid,
@@ -71,7 +72,7 @@ as $$
     ) as page
   ), '[]'::jsonb)
   from public.trails as t
-  where t.id = p_trail_id;
+  where t.id = p_trail_id and (t.is_public or t.created_by = (select auth.uid()));
 $$;
 
 revoke all on function public.get_trail_comments(uuid, timestamptz, uuid, integer)

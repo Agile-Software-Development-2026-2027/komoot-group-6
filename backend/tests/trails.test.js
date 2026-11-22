@@ -1,15 +1,16 @@
 // Integration tests for GET /api/trails and GET /api/trails/:id.
 // REAL: the Express app, the validation, the controller, trailsService.
 // FAKE: Supabase (supabase.rpc).
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 
 vi.mock('../src/config/supabase.js', () => ({
-  supabase: { rpc: vi.fn() },
+  supabase: { rpc: vi.fn(), from: vi.fn(), auth: { getUser: vi.fn() } },
+  supabaseAsUser: vi.fn(),
 }));
 
 import app from '../src/app.js';
-import { supabase } from '../src/config/supabase.js';
+import { supabase, supabaseAsUser } from '../src/config/supabase.js';
 
 const TRAIL_ID = 'f4ef6996-f2e9-4462-9d86-a56d15cbaff2';
 
@@ -32,6 +33,8 @@ const ROW = {
 beforeEach(() => {
   vi.clearAllMocks();
 });
+
+afterEach(() => vi.unstubAllEnvs());
 
 describe('GET /api/trails', () => {
   it('returns the trails in the area as a FeatureCollection (200)', async () => {
@@ -82,6 +85,46 @@ describe('GET /api/trails/:id', () => {
     const res = await request(app).get(`/api/trails/${TRAIL_ID}`);
 
     expect(res.status).toBe(404);
+  });
+
+  it.each(['42703', 'PGRST204'])('keeps trail details readable if GPX metadata is unavailable (%s)', async (code) => {
+    const imageUrl = 'https://example.com/trail.jpg';
+    supabase.rpc.mockResolvedValue({ data: [{ ...ROW, image_url: imageUrl }], error: null });
+    const maybeSingle = vi.fn().mockResolvedValue({ data: null, error: { code, message: 'Missing GPX column' } });
+    supabase.from.mockReturnValue({ select: () => ({ eq: () => ({ maybeSingle }) }) });
+
+    const res = await request(app).get(`/api/trails/${TRAIL_ID}?cover=1`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.geometry).toEqual(ROW.route);
+    expect(res.body.properties).toMatchObject({ name: ROW.name, imageUrl });
+  });
+
+  it('uses the authenticated reader for a private trail and its cover', async () => {
+    const base = 'https://test.supabase.co/storage/v1/object';
+    const path = `author/${TRAIL_ID}/cover.jpg`;
+    const reference = `${base}/authenticated/trail-covers/${path}`;
+    const signedUrl = `${base}/sign/trail-covers/${path}?token=test`;
+    vi.stubEnv('SUPABASE_URL', 'https://test.supabase.co');
+    const rpc = vi.fn().mockResolvedValue({ data: [{ ...ROW, image_url: reference }], error: null });
+    const maybeSingle = vi.fn().mockResolvedValue({ data: { is_public: false }, error: null });
+    const createSignedUrls = vi.fn().mockResolvedValue({ data: [{ path, signedUrl }], error: null });
+    supabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'author' } }, error: null });
+    supabaseAsUser.mockReturnValue({
+      rpc,
+      from: () => ({ select: () => ({ eq: () => ({ maybeSingle }) }) }),
+      storage: { from: () => ({ createSignedUrls }) },
+    });
+
+    const res = await request(app).get(`/api/trails/${TRAIL_ID}?cover=1`)
+      .set('Authorization', 'Bearer owner-token');
+
+    expect(res.status).toBe(200);
+    expect(res.headers['cache-control']).toBe('no-store');
+    expect(res.body.properties).toMatchObject({ imageUrl: signedUrl, isPublic: false });
+    expect(supabaseAsUser).toHaveBeenCalledWith('owner-token');
+    expect(createSignedUrls).toHaveBeenCalledWith([path], 300);
+    expect(supabase.rpc).not.toHaveBeenCalled();
   });
 
   it('responds 400 when the id is not a UUID, without calling Supabase', async () => {

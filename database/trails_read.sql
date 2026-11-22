@@ -31,7 +31,7 @@ as $$
   where t.id = get_trail.trail_id;
 $$;
 
--- Logged-in and anonymous users can call it (the trails table is readable by everyone)
+-- Both roles can call it. The trails table policy decides which rows are visible.
 grant execute on function public.get_trail(uuid) to anon, authenticated;
 
 -- Trails whose start point is inside the rectangle of the map

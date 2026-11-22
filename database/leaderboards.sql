@@ -40,7 +40,7 @@ as $$
     ) as ranked
   ), '[]'::jsonb)
   from public.trails as t
-  where t.id = p_trail_id;
+  where t.id = p_trail_id and (t.is_public or t.created_by = (select auth.uid()));
 $$;
 
 -- returns the global leaderboard ordered by highest player level and total points

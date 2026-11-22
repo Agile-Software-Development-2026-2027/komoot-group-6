@@ -2,19 +2,18 @@ import { trailImageUrl } from '../utils/trailImages.js';
 import { ApiError, apiRequest } from './api.js';
 
 // Backend calls about trails.
-// getTrailsInBounds and getTrail: trails are public data, the endpoints do not require login,
-// so no token. getNearbyTrails and saveTrail instead receive authFetch from useAuth(),
-// which adds the token and refreshes it if it has expired.
+// An authenticated request includes the user's own private trails.
 
 // Trails that start inside the area [minLng, minLat, maxLng, maxLat].
 // Returns a FeatureCollection of points (the starting points).
-export function getTrailsInBounds(bbox) {
-  return apiRequest(`/trails?bbox=${bbox.join(',')}`);
+export function getTrailsInBounds(bbox, request = apiRequest) {
+  return request(`/trails?bbox=${bbox.join(',')}`);
 }
 
 // A trail with the full route: a Feature whose geometry is the route.
-export function getTrail(id) {
-  return apiRequest(`/trails/${encodeURIComponent(id)}`);
+export function getTrail(id, request = apiRequest, { includeCover = false } = {}) {
+  const cover = includeCover ? '?cover=1' : '';
+  return request(`/trails/${encodeURIComponent(id)}${cover}`);
 }
 
 export function getTrailComments(trailId, cursor, request = apiRequest) {
@@ -54,7 +53,7 @@ function toTrail(feature) {
     elevationGainM: props.ascentM,
     distanceM: props.distanceM,
     start: toLngLat(feature?.geometry?.coordinates),
-    imageUrl: trailImageUrl(props.name),
+    imageUrl: props.imageUrl ?? trailImageUrl(props.name),
     saved: Boolean(props.saved),
   };
 }

@@ -136,7 +136,7 @@ describe('POST /api/trails/:id/likes', () => {
   });
 
   it('responds 500 for an unexpected database error', async () => {
-    insert.mockResolvedValue({ error: { code: '42501', message: 'permission denied' } });
+    insert.mockResolvedValue({ error: { code: '08006', message: 'connection failure' } });
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const res = await send('post');

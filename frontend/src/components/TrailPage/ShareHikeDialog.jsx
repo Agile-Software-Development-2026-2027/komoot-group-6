@@ -75,7 +75,7 @@ export default function ShareHikeDialog({ feature, durationMin, completedAt, onC
       stats: recapStats(trail, durationMin),
       footer: footerText(trail),
       geometry: feature.geometry,
-      imageUrl: trailImageUrl(trail.name),
+      imageUrl: trail.imageUrl ?? trailImageUrl(trail.name),
     })
       .then((blob) => {
         if (ignore) return;

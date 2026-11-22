@@ -25,7 +25,10 @@ drop policy if exists "Users save trails for themselves" on public.saved_trails;
 create policy "Users save trails for themselves"
   on public.saved_trails for insert
   to authenticated
-  with check ((select auth.uid()) = user_id);
+  with check (
+    (select auth.uid()) = user_id
+    and exists (select 1 from public.trails t where t.id = saved_trails.trail_id)
+  );
 
 drop policy if exists "Users remove their saved trails" on public.saved_trails;
 create policy "Users remove their saved trails"

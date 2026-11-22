@@ -8,6 +8,7 @@ const PROFILE_SEARCH_PAGE_SIZE = 20;
 const INSERT_ERRORS = {
   '23505': { status: 409, error: 'Trail already saved' }, // duplicate key: the user has already saved it
   '23503': { status: 404, error: 'Trail not found' }, // the trail does not exist in the trails table
+  '42501': { status: 404, error: 'Trail not found' }, // the trail is not visible to this user
   '22P02': { status: 400, error: 'Invalid trail id' }, // the id is not a uuid
 };
 

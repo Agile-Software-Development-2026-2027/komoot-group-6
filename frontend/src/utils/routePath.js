@@ -3,6 +3,8 @@
 // Returns { d, start, end } (start/end are the [x, y] of the beginning and the end) or null
 // if the route does not have at least two valid points in different places.
 
+import { routeBounds } from './routeBounds.js';
+
 const MAX_POINTS = 400;
 
 function toLines(geometry) {
@@ -24,17 +26,15 @@ export function routeToSvgPath(geometry, { width = 640, height = 360, padding = 
     .filter((line) => line.length >= 2);
   if (lines.length === 0) return null;
 
-  const all = lines.flat();
-  const lngs = all.map(([lng]) => lng);
-  const lats = all.map(([, lat]) => lat);
-  const minLng = Math.min(...lngs);
-  const maxLat = Math.max(...lats);
-  const midLat = (maxLat + Math.min(...lats)) / 2;
+  const [[minLng, minLat], [maxLng, maxLat]] = routeBounds({
+    type: 'MultiLineString', coordinates: lines,
+  });
+  const midLat = (maxLat + minLat) / 2;
 
   // At this latitude a degree of longitude is shorter than a degree of latitude
   const xScale = Math.cos((midLat * Math.PI) / 180);
-  const spanX = (Math.max(...lngs) - minLng) * xScale;
-  const spanY = maxLat - Math.min(...lats);
+  const spanX = (maxLng - minLng) * xScale;
+  const spanY = maxLat - minLat;
   if (spanX === 0 && spanY === 0) return null;
 
   const scale = Math.min(

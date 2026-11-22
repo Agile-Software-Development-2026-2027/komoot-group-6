@@ -61,6 +61,6 @@ as $$
   limit (select max_rows from params);
 $$;
 
--- Trails are public data, like get_trail: anyone can search them.
+-- Anyone can search trails visible to their role under the trails table policy.
 revoke execute on function public.nearby_trails(double precision, double precision, double precision, integer) from public;
 grant execute on function public.nearby_trails(double precision, double precision, double precision, integer) to anon, authenticated;

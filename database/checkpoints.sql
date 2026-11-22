@@ -20,11 +20,11 @@ create index if not exists checkpoints_trail_idx on public.checkpoints (trail_id
 
 alter table public.checkpoints enable row level security;
 
--- Everyone can read the checkpoints, like the trails.
+-- Checkpoints follow the visibility of their trail.
 drop policy if exists checkpoints_select on public.checkpoints;
 create policy checkpoints_select
   on public.checkpoints for select
-  using (true);
+  using (exists (select 1 from public.trails t where t.id = checkpoints.trail_id));
 
 -- Only the author of the trail can add, change or delete its checkpoints.
 drop policy if exists checkpoints_write on public.checkpoints;
