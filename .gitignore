@@ -10,6 +10,9 @@ node_modules/
 dist/
 dist-ssr/
 
+# GPX photos are ready for Git once the upload has been saved.
+/backend/data/trail-covers/*.pending
+
 # Logs
 logs/
 *.log

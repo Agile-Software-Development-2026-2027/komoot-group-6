@@ -13,7 +13,7 @@ export class ApiError extends Error {
 
 // Invia una richiesta al backend e restituisce il corpo JSON analizzato.
 // Genera un ApiError in caso di stati di errore o quando non è possibile raggiungere il server.
-export async function apiRequest(path, { method = 'GET', body, token } = {}) {
+export async function apiRequest(path, { method = 'GET', body, token, asBlob = false } = {}) {
   const headers = {};
   const isForm = body instanceof FormData;
   if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
@@ -30,6 +30,8 @@ export async function apiRequest(path, { method = 'GET', body, token } = {}) {
     // in questo caso fetch non va a buon fine se il backend è spento o se il browser blocca la chiamata.
     throw new ApiError('Cannot reach the server. Please try again later.', 0);
   }
+
+  if (response.ok && asBlob) return response.blob();
 
   // Alcune risposte sono prive di corpo (ad es. 204 in seguito a un logout).
   const data = response.status === 204 ? null : await response.json().catch(() => null);

@@ -22,6 +22,8 @@ function loadImage(url) {
   if (!url) return Promise.resolve(null);
   return new Promise((resolve) => {
     const image = new Image();
+    // Canvas can export a Storage photo only when the browser loads it with CORS.
+    image.crossOrigin = 'anonymous';
     image.onload = () => resolve(image);
     image.onerror = () => resolve(null);
     image.src = url;

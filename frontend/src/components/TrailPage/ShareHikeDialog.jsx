@@ -10,7 +10,6 @@ import {
   shareText,
   trailUrl,
 } from '../../utils/shareRecap.js';
-import { trailImageUrl } from '../../utils/trailImages.js';
 import { DIFFICULTY_LABELS } from '../NearbyPanel/difficulty.js';
 import { ChatIcon, CloseIcon, CopyIcon, DownloadIcon, GlobeIcon, PostIcon, SendIcon, ShareIcon } from './shareIcons.jsx';
 import styles from './ShareHike.module.css';
@@ -48,10 +47,10 @@ function footerText(trail) {
 }
 
 
-export default function ShareHikeDialog({ feature, durationMin, completedAt, onClose }) {
+export default function ShareHikeDialog({ feature, durationMin, completed, completedAt, onClose }) {
   const trail = feature.properties;
   const url = trailUrl(trail.id);
-  const text = shareText(trail, durationMin);
+  const text = shareText(trail, durationMin, completed);
   const links = shareLinks(text, url);
   const fileName = recapFileName(trail.name);
   // The system share sheet does not exist in every browser
@@ -71,11 +70,11 @@ export default function ShareHikeDialog({ feature, durationMin, completedAt, onC
 
     createRecapImage({
       name: trail.name,
-      kicker: date ? `Completed · ${date}` : 'Completed hike',
+      kicker: completed ? (date ? `Completed · ${date}` : 'Completed hike') : 'Trail',
       stats: recapStats(trail, durationMin),
       footer: footerText(trail),
       geometry: feature.geometry,
-      imageUrl: trail.imageUrl ?? trailImageUrl(trail.name),
+      imageUrl: trail.imageUrl,
     })
       .then((blob) => {
         if (ignore) return;
@@ -91,7 +90,7 @@ export default function ShareHikeDialog({ feature, durationMin, completedAt, onC
       // Frees the memory of the image when the window closes
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [feature, trail, durationMin, completedAt]);
+  }, [feature, trail, durationMin, completed, completedAt]);
 
   // While the window is open: focus on the close button, Escape closes, Tab stays in the window,
   // the page behind does not scroll
@@ -184,8 +183,8 @@ export default function ShareHikeDialog({ feature, durationMin, completedAt, onC
         </div>
 
         <div className={styles.panel}>
-          <h2 id="share-hike-title" className={styles.title}>Share your hike</h2>
-          <p className={styles.subtitle}>Show your friends what you have done.</p>
+          <h2 id="share-hike-title" className={styles.title}>{completed ? 'Share your hike' : 'Share trail'}</h2>
+          {completed && <p className={styles.subtitle}>Show your friends what you have done.</p>}
 
           {/* The text that is sent with the link */}
           <blockquote className={styles.message}>{text}</blockquote>

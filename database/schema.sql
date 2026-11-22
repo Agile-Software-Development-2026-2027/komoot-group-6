@@ -67,14 +67,20 @@ create table if not exists public.trails (
   external_id      text,                                    -- id in the source (e.g. demo-rende-01)
   created_by       uuid        references public.profiles (id) on delete set null,
   created_at       timestamptz not null default now(),
-  image_url        text,
-  -- Only secure links for the cover image
-  constraint trails_image_url_https check (image_url ~ '^https://')
+  image_url        text
 );
 
 -- Existing trails stay public. GPX uploads explicitly choose their visibility.
 alter table public.trails
   add column if not exists is_public boolean not null default true;
+
+-- A cover can be a file relative to backend/data or a legacy HTTPS link.
+alter table public.trails
+  drop constraint if exists trails_image_url_https,
+  drop constraint if exists trails_image_url_format,
+  add constraint trails_image_url_format check (
+    image_url ~ '^https://' or image_url ~ '^trail-covers/(catalog|gpx)-[a-z0-9-]+[.](jpg|webp)$'
+  );
 
 -- Spatial indexes: they make the searches by area and by distance fast.
 -- (trails_nearby.sql also indexes the geometry used by nearby search.)

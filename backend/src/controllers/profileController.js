@@ -131,8 +131,9 @@ export async function completeTrail(req, res) {
   
   // Level before the insert: the points depend on it, and it tells the frontend if the user goes up a level
   const levelBefore = await readLevel(req);
-  // Calculate points based on difficulty, length and level of the user
-  const pointsEarned = calculateHikeScore(trail.difficulty, trail.length_m, levelBefore);
+  // Older catalogue trails can omit the CAI grade. Score those as T.
+  const difficulty = trail.difficulty ?? 'T';
+  const pointsEarned = calculateHikeScore(difficulty, trail.length_m, levelBefore);
   console.log("Points earned::", pointsEarned)
   const { data, error } = await supabaseAsUser(req.token)
     .from('completed_trails')

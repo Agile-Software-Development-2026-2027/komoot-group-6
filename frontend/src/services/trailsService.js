@@ -1,4 +1,3 @@
-import { trailImageUrl } from '../utils/trailImages.js';
 import { ApiError, apiRequest } from './api.js';
 
 // Backend calls about trails.
@@ -14,6 +13,10 @@ export function getTrailsInBounds(bbox, request = apiRequest) {
 export function getTrail(id, request = apiRequest, { includeCover = false } = {}) {
   const cover = includeCover ? '?cover=1' : '';
   return request(`/trails/${encodeURIComponent(id)}${cover}`);
+}
+
+export function getTrailCover(id, request = apiRequest) {
+  return request(`/trails/${encodeURIComponent(id)}/cover`, { asBlob: true });
 }
 
 export function getTrailComments(trailId, cursor, request = apiRequest) {
@@ -53,7 +56,8 @@ function toTrail(feature) {
     elevationGainM: props.ascentM,
     distanceM: props.distanceM,
     start: toLngLat(feature?.geometry?.coordinates),
-    imageUrl: props.imageUrl ?? trailImageUrl(props.name),
+    imageUrl: props.imageUrl ?? null,
+    ...(props.hasLocalCover ? { hasLocalCover: true } : {}),
     saved: Boolean(props.saved),
   };
 }

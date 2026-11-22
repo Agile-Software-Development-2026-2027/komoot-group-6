@@ -5,12 +5,13 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import App from '../App.jsx';
 import { ApiError } from '../services/api.js';
-import { deleteTrailComment, getTrail, getTrailComments, postTrailComment } from '../services/trailsService.js';
+import { deleteTrailComment, getCompletedTrails, getTrail, getTrailComments, postTrailComment } from '../services/trailsService.js';
 import TrailPage from './TrailPage.jsx';
 
 vi.mock('../services/trailsService.js', async (importOriginal) => ({
   ...(await importOriginal()), // keeps CAI_TO_DIFFICULTY
   getTrail: vi.fn(),
+  getCompletedTrails: vi.fn(() => Promise.resolve([])),
   deleteTrailComment: vi.fn(),
   getTrailComments: vi.fn(),
   postTrailComment: vi.fn(),
@@ -25,8 +26,6 @@ const auth = { isAuthenticated: true, user: { id: 'author' }, loading: false, au
 vi.mock('../components/TrailPage/TrailMap.jsx', () => ({
   default: ({ trail }) => <div data-testid="trail-map">{trail.geometry.type}</div>,
 }));
-// "Share your hike" has its own tests (TrailShare.test.jsx)
-vi.mock('../components/TrailPage/TrailShare.jsx', () => ({ default: () => null }));
 vi.mock('./HomePage.jsx', () => ({ default: () => null }));
 
 const TRAIL_ID = 'f4ef6996-f2e9-4462-9d86-a56d15cbaff2';
@@ -116,6 +115,14 @@ describe('TrailPage', () => {
     const directions = screen.getByRole('link', { name: 'Get directions' });
     expect(directions.getAttribute('href')).toBe('https://www.google.com/maps/dir/?api=1&destination=39.359,16.2275');
     expect(screen.getByText('39.3590° N, 16.2275° E')).toBeTruthy();
+  });
+
+  it('shows the share button for a completed private trail', async () => {
+    getTrail.mockResolvedValue({ ...FEATURE, properties: { ...FEATURE.properties, isPublic: false } });
+    getCompletedTrails.mockResolvedValueOnce([{ trail_id: TRAIL_ID, completed_at: '2026-11-06T10:00:00Z' }]);
+    renderPage();
+
+    expect(await screen.findByRole('button', { name: 'Share your hike' })).toBeTruthy();
   });
 
   it('shows the like button with the total likes on the cover', async () => {

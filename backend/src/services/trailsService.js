@@ -1,5 +1,5 @@
 import { supabase } from '../config/supabase.js';
-import { trailCoverPath, withSignedTrailCovers } from './trailCovers.js';
+import { hasTrailCover, isManagedTrailCover } from './trailCovers.js';
 
 function toTrailProperties(row) {
   return {
@@ -14,7 +14,7 @@ function toTrailProperties(row) {
     maxElevationM: row.max_elevation_m ?? null,
     estDurationMin: row.est_duration_min ?? null,
     startPoint: [row.lng, row.lat],
-    ...(row.image_url && !trailCoverPath(row.image_url) ? { imageUrl: row.image_url } : {}),
+    ...(row.image_url && !isManagedTrailCover(row.image_url) ? { imageUrl: row.image_url } : {}),
   };
 }
 
@@ -41,6 +41,11 @@ export function toTrailDetailFeature(row) {
 // Many rows -> one GeoJSON FeatureCollection of start points
 export function toTrailCollection(rows) {
   return { type: 'FeatureCollection', features: rows.map(toTrailFeature) };
+}
+
+async function withLocalCover(feature, trail) {
+  if (await hasTrailCover(trail)) feature.properties.hasLocalCover = true;
+  return feature;
 }
 
 // Supabase does not throw: it returns { data, error }. We throw, so that
@@ -76,20 +81,18 @@ export async function getTrailById(id, db = supabase, includeCover = false) {
 
   if (!includeCover) return toTrailDetailFeature(row);
 
-  // Visibility is also used by the detail page to enable sharing.
   const { data: visibility, error: visibilityError } = await db.from('trails')
-    .select('is_public')
+    .select('is_public, created_by')
     .eq('id', id)
     .maybeSingle();
   // Older databases still serve the trail while the GPX migration is pending.
   if (isMissingColumn(visibilityError)) {
-    return toTrailDetailFeature(row);
+    return withLocalCover(toTrailDetailFeature(row), row);
   }
   failIfError(visibilityError, 'load trail visibility');
   if (!visibility) return null;
 
-  const [withCover] = await withSignedTrailCovers(db, [row]);
-  const feature = toTrailDetailFeature(withCover);
+  const feature = await withLocalCover(toTrailDetailFeature(row), { ...row, created_by: visibility.created_by });
   feature.properties.isPublic = visibility.is_public;
   return feature;
 }
@@ -117,6 +120,6 @@ export async function getNearbyTrails({ lat, lng, radius, limit }, db = supabase
     max_results: limit,
   });
   failIfError(error, 'search the nearby trails');
-  const rows = await withSignedTrailCovers(db, data ?? []);
-  return { type: 'FeatureCollection', features: rows.map(toNearbyFeature) };
+  const features = await Promise.all((data ?? []).map((row) => withLocalCover(toNearbyFeature(row), row)));
+  return { type: 'FeatureCollection', features };
 }

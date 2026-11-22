@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { CAI_TO_DIFFICULTY } from '../../services/trailsService.js';
 import { DIFFICULTY_LABELS } from '../NearbyPanel/difficulty.js';
-import { trailImageUrl } from '../../utils/trailImages.js';
 import styles from './TrailPage.module.css';
 
 // "trail_running" -> "Trail running"
@@ -17,10 +16,8 @@ function formatType(type) {
 // "trail" = the properties returned by GET /api/trails/:id
 // "children" = actions shown in the bottom-right corner of the cover (e.g. the like button)
 export default function TrailHeader({ trail, children }) {
-  const [failedImages, setFailedImages] = useState([]);
-  const imageUrl = [trail.imageUrl, trailImageUrl(trail.name)].find(
-    (url) => url && !failedImages.includes(url)
-  );
+  const [failedImage, setFailedImage] = useState(null);
+  const imageUrl = trail.imageUrl === failedImage ? null : trail.imageUrl;
   // The backend uses the CAI scale (T, E, EE, EEA): the page shows Easy / Intermediate / Difficult
   const difficulty = CAI_TO_DIFFICULTY[trail.difficulty];
 
@@ -28,7 +25,7 @@ export default function TrailHeader({ trail, children }) {
     <header className={`${styles.hero} ${imageUrl ? styles.heroWithPhoto : ''}`}>
       {imageUrl && (
         <img className={styles.heroImage} src={imageUrl} alt=""
-          onError={() => setFailedImages((current) => [...current, imageUrl])} />
+          onError={() => setFailedImage(imageUrl)} />
       )}
 
       <div className={styles.heroText}>

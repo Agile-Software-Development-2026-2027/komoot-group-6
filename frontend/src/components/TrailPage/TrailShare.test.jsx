@@ -68,21 +68,25 @@ afterEach(() => {
 });
 
 describe('TrailShare', () => {
-  it('does not show the button if the user has not completed the trail', async () => {
+  it('shares a trail without saying it was completed', async () => {
     getCompletedTrails.mockResolvedValue([{ trail_id: 'another-trail', completed_at: '2026-10-01T09:00:00Z' }]);
     render(<TrailShare feature={FEATURE} durationMin={240} />);
 
-    await act(async () => {});
+    fireEvent.click(screen.getByRole('button', { name: 'Share trail' }));
+    const dialog = screen.getByRole('dialog', { name: 'Share trail' });
+    await within(dialog).findByRole('img');
     expect(getCompletedTrails).toHaveBeenCalledWith(authFetch);
-    expect(screen.queryByRole('button', { name: 'Share your hike' })).not.toBeInTheDocument();
+    expect(within(dialog).getByText(/Check out "Anello del Lago Arvo"/)).toBeInTheDocument();
+    expect(within(dialog).queryByText(/I completed/)).not.toBeInTheDocument();
+    expect(createRecapImage).toHaveBeenCalledWith(expect.objectContaining({ kicker: 'Trail' }));
   });
 
-  it('does not show the button if the completed trails cannot be loaded', async () => {
+  it('offers the trail share if completion status cannot be loaded', async () => {
     getCompletedTrails.mockRejectedValue(new Error('Internal Server Error'));
     render(<TrailShare feature={FEATURE} durationMin={240} />);
 
     await act(async () => {});
-    expect(screen.queryByRole('button', { name: 'Share your hike' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Share trail' })).toBeInTheDocument();
   });
 
   it('opens the window with the recap image, the text and the share links', async () => {

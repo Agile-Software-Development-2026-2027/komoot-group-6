@@ -1,5 +1,4 @@
 import { formatDistance, formatDuration, formatElevation } from './formatTrail.js';
-import { toImageKey } from './trailImages.js';
 
 // Link to the trail page that is shared. VITE_SITE_URL is the public address of the site:
 // without it the link uses the address of the current page, which in development is localhost.
@@ -28,7 +27,7 @@ export function recapStats(trail, durationMin) {
 }
 
 // Text of the message shared on WhatsApp, Telegram, X...: the name and the numbers in one line.
-export function shareText(trail, durationMin) {
+export function shareText(trail, durationMin, completed = true) {
   const duration = formatDuration(durationMin);
   const parts = [
     formatDistance(trail.lengthM),
@@ -37,7 +36,8 @@ export function shareText(trail, durationMin) {
   ].filter((part) => part !== '—');
 
   const numbers = parts.length > 0 ? ` ${parts.join(' · ')}` : '';
-  return `I completed "${trail.name}"! 🥾${numbers}`;
+  const message = completed ? `I completed "${trail.name}"!` : `Check out "${trail.name}"!`;
+  return `${message} 🥾${numbers}`;
 }
 
 // Links that open the "share" page of each app with the text and the link already filled in.
@@ -55,7 +55,8 @@ export function shareLinks(text, url) {
 
 // Name of the downloaded image: "Anello del Lago Arvo" -> "hike-anello-del-lago-arvo.png"
 export function recapFileName(trailName) {
-  const key = toImageKey(trailName);
+  const key = String(trailName ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   return key ? `hike-${key}.png` : 'hike.png';
 }
 

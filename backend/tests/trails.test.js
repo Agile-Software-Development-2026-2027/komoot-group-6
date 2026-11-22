@@ -2,6 +2,9 @@
 // REAL: the Express app, the validation, the controller, trailsService.
 // FAKE: Supabase (supabase.rpc).
 import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import request from 'supertest';
 
 vi.mock('../src/config/supabase.js', () => ({
@@ -11,8 +14,11 @@ vi.mock('../src/config/supabase.js', () => ({
 
 import app from '../src/app.js';
 import { supabase, supabaseAsUser } from '../src/config/supabase.js';
+import { publishTrailCover, stageTrailCover } from '../src/services/trailCovers.js';
 
 const TRAIL_ID = 'f4ef6996-f2e9-4462-9d86-a56d15cbaff2';
+const PHOTO = Buffer.from('/9j/4AD/2Q==', 'base64');
+let coversDir;
 
 const ROW = {
   id: TRAIL_ID,
@@ -30,11 +36,16 @@ const ROW = {
   route: { type: 'LineString', coordinates: [[16.2275, 39.359], [16.2281, 39.3597]] },
 };
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.clearAllMocks();
+  coversDir = await mkdtemp(join(tmpdir(), 'qomoot-trail-read-'));
+  vi.stubEnv('TRAIL_COVERS_DIR', coversDir);
 });
 
-afterEach(() => vi.unstubAllEnvs());
+afterEach(async () => {
+  vi.unstubAllEnvs();
+  await rm(coversDir, { recursive: true, force: true });
+});
 
 describe('GET /api/trails', () => {
   it('returns the trails in the area as a FeatureCollection (200)', async () => {
@@ -101,19 +112,16 @@ describe('GET /api/trails/:id', () => {
   });
 
   it('uses the authenticated reader for a private trail and its cover', async () => {
-    const base = 'https://test.supabase.co/storage/v1/object';
-    const path = `author/${TRAIL_ID}/cover.jpg`;
-    const reference = `${base}/authenticated/trail-covers/${path}`;
-    const signedUrl = `${base}/sign/trail-covers/${path}?token=test`;
-    vi.stubEnv('SUPABASE_URL', 'https://test.supabase.co');
-    const rpc = vi.fn().mockResolvedValue({ data: [{ ...ROW, image_url: reference }], error: null });
-    const maybeSingle = vi.fn().mockResolvedValue({ data: { is_public: false }, error: null });
-    const createSignedUrls = vi.fn().mockResolvedValue({ data: [{ path, signedUrl }], error: null });
+    const image_url = await stageTrailCover(TRAIL_ID, 'author', PHOTO);
+    await publishTrailCover(image_url);
+    const rpc = vi.fn().mockResolvedValue({ data: [{ ...ROW, image_url }], error: null });
+    const privateTrail = { ...ROW, image_url, created_by: 'author', is_public: false };
+    const maybeSingle = vi.fn().mockResolvedValue({ data: privateTrail, error: null });
+    const coverLookup = () => ({ select: () => ({ eq: () => ({ maybeSingle }) }) });
     supabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'author' } }, error: null });
     supabaseAsUser.mockReturnValue({
       rpc,
-      from: () => ({ select: () => ({ eq: () => ({ maybeSingle }) }) }),
-      storage: { from: () => ({ createSignedUrls }) },
+      from: coverLookup,
     });
 
     const res = await request(app).get(`/api/trails/${TRAIL_ID}?cover=1`)
@@ -121,10 +129,38 @@ describe('GET /api/trails/:id', () => {
 
     expect(res.status).toBe(200);
     expect(res.headers['cache-control']).toBe('no-store');
-    expect(res.body.properties).toMatchObject({ imageUrl: signedUrl, isPublic: false });
+    expect(res.body.properties).toMatchObject({ hasLocalCover: true, isPublic: false });
     expect(supabaseAsUser).toHaveBeenCalledWith('owner-token');
-    expect(createSignedUrls).toHaveBeenCalledWith([path], 300);
     expect(supabase.rpc).not.toHaveBeenCalled();
+
+    const coverUrl = `/api/trails/${TRAIL_ID}/cover`;
+    const cover = await request(app).get(coverUrl).set('Authorization', 'Bearer owner-token');
+    expect(cover.status).toBe(200);
+    expect(cover.headers['content-type']).toBe('image/jpeg');
+    expect(cover.headers['cache-control']).toBe('no-store');
+    expect(cover.body).toEqual(PHOTO);
+
+    supabase.from.mockImplementation(coverLookup);
+    expect((await request(app).get(coverUrl)).status).toBe(404);
+
+    const otherTrailId = 'f4ef6996-f2e9-4462-9d86-a56d15cbaff3';
+    maybeSingle.mockResolvedValue({ data: { ...privateTrail, id: otherTrailId, is_public: true }, error: null });
+    expect((await request(app).get(`/api/trails/${otherTrailId}/cover`)).status).toBe(404);
+  });
+
+  it('serves a catalogue cover from the same backend folder, even with a legacy reference', async () => {
+    vi.stubEnv('SUPABASE_URL', 'https://test.supabase.co');
+    const image_url = `https://test.supabase.co/storage/v1/object/authenticated/trail-covers/catalog/${TRAIL_ID}.jpg`;
+    await writeFile(join(coversDir, 'catalog-anello-del-campus-unical.jpg'), PHOTO);
+    supabase.rpc.mockResolvedValue({ data: [{ ...ROW, image_url }], error: null });
+    const maybeSingle = vi.fn().mockResolvedValue({ data: { ...ROW, image_url, is_public: true, created_by: null }, error: null });
+    supabase.from.mockReturnValue({ select: () => ({ eq: () => ({ maybeSingle }) }) });
+
+    const res = await request(app).get(`/api/trails/${TRAIL_ID}?cover=1`);
+    expect(res.status).toBe(200);
+    expect(res.body.properties).not.toHaveProperty('imageUrl');
+    expect(res.body.properties.hasLocalCover).toBe(true);
+    expect((await request(app).get(`/api/trails/${TRAIL_ID}/cover`)).body).toEqual(PHOTO);
   });
 
   it('responds 400 when the id is not a UUID, without calling Supabase', async () => {

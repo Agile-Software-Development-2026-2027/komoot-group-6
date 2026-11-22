@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { validateBbox, validateTrailId, validateNearbyQuery } from '../middlewares/validateTrailQuery.js';
 import { validateLeaderboardQuery } from '../middlewares/validateLeaderboardQuery.js';
-import { listTrails, getTrail, nearbyTrails } from '../controllers/trailsController.js';
+import { listTrails, getTrail, getTrailCover, nearbyTrails } from '../controllers/trailsController.js';
 import { getTrailLikes, likeTrail, unlikeTrail } from '../controllers/likesController.js';
 import { deleteTrailComment, getTrailComments, postTrailComment } from '../controllers/trailCommentsController.js';
 import { getTrailLeaderboard } from '../controllers/leaderboardController.js';
@@ -20,6 +20,7 @@ router.post('/', requireAuth, uploadTrailGpx, readGpx, createUploadedTrail);
 // otherwise Express would treat "nearby" as a trail id.
 router.get('/nearby', validateNearbyQuery, requireAuthIfPresent, nearbyTrails);
 router.get('/:id', validateTrailId, requireAuthIfPresent, getTrail);
+router.get('/:id/cover', validateTrailId, requireAuthIfPresent, getTrailCover);
 router.patch('/:id/visibility', requireAuth, validateTrailId, changeTrailVisibility);
 
 router.get('/:id/comments', validateTrailId, requireAuthIfPresent, getTrailComments);

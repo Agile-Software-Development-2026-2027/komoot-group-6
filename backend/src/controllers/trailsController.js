@@ -1,5 +1,6 @@
 import { supabase, supabaseAsUser } from '../config/supabase.js';
-import { getTrailsInBounds, getTrailById, getNearbyTrails } from '../services/trailsService.js';
+import { getTrailsInBounds, getTrailById, getNearbyTrails, isMissingColumn } from '../services/trailsService.js';
+import { readTrailCover } from '../services/trailCovers.js';
 
 function trailReader(req, res) {
   res.set('Cache-Control', 'no-store');
@@ -21,6 +22,31 @@ export async function getTrail(req, res) {
     return res.status(404).json({ error: 'Trail not found' });
   }
   return res.json(trail);
+}
+
+export async function getTrailCover(req, res) {
+  const db = trailReader(req, res);
+  const trailId = req.params.id.toLowerCase();
+  let { data: trail, error } = await db.from('trails')
+    .select('id, name, created_by, image_url, is_public')
+    .eq('id', trailId)
+    .maybeSingle();
+  if (isMissingColumn(error)) {
+    const legacy = await db.from('trails')
+      .select('id, name, created_by, image_url')
+      .eq('id', trailId)
+      .maybeSingle();
+    trail = legacy.data;
+    error = legacy.error;
+  }
+  if (error) throw error;
+  if (!trail || (trail.is_public === false && trail.created_by !== req.user?.id)) {
+    return res.status(404).json({ error: 'Trail cover not found' });
+  }
+  const cover = await readTrailCover(trail);
+  if (!cover) return res.status(404).json({ error: 'Trail cover not found' });
+
+  return res.type(cover.type).set('X-Content-Type-Options', 'nosniff').send(cover.bytes);
 }
 // GET /api/trails/nearby?lat=...&lng=...&radius=...&limit=...
 // Trails passing near the position, closest first

@@ -24,7 +24,6 @@ Run the files in the **SQL Editor** of Supabase, one at a time, in this order:
 | 13 | `leaderboards.sql` | trail leaderboard (`get_trail_leaderboard`) and global leaderboard (`get_global_leaderboard`) |
 | 14 | `levels.sql` | the levels (`levels` table) and the trigger that saves the level of each user in `profiles.level` |
 | 15 | `trail_uploads.sql` | GPX duplicate check on import and publication |
-| 16 | `trail_cover_storage.sql` | private bucket and access rules for trail covers |
 
 ## Good to know
 
@@ -38,8 +37,7 @@ Run the files in the **SQL Editor** of Supabase, one at a time, in this order:
   and `service_role` access to the new tables: the files only change what
   is different (for example the columns of `profiles` that users can read).
   Row Level Security decides which rows each user sees.
-- **Existing cover files** are migrated separately after creating the bucket.
-  Project settings such as the JWT expiry time remain managed in Supabase.
+- Project settings such as the JWT expiry time remain managed in Supabase.
 - **New changes to the database:** write them in a new `.sql` file (or in the
   file of that feature), add it to the table above, and open a PR.
   This way the files and the real database stay the same.
@@ -53,13 +51,10 @@ uploads in the app.
 2. `trails_read.sql` and `trails_nearby.sql`
 3. `saved_trails.sql`, `completed_trails.sql`, `checkpoints.sql`, `trail_likes.sql`,
    `trail_comments.sql` and `leaderboards.sql`
-4. `trail_uploads.sql` and `trail_cover_storage.sql`
+4. `trail_uploads.sql`
 
 Existing trails start as public. New GPX uploads use the signed-in user's id
-as their `created_by` and choose visibility in the form. The private
-`trail-covers` bucket holds resized JPEGs up to 512 KiB. The existing
-`trails.image_url` field stores a stable reference. The backend issues
-short-lived signed URLs using the reader's permissions. GeoJSON preserves
+as their `created_by` and choose visibility in the form. GeoJSON preserves
 separate track segments and optional point elevations.
 
 An upload matches an existing public route when at least 90% of the length of
@@ -67,14 +62,14 @@ each route is within 25 metres of the other. The check uses the GPX geometry
 or the older PostGIS route. A trail with only a start point has no route length
 to compare. The same check runs when a private GPX trail is made public.
 
-### Catalogue covers
+### Trail covers
 
-From the repository root, check the existing catalogue and its bundled photos.
+All covers live in `backend/data/trail-covers/`. Catalogue filenames start
+with `catalog-` and new GPX covers are JPEGs up to 512 KiB. Supabase
+`trails.image_url` stores paths relative to `backend/data/`. The backend
+checks the trail's visibility before serving its cover.
 
-```sh
-node --env-file=backend/.env backend/scripts/migrateCatalogCovers.js
-```
-
-After installing the bucket, an administrator can run the same command with
-`--apply` and `SUPABASE_SERVICE_ROLE_KEY` set in their local environment.
-Each trail receives its Storage reference after its photo is uploaded.
+Commit the cover files to share them across checkouts. Repository readers can
+see both public and private cover files. The trail's visibility controls who
+can see the cover through the app. Visibility changes leave the file path in
+place.
