@@ -1,9 +1,9 @@
 import { McpServer } from '@modelcontextprotocol/server';
+import { registerTrailSearchTools } from './trailSearchTools.js';
 
 // Every MCP module exports a function register(server, backend) that adds its
 // tools, resources and prompts. To add a module, import it and put it in this list.
-export const MODULES = [];
-
+export const MODULES = [registerTrailSearchTools];
 // Creates the MCP server of the site. backend is the client of createBackendClient().
 export function createMcpServer({ backend, modules = MODULES }) {
   const server = new McpServer(
