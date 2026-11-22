@@ -114,6 +114,23 @@ describe('search_trails_nearby', () => {
   });
 });
 
+describe('search_trails_nearby with many trails', () => {
+  it('warns the model when the filters were applied only to the 100 closest trails', async () => {
+    const many = Array.from({ length: 100 }, (_, i) => feature(`m${i}`, `Trail ${i}`, { difficulty: 'E', distanceM: i * 10 }));
+    const client = await connect(fakeBackend(many));
+
+    const filtered = await client.callTool({ name: 'search_trails_nearby', arguments: { lat: 39.36, lng: 16.23, difficulty: ['T'] } });
+    expect(filtered.content[0].text).toContain('only the 100 closest trails were checked');
+    expect(filtered.content[0].text).toContain('trails_in_area');
+    expect(filtered.structuredContent.partial).toBe(true);
+
+    // Without filters the closest trails are the right answer: no warning
+    const unfiltered = await client.callTool({ name: 'search_trails_nearby', arguments: { lat: 39.36, lng: 16.23 } });
+    expect(unfiltered.content[0].text).not.toContain('Note:');
+    expect(unfiltered.structuredContent).not.toHaveProperty('partial');
+  });
+});
+
 describe('trails_in_area', () => {
   it('passes the rectangle to the backend and sorts the trails by name', async () => {
     const backend = fakeBackend([BOTTE, CAMPUS, CRATI]);

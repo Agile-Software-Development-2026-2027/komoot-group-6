@@ -64,11 +64,13 @@ export function formatTrailLine(t, index) {
 }
 
 
-function trailListResult(trails, emptyText) {
-  if (trails.length === 0) return textResult(emptyText, { count: 0, trails: [] });
+function trailListResult(trails, emptyText, note) {
+  const extra = note ? `\n${note}` : '';
+  const data = { count: trails.length, trails, ...(note && { partial: true }) };
+  if (trails.length === 0) return textResult(emptyText + extra, data);
   const text = `${trails.length} trail(s) found:\n${trails.map(formatTrailLine).join('\n')}\n` +
-    'Use get_trail with the id to read the details of one trail.';
-  return textResult(text, { count: trails.length, trails });
+    'Use the id of a trail with the other tools of this server (e.g. to read its details or to save it).' + extra;
+  return textResult(text, data);
 }
 
 
@@ -98,8 +100,16 @@ export function registerTrailSearchTools(server, backend) {
           radius: Math.round(radius_km * 1000), // the backend wants meters
           limit: BACKEND_LIMIT, // filters are applied here, so we ask for more
         });
-        const trails = applyFilters((data.features ?? []).map(toTrailSummary), filters);
-        return trailListResult(trails, `No trails within ${radius_km} km with these filters.`);
+        const features = data.features ?? [];
+        const trails = applyFilters(features.map(toTrailSummary), filters);
+        // The backend gives at most BACKEND_LIMIT trails, the closest ones. With filters, farther
+        // trails that match them may be left out: the model is told, and where to find them all.
+        const filtered = filters.difficulty !== undefined || filters.max_length_km !== undefined;
+        const note = filtered && features.length >= BACKEND_LIMIT
+          ? `Note: only the ${BACKEND_LIMIT} closest trails were checked, so farther trails that match ` +
+            'the filters may be missing. For a complete list of a zone use trails_in_area.'
+          : undefined;
+        return trailListResult(trails, `No trails within ${radius_km} km with these filters.`, note);
       } catch (err) {
         return errorResult(err);
       }
