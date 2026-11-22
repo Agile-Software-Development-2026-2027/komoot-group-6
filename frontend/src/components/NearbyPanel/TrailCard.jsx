@@ -194,37 +194,6 @@ export default function TrailCard({
         ) : (
           <TrailArt trail={trail} />
         )}
-
-        {earnedPoints != null && (
-          <span className={styles.pointsPopup} role="status" aria-label={`+${earnedPoints} points`}>
-            +{earnedPoints}
-          </span>
-        )}
-
-        {(onToggleComplete || onComplete) && (
-          <button
-            type="button"
-            className={`${styles.completeBtn} ${isDone ? styles.isCompleted : ''}`}
-            onClick={handleToggle}
-            disabled={actionLoading}
-            aria-label={`${completeLabel} ${trail.name}`}
-            title={isDone ? 'Remove from completed' : 'Mark as completed'}
-          >
-            <CheckIcon />
-          </button>
-        )}
-
-        <button
-          type="button"
-          className={`${styles.bookmark} ${isSaved ? styles.isSaved : ''}`}
-          onClick={handleBookmark}
-          disabled={saveAction !== null}
-          aria-label={`${SAVE_LABELS[bookmarkState]} ${trail.name}`}
-          aria-pressed={isSaved}
-          title={isSaved ? 'Remove from your saved trails' : 'Save to your profile'}
-        >
-          <BookmarkIcon filled={isSaved} />
-        </button>
       </div>
 
       <h3 className={styles.cardTitle}>
@@ -271,9 +240,44 @@ export default function TrailCard({
           <PinIcon />
           {formatDistance(trail.distanceM)} away
         </p>
-        <TrailDetailsLink trailId={trail.id} className={styles.detailsLink}>
-          Details
-        </TrailDetailsLink>
+
+        <div className={styles.cardActions}>
+          {(onToggleComplete || onComplete) && (
+            <div className={styles.completeWrapper}>
+              {earnedPoints != null && (
+                <span className={styles.pointsPopup} role="status" aria-label={`+${earnedPoints} points`}>
+                  +{earnedPoints}
+                </span>
+              )}
+              <button
+                type="button"
+                className={`${styles.completeBtn} ${isDone ? styles.isCompleted : ''}`}
+                onClick={handleToggle}
+                disabled={actionLoading}
+                aria-label={`${completeLabel} ${trail.name}`}
+                title={isDone ? 'Remove from completed' : 'Mark as completed'}
+              >
+                <CheckIcon />
+              </button>
+            </div>
+          )}
+
+          <button
+            type="button"
+            className={`${styles.bookmark} ${isSaved ? styles.isSaved : ''}`}
+            onClick={handleBookmark}
+            disabled={saveAction !== null}
+            aria-label={`${SAVE_LABELS[bookmarkState]} ${trail.name}`}
+            aria-pressed={isSaved}
+            title={isSaved ? 'Remove from your saved trails' : 'Save to your profile'}
+          >
+            <BookmarkIcon filled={isSaved} />
+          </button>
+
+          <TrailDetailsLink trailId={trail.id} className={styles.detailsLink}>
+            Details
+          </TrailDetailsLink>
+        </div>
       </div>
 
       {saveMessage && (

@@ -4,6 +4,7 @@ import { Popup, useMap } from 'react-map-gl/maplibre';
 import { EDGE_MARGIN, POPUP_PAN_DURATION_MS } from '../../config/map.config.js';
 import { getPanOffset } from '../../utils/panToFit.js';
 import TrailDetailsLink from '../TrailPage/TrailDetailsLink.jsx';
+import { estimateDurationMin } from '../../utils/formatTrail.js';
 import './TrackPopup.css';
 
 function formatDistance(meters) {
@@ -69,10 +70,15 @@ export default function TrackPopup({ trail, lngLat, onClose }) {
 
   if (!trail || !lngLat) return null;
 
+  //estimation of the trail duration when we don't have it in the DB
+  const durationMin = trail.estDurationMin ??
+                      estimateDurationMin(trail.lengthM, trail.ascentM ??
+                      trail.elevationGainM);
+
   // Solo i dettagli che il sentiero ha davvero
   const stats = [
     { label: 'Distance', value: trail.lengthM != null && formatDistance(trail.lengthM) },
-    { label: 'Est. time', value: trail.estDurationMin != null && formatDuration(trail.estDurationMin) },
+    { label: 'Est. time', value: durationMin != null && formatDuration(durationMin) },
     { label: 'Ascent', value: (trail.ascentM ?? trail.elevationGainM) != null && formatMeters(trail.ascentM ?? trail.elevationGainM) },
   ].filter((item) => item.value);
 

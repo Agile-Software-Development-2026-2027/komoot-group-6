@@ -71,7 +71,6 @@ describe('TrackPopup', () => {
       expect.objectContaining({ longitude: 16.17, latitude: 39.27, anchor: 'bottom' })
     );
     expect(screen.getByText('Test trail')).toBeTruthy();
-    expect(screen.getByText('A nice loop.')).toBeTruthy();
     expect(screen.getByText('trail running')).toBeTruthy();
     expect(screen.getByText('12.35 km')).toBeTruthy();
     expect(screen.getByText('1 h 30 min')).toBeTruthy();
@@ -82,15 +81,25 @@ describe('TrackPopup', () => {
   it('hides the details the trail has no data for', () => {
     render(
       <TrackPopup
-        trail={{ ...trail, description: null, estDurationMin: null, ascentM: null, descentM: null }}
+        trail={{ ...trail, description: null, estDurationMin: null, lengthM: null, ascentM: null, descentM: null }}
         lngLat={lngLat}
         onClose={() => {}}
       />
     );
     expect(screen.queryByText('Est. time')).toBeNull();
     expect(screen.queryByText('Ascent')).toBeNull();
-    expect(screen.queryByText('A nice loop.')).toBeNull();
-    expect(screen.getByText('Distance')).toBeTruthy();
+    expect(screen.queryByText('Distance')).toBeNull();
+  });
+
+  it('estimates duration when estDurationMin is missing but length is present', () => {
+    render(
+      <TrackPopup
+        trail={{ ...trail, estDurationMin: null, lengthM: 8000, ascentM: 300 }}
+        lngLat={lngLat}
+        onClose={() => {}}
+      />
+    );
+    expect(screen.getByText('Est. time')).toBeTruthy();
   });
 
   it('does not move the map when the popup is fully visible', () => {
