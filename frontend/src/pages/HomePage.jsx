@@ -126,6 +126,8 @@ export default function HomePage() {
   const elevationStats = useMemo(() => {
   const properties = route?.properties ?? {};
 
+  
+
   return {
     distanceM: properties.lengthM,
     durationMin: properties.estDurationMin,

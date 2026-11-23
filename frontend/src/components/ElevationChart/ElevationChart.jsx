@@ -184,22 +184,25 @@ export default function ElevationProfile({ data = [], stats = null, onHover }) {
   return buildColoredChartData(addSlopeToProfile(sampled));
 }, [valid]);
 
-  const handleMouseMove = (state) => {
-    const index = state?.activeTooltipIndex;
-    const numericIndex = Number(index);
+const handleMouseMove = (state) => {
+  const index = state?.activeTooltipIndex;
+  const numericIndex = Number(index);
 
-    const point =
-      state?.isTooltipActive &&
-      index != null &&
-      Number.isInteger(numericIndex) &&
-      numericIndex >= 0 &&
-      numericIndex < rows.length
-  ? rows[numericIndex]
-  : null;
+  const point =
+    state?.isTooltipActive &&
+    index != null &&
+    Number.isInteger(numericIndex) &&
+    numericIndex >= 0 &&
+    numericIndex < rows.length
+      ? {
+          distance: rows[numericIndex].distance,
+          elevation: rows[numericIndex].elevation,
+          coordinates: rows[numericIndex].coordinates,
+        }
+      : null;
 
-    // Keep original coordinates for the existing map hover marker.
-    onHover?.(point);
-  };
+  onHover?.(point);
+};
 
   return (
     <section className={styles.profile} aria-label="Elevation profile">

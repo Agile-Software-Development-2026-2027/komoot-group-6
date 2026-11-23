@@ -64,6 +64,7 @@ function toTrail(feature) {
 export async function getNearbyTrails(authFetch, { lat, lng, radiusKm }) {
   const query = new URLSearchParams({ lat, lng, radius: Math.round(radiusKm * 1000) });
   const data = await authFetch(`/trails/nearby?${query}`);
+  console.log('getNearbyTrails', data);
   return (data?.features ?? []).map(toTrail);
 }
 
