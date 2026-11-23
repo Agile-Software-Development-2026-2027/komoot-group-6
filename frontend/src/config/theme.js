@@ -1,10 +1,10 @@
 // color of the layer when the user is drawing a new route
-export const LAYER_PAINT_COLOR = '#E63946';
+export const LAYER_PAINT_COLOR = '#6366F1';
 // width of the layer when the user is drawing a new route
 export const LAYER_PAINT_WIDTH = 4;
 
 //  the color of the starting point of a trail on the map
-export const STARTING_POINT_COLOR = '#E63946';
+export const STARTING_POINT_COLOR = '#003366';
 
 // THE COLOR OF THE LINE IN THE ELEVATION PROFILE CHART
 export const ELEVATION_CHART_LINE_COLOR = '#16803c';

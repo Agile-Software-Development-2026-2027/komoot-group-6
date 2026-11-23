@@ -8,7 +8,9 @@
     "test": "vitest run",
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "mcp": "node src/mcp/index.js"
+    "mcp": "node src/mcp/index.js",
+    "mcp:login": "node src/mcp/login.js",
+    "mcp:logout": "node src/mcp/login.js --logout"
   },
   "keywords": [],
   "author": "",

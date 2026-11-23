@@ -1,8 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useTrailCover } from '../../hooks/useTrailCover.js';
 import { Popup, useMap } from 'react-map-gl/maplibre';
 import { EDGE_MARGIN, POPUP_PAN_DURATION_MS } from '../../config/map.config.js';
 import { getPanOffset } from '../../utils/panToFit.js';
 import TrailDetailsLink from '../TrailPage/TrailDetailsLink.jsx';
+import { estimateDurationMin } from '../../utils/formatTrail.js';
 import './TrackPopup.css';
 
 function formatDistance(meters) {
@@ -27,9 +29,12 @@ function formatType(type) {
 // Piccola scheda con i dettagli di un sentiero, attaccata al suo punto di partenza sulla mappa.
 // "trail" sono le proprietà del sentiero restituite da /api/trails e "lngLat" è il suo punto di partenza: se manca uno dei due non compare.
 // Si chiude con la X o con Esc. Se esce dal riquadro della mappa, la mappa scorre quanto basta per mostrarla tutta.
-export default function TrackPopup({ trail, lngLat, onClose }) {
+export default function TrackPopup({ trail, lngLat, authFetch, onClose }) {
   const { current: map } = useMap();
   const popupRef = useRef(null);
+
+  const imageUrl = useTrailCover(trail, authFetch);
+  const [failedImage, setFailedImage] = useState(null);
 
   useEffect(() => {
     if (!trail) return undefined;
@@ -63,15 +68,17 @@ export default function TrackPopup({ trail, lngLat, onClose }) {
 
   if (!trail || !lngLat) return null;
 
+  //estimation of the trail duration when we don't have it in the DB
+  const durationMin = trail.estDurationMin ??
+                      estimateDurationMin(trail.lengthM, trail.ascentM ??
+                      trail.elevationGainM);
+
   // Solo i dettagli che il sentiero ha davvero
-  const rows = [
-    ['Distance', trail.lengthM != null && formatDistance(trail.lengthM)],
-    ['Est. time', trail.estDurationMin != null && formatDuration(trail.estDurationMin)],
-    ['Ascent', trail.ascentM != null && formatMeters(trail.ascentM)],
-    ['Descent', trail.descentM != null && formatMeters(trail.descentM)],
-    ['Highest point', trail.maxElevationM != null && formatMeters(trail.maxElevationM)],
-    ['Difficulty', trail.difficulty],
-  ].filter(([, value]) => value);
+  const stats = [
+    { label: 'Distance', value: trail.lengthM != null && formatDistance(trail.lengthM) },
+    { label: 'Est. time', value: durationMin != null && formatDuration(durationMin) },
+    { label: 'Ascent', value: (trail.ascentM ?? trail.elevationGainM) != null && formatMeters(trail.ascentM ?? trail.elevationGainM) },
+  ].filter((item) => item.value);
 
   return (
     <Popup
@@ -87,23 +94,55 @@ export default function TrackPopup({ trail, lngLat, onClose }) {
       closeButton
       onClose={onClose}
       className="track-popup"
-    >
-      <div role="group" aria-labelledby="track-popup-title">
-        <h2 id="track-popup-title">{trail.name}</h2>
-        {trail.trailType && <p className="track-popup-subtitle">{formatType(trail.trailType)}</p>}
-        {trail.description && <p className="track-popup-description">{trail.description}</p>}
-        <dl className="track-popup-grid">
-          {rows.map(([label, value]) => (
-            <div key={label}>
-              <dt>{label}</dt>
-              <dd>{value}</dd>
+    >      <div className="track-popup-card">
+        {/* Immagine di copertina */}
+        {imageUrl && imageUrl !== failedImage ? (
+          <div className="track-popup-image-container">
+            <img
+              src={imageUrl}
+              alt=""
+              className="track-popup-image"
+              loading="lazy"
+              onError={() => setFailedImage(imageUrl)}
+            />
+          </div>
+        ) : (
+          <div className="track-popup-image-placeholder" aria-hidden="true" />
+        )}
+
+        <div className="track-popup-body">
+          <div className="track-popup-header">
+            <h2 id="track-popup-title" className="track-popup-title">
+              {trail.name}
+            </h2>
+            {trail.difficulty && (
+              <span className="track-popup-badge" title="Difficulty">
+                {trail.difficulty}
+              </span>
+            )}
+          </div>
+
+          {trail.trailType && (
+            <p className="track-popup-subtitle">{formatType(trail.trailType)}</p>
+          )}
+
+          {/* Statistiche essenziali */}
+          {stats.length > 0 && (
+            <div className="track-popup-stats">
+              {stats.map(({ label, value }) => (
+                <div key={label} className="track-popup-stat-item">
+                  <span className="track-popup-stat-label">{label}</span>
+                  <span className="track-popup-stat-value">{value}</span>
+                </div>
+              ))}
             </div>
-          ))}
-               </dl>
-        {/* Opens the page of the trail, with map, profile and all the details */}
-        <TrailDetailsLink trailId={trail.id} className="track-popup-details">
-          View trail details 
-        </TrailDetailsLink>
+          )}
+
+          {/* Link alla pagina completa del sentiero */}
+          <TrailDetailsLink trailId={trail.id} className="track-popup-details">
+            View trail details &rarr;
+          </TrailDetailsLink>
+        </div>
       </div>
     </Popup>
   );

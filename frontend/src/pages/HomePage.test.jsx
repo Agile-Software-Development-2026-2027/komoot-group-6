@@ -39,7 +39,12 @@ vi.mock('../components/MapView/TrailStartsLayer.jsx', () => ({
 vi.mock('../components/MapView/TrackPopup.jsx', () => ({
   default: ({ trail, onClose }) => trail ? <button onClick={onClose}>Close selected trail</button> : null,
 }));
-vi.mock('../components/NearbyPanel/NearbyPanel.jsx', () => ({ default: () => null }));
+const nearbyTrail = { id: 'nearby-private', name: 'Nearby private trail', start: [18, 39] };
+vi.mock('../components/NearbyPanel/NearbyPanel.jsx', () => ({
+  default: ({ isOpen, onSelectTrail }) => isOpen && (
+    <button onClick={() => onSelectTrail(nearbyTrail)}>{nearbyTrail.name}</button>
+  ),
+}));
 const authFetch = vi.fn();
 vi.mock('../context/useAuth.js', () => ({ useAuth: () => ({ user: { username: 'mario.rossi' }, authFetch }) }));
 vi.mock('react-router-dom', () => ({
@@ -82,7 +87,7 @@ it('places the marker at the hovered route coordinate and clears it on leave, ro
   expect(screen.queryByTestId('hover-marker')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Hover profile' }));
   fireEvent.click(screen.getByRole('button', { name: 'Second trail' }));
-  await waitFor(() => expect(getTrail).toHaveBeenLastCalledWith('1', authFetch));
+  await waitFor(() => expect(getTrail).toHaveBeenLastCalledWith('1', authFetch, { includeCover: true }));
   expect(screen.queryByTestId('hover-marker')).toBeNull();
 
   fireEvent.click(await screen.findByRole('button', { name: 'Hover profile' }));
@@ -91,6 +96,25 @@ it('places the marker at the hovered route coordinate and clears it on leave, ro
   fireEvent.click(screen.getByRole('button', { name: 'Close selected trail' }));
   expect(screen.queryByTestId('hover-marker')).toBeNull();
   expect(screen.queryByRole('button', { name: 'Hover profile' })).toBeNull();
+});
+
+it('loads and frames a nearby private trail outside the current map bounds', async () => {
+  getTrail.mockResolvedValueOnce({
+    type: 'Feature',
+    id: nearbyTrail.id,
+    properties: { id: nearbyTrail.id, name: nearbyTrail.name, hasLocalCover: true },
+    geometry: { type: 'LineString', coordinates: [[18, 39, 100], [18.01, 39.01, 120]] },
+  });
+
+  render(<HomePage />);
+  fireEvent.click(screen.getByRole('button', { name: 'Trails nearby' }));
+  fireEvent.click(screen.getByRole('button', { name: nearbyTrail.name }));
+  await screen.findByRole('button', { name: 'Close selected trail' });
+
+  expect(getTrail).toHaveBeenCalledWith(nearbyTrail.id, authFetch, { includeCover: true });
+  expect(map.instance.fitBounds).toHaveBeenCalledWith(
+    [[18, 39], [18.01, 39.01]], expect.any(Object), { fromNearbyPanel: true }
+  );
 });
 
 it('shows the profile icon in the top-right, linking to the profile page', () => {

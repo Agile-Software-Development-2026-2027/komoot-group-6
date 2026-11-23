@@ -88,10 +88,11 @@ function FitToTrack({ data, onDone }) {
     }
 
     map.once('moveend', onDone);
-    map.fitBounds([[bounds[0], bounds[1]], [bounds[2], bounds[3]]], {
-      padding: FIT_TRACK_PADDING,
-      duration: FIT_TRACK_DURATION_MS,
-    });
+    map.fitBounds(
+      [[bounds[0], bounds[1]], [bounds[2], bounds[3]]],
+      { padding: FIT_TRACK_PADDING, duration: FIT_TRACK_DURATION_MS },
+      { fromNearbyPanel: true }
+    );
     return () => map.off('moveend', onDone);
   }, [map, data, onDone]);
 
@@ -128,17 +129,18 @@ export default function HomePage() {
   const [elevationOpen, setElevationOpen] = useState(true);
 
   const selectTrail = useCallback(
-    (trail) => {
-      const [lng, lat] = trail.geometry.coordinates;
-      const { id } = trail.properties;
+    (properties, start) => {
+      const id = properties?.id;
+      if (!id) return;
+      const lngLat = start ? { lng: start[0], lat: start[1] } : null;
       selectedIdRef.current = id;
-      setSelected({ id, lngLat: { lng, lat }, properties: trail.properties });
+      setSelected({ id, lngLat, properties });
       setRoute(null);
       setHoveredPoint(null);
       setElevationOpen(true);
       setPopupOpen(false);
 
-      getTrail(id, authFetch)
+      getTrail(id, authFetch, { includeCover: true })
         .then((detail) => {
           if (selectedIdRef.current === id) setRoute(detail);
         })
@@ -152,7 +154,7 @@ export default function HomePage() {
 
   const handleSelect = useCallback((feature) => {
     const trail = trails?.features.find((item) => item.properties.id === feature.properties?.id);
-    if (trail) selectTrail(trail);
+    if (trail) selectTrail(trail.properties, trail.geometry.coordinates);
   }, [trails, selectTrail]);
 
   const handleClose = useCallback(() => {
@@ -202,8 +204,10 @@ export default function HomePage() {
           )}
           <FitToTrack data={route} onDone={handleFitted} />
           <TrackPopup
+            key={selected?.id}
             trail={popupOpen ? (route?.properties ?? selected?.properties) : null}
             lngLat={selected?.lngLat}
+            authFetch={authFetch}
             onClose={handleClose}
           />
           <MapToolbar>
@@ -245,7 +249,11 @@ export default function HomePage() {
             />
           </MapToolbar>
           {/* Trails near the center of the map, with filters and saving to the profile */}
-          <NearbyPanel isOpen={openPanel === 'nearby'} onClose={closePanel} />
+          <NearbyPanel
+            isOpen={openPanel === 'nearby'}
+            onClose={closePanel}
+            onSelectTrail={(trail) => selectTrail(trail, trail?.start)}
+          />
         </MapView>
       </section>
       {openPanel === 'profiles' && <ProfileSearchDialog onClose={closePanel} />}
@@ -256,7 +264,7 @@ export default function HomePage() {
           onSaved={() => setTrailRevision((current) => current + 1)}
           onShowTrail={(trail) => {
             closePanel();
-            selectTrail(trail);
+            selectTrail(trail.properties, trail.geometry.coordinates);
           }}
         />
       )}

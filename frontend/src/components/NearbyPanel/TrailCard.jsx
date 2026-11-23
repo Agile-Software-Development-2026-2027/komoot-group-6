@@ -16,7 +16,8 @@ import styles from './NearbyPanel.module.css';
 
 const SAVE_LABELS = { save: 'Save', saving: 'Saving...', saved: 'Saved', removing: 'Removing...' };
 
-// Message shown under the card after clicking the bookmark
+// Message read by screen readers after a click on the bookmark (it is not shown on screen:
+// the visible feedback is the button changing from "Save" to "Saved")
 const SAVE_MESSAGES = {
   saved: 'Trail saved',
   'already-saved': 'Trail already saved',
@@ -96,6 +97,7 @@ export default function TrailCard({
   const [saveAction, setSaveAction] = useState(null);
   // Failed bookmark action: 'save', 'remove' or null
   const [saveError, setSaveError] = useState(null);
+  // Key of the confirmation for screen readers: 'saved', 'already-saved', 'removed' or null
   const [saveMessage, setSaveMessage] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -138,12 +140,12 @@ export default function TrailCard({
       if (removing) {
         await onUnsave(trail.id);
         setLocalSaved(false);
-        setSaveMessage(SAVE_MESSAGES.removed);
+        setSaveMessage('removed');
       } else {
         const result = await onSave(trail.id);
         setLocalSaved(true);
         // If onSave does not say how it went, the trail is considered saved now
-        setSaveMessage(SAVE_MESSAGES[result] ?? SAVE_MESSAGES.saved);
+        setSaveMessage(result === 'already-saved' ? 'already-saved' : 'saved');
       }
     } catch {
       // The bookmark stays as it was and the user can try again
@@ -185,6 +187,15 @@ export default function TrailCard({
     }
   }
 
+  // Bookmark classes: saved (filled), busy (icon pulses while saving or removing),
+  // justSaved (small bounce right after the trail is saved)
+  const bookmarkClass = [
+    styles.bookmark,
+    isSaved && styles.isSaved,
+    saveAction && styles.isBusy,
+    saveMessage === 'saved' && styles.justSaved,
+  ].filter(Boolean).join(' ');
+
   const completeLabel = actionLoading
     ? (isDone ? 'Removing...' : 'Completing...')
     : (isDone ? 'Completed' : 'Mark as completed');
@@ -197,37 +208,6 @@ export default function TrailCard({
         ) : (
           <TrailArt trail={trail} />
         )}
-
-        {earnedPoints != null && (
-          <span className={styles.pointsPopup} role="status" aria-label={`+${earnedPoints} points`}>
-            +{earnedPoints}
-          </span>
-        )}
-
-        {(onToggleComplete || onComplete) && (
-          <button
-            type="button"
-            className={`${styles.completeBtn} ${isDone ? styles.isCompleted : ''}`}
-            onClick={handleToggle}
-            disabled={actionLoading}
-            aria-label={`${completeLabel} ${trail.name}`}
-            title={isDone ? 'Remove from completed' : 'Mark as completed'}
-          >
-            <CheckIcon />
-          </button>
-        )}
-
-        <button
-          type="button"
-          className={`${styles.bookmark} ${isSaved ? styles.isSaved : ''}`}
-          onClick={handleBookmark}
-          disabled={saveAction !== null}
-          aria-label={`${SAVE_LABELS[bookmarkState]} ${trail.name}`}
-          aria-pressed={isSaved}
-          title={isSaved ? 'Remove from your saved trails' : 'Save to your profile'}
-        >
-          <BookmarkIcon filled={isSaved} />
-        </button>
       </div>
 
       <h3 className={styles.cardTitle}>
@@ -274,13 +254,51 @@ export default function TrailCard({
           <PinIcon />
           {formatDistance(trail.distanceM)} away
         </p>
-        <TrailDetailsLink trailId={trail.id} className={styles.detailsLink}>
-          Details
-        </TrailDetailsLink>
+
+        <div className={styles.cardActions}>
+          {(onToggleComplete || onComplete) && (
+            <div className={styles.completeWrapper}>
+              {earnedPoints != null && (
+                <span className={styles.pointsPopup} role="status" aria-label={`+${earnedPoints} points`}>
+                  +{earnedPoints}
+                </span>
+              )}
+              <button
+                type="button"
+                className={`${styles.completeBtn} ${isDone ? styles.isCompleted : ''}`}
+                onClick={handleToggle}
+                disabled={actionLoading}
+                aria-label={`${completeLabel} ${trail.name}`}
+                title={isDone ? 'Remove from completed' : 'Mark as completed'}
+              >
+                <CheckIcon />
+              </button>
+            </div>
+          )}
+
+          <button
+            type="button"
+            className={bookmarkClass}
+            onClick={handleBookmark}
+            disabled={saveAction !== null}
+            aria-busy={saveAction !== null}
+            aria-label={`${SAVE_LABELS[bookmarkState]} ${trail.name}`}
+            aria-pressed={isSaved}
+            title={isSaved ? 'Remove from your saved trails' : 'Save to your profile'}
+          >
+            <BookmarkIcon filled={isSaved} />
+            {/* Visible text; screen readers already read the aria-label */}
+            <span aria-hidden="true">{isSaved ? 'Saved' : 'Save'}</span>
+          </button>
+
+          <TrailDetailsLink trailId={trail.id} className={styles.detailsLink}>
+            Details
+          </TrailDetailsLink>
+        </div>
       </div>
 
       {saveMessage && (
-        <p role="status" className={styles.cardNotice}>{saveMessage}</p>
+        <p role="status" className="visually-hidden">{SAVE_MESSAGES[saveMessage]}</p>
       )}
 
       {saveError && (
