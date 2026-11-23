@@ -11,14 +11,17 @@ export function routeBounds(geometry) {
   else if (type === 'MultiLineString') points = coordinates.flat();
   else if (type === 'Point') points = [coordinates];
 
-  // Only real numbers count (a broken point must not move the rectangle)
-  const valid = points.filter(([lng, lat]) => Number.isFinite(lng) && Number.isFinite(lat));
-  if (valid.length === 0) return null;
-
-  const lngs = valid.map(([lng]) => lng);
-  const lats = valid.map(([, lat]) => lat);
-  return [
-    [Math.min(...lngs), Math.min(...lats)],
-    [Math.max(...lngs), Math.max(...lats)],
-  ];
+  // Iterate so even a densely recorded GPX can fit into the map bounds.
+  let west = Infinity;
+  let south = Infinity;
+  let east = -Infinity;
+  let north = -Infinity;
+  for (const [lng, lat] of points) {
+    if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
+    west = Math.min(west, lng);
+    south = Math.min(south, lat);
+    east = Math.max(east, lng);
+    north = Math.max(north, lat);
+  }
+  return Number.isFinite(west) ? [[west, south], [east, north]] : null;
 }

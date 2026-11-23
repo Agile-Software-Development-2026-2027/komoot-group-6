@@ -60,7 +60,7 @@ export async function postTrailComment(req, res) {
   const { error } = await supabaseAsUser(req.token)
     .from('trail_comments')
     .insert({ trail_id: req.params.id, body });
-  if (error?.code === '23503') return res.status(404).json(TRAIL_NOT_FOUND);
+  if (error?.code === '23503' || error?.code === '42501') return res.status(404).json(TRAIL_NOT_FOUND);
   if (error) throw error;
 
   return res.status(201).end();

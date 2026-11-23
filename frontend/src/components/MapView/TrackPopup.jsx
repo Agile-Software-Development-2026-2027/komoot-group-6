@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { trailImageUrl } from '../../utils/trailImages.js';
+import { useTrailCover } from '../../hooks/useTrailCover.js';
 import { Popup, useMap } from 'react-map-gl/maplibre';
 import { EDGE_MARGIN, POPUP_PAN_DURATION_MS } from '../../config/map.config.js';
 import { getPanOffset } from '../../utils/panToFit.js';
@@ -29,14 +29,12 @@ function formatType(type) {
 // Piccola scheda con i dettagli di un sentiero, attaccata al suo punto di partenza sulla mappa.
 // "trail" sono le proprietà del sentiero restituite da /api/trails e "lngLat" è il suo punto di partenza: se manca uno dei due non compare.
 // Si chiude con la X o con Esc. Se esce dal riquadro della mappa, la mappa scorre quanto basta per mostrarla tutta.
-export default function TrackPopup({ trail, lngLat, onClose }) {
+export default function TrackPopup({ trail, lngLat, authFetch, onClose }) {
   const { current: map } = useMap();
   const popupRef = useRef(null);
 
-  //state in case there is no image for the trail
-  const [imageError, setImageError] = useState(false);
-  const imageUrl = !imageError && (trail?.imageUrl || trailImageUrl(trail?.name));
-
+  const imageUrl = useTrailCover(trail, authFetch);
+  const [failedImage, setFailedImage] = useState(null);
 
   useEffect(() => {
     if (!trail) return undefined;
@@ -98,14 +96,14 @@ export default function TrackPopup({ trail, lngLat, onClose }) {
       className="track-popup"
     >      <div className="track-popup-card">
         {/* Immagine di copertina */}
-        {imageUrl ? (
+        {imageUrl && imageUrl !== failedImage ? (
           <div className="track-popup-image-container">
             <img
               src={imageUrl}
               alt=""
               className="track-popup-image"
               loading="lazy"
-              onError={() => setImageError(true)}
+              onError={() => setFailedImage(imageUrl)}
             />
           </div>
         ) : (

@@ -23,6 +23,7 @@ Run the files in the **SQL Editor** of Supabase, one at a time, in this order:
 | 12 | `public_profile_points.sql` | *optional*: public profile score totals on databases with `completed_trails.points_earned` |
 | 13 | `leaderboards.sql` | trail leaderboard (`get_trail_leaderboard`) and global leaderboard (`get_global_leaderboard`) |
 | 14 | `levels.sql` | the levels (`levels` table) and the trigger that saves the level of each user in `profiles.level` |
+| 15 | `trail_uploads.sql` | GPX duplicate check on import and publication |
 
 ## Good to know
 
@@ -36,21 +37,39 @@ Run the files in the **SQL Editor** of Supabase, one at a time, in this order:
   and `service_role` access to the new tables: the files only change what
   is different (for example the columns of `profiles` that users can read).
   Row Level Security decides which rows each user sees.
-- **Not included:** Supabase Storage (buckets and files) and the settings of
-  the project (e.g. the JWT expiry time in Authentication).
+- Project settings such as the JWT expiry time remain managed in Supabase.
 - **New changes to the database:** write them in a new `.sql` file (or in the
   file of that feature), add it to the table above, and open a PR.
   This way the files and the real database stay the same.
 
 ## GPX routes
 
-On an existing database, run the updated `trails_read.sql` and
-`trails_nearby.sql` in that order, in a single transaction. The endpoint
-responses keep the same format. Trails already stored with `route` still
-use it. Trails with only `start_point` are still visible and searchable.
+On an existing database, run the updated files in this order before enabling
+uploads in the app.
 
-For a GPX trail, save the parsed GeoJSON geometry (`LineString` or
-`MultiLineString`) in `route_geojson` and its first position as a 2D
-`start_point`. Each coordinate can have an optional elevation as its
-third value. Distance, ascent, difficulty and other summary data use the
-existing columns, which can be left empty when the values are unknown.
+1. `schema.sql`
+2. `trails_read.sql` and `trails_nearby.sql`
+3. `saved_trails.sql`, `completed_trails.sql`, `checkpoints.sql`, `trail_likes.sql`,
+   `trail_comments.sql` and `leaderboards.sql`
+4. `trail_uploads.sql`
+
+Existing trails start as public. New GPX uploads use the signed-in user's id
+as their `created_by` and choose visibility in the form. GeoJSON preserves
+separate track segments and optional point elevations.
+
+An upload matches an existing public route when at least 90% of the length of
+each route is within 25 metres of the other. The check uses the GPX geometry
+or the older PostGIS route. A trail with only a start point has no route length
+to compare. The same check runs when a private GPX trail is made public.
+
+### Trail covers
+
+All covers live in `backend/data/trail-covers/`. Catalogue filenames start
+with `catalog-` and new GPX covers are JPEGs up to 512 KiB. Supabase
+`trails.image_url` stores paths relative to `backend/data/`. The backend
+checks the trail's visibility before serving its cover.
+
+Commit the cover files to share them across checkouts. Repository readers can
+see both public and private cover files. The trail's visibility controls who
+can see the cover through the app. Visibility changes leave the file path in
+place.

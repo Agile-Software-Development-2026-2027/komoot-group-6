@@ -308,6 +308,7 @@ export default function NearbyPanel({ isOpen = true, onClose, onSelectTrail }) {
                 <li key={trail.id}>
                   <TrailCard
                     trail={trail}
+                    authFetch={authFetch}
                     isSaved={Boolean(user && savedTrailIds.has(trail.id))}
                     isCompleted={Boolean(user && completedTrailIds.has(trail.id))}
                     onToggleComplete={handleToggleComplete}

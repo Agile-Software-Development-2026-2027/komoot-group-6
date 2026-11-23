@@ -2,21 +2,25 @@ import { useEffect, useState } from 'react';
 import { CAI_TO_DIFFICULTY, getCompletedTrails, getSavedTrails, getTrail } from '../services/trailsService.js';
 
 // The profile lists contain only the trail ids: here the details of each one are loaded.
-// A trail that cannot be loaded (e.g. removed) is skipped.
-async function resolveTrails(entries, dateKey) {
-  const results = await Promise.allSettled(entries.map((entry) => getTrail(entry.trail_id)));
+// Keep entries for trails that became private so the user's activity does not disappear.
+async function resolveTrails(entries, dateKey, authFetch) {
+  const results = await Promise.allSettled(entries.map((entry) => getTrail(entry.trail_id, authFetch)));
   return results.flatMap((result, index) => {
-    if (result.status !== 'fulfilled') return [];
+    const id = entries[index].trail_id;
+    const date = entries[index][dateKey];
+    if (result.status === 'rejected') {
+      return result.reason?.status === 404 ? [{ id, date, unavailable: true }] : [];
+    }
     const props = result.value?.properties ?? {};
     return [{
-      id: entries[index].trail_id,
+      id,
       name: props.name,
       difficulty: CAI_TO_DIFFICULTY[props.difficulty] ?? props.difficulty ?? null,
       lengthM: props.lengthM,
       ascentM: props.ascentM,
       // The whole route: needed to draw the route of the last completed trail
       geometry: result.value?.geometry ?? null,
-      date: entries[index][dateKey],
+      date,
     }];
   });
 }
@@ -32,8 +36,8 @@ export function useProfileTrails(authFetch) {
     let active = true;
 
     Promise.all([
-      getSavedTrails(authFetch).then((list) => resolveTrails(list, 'created_at')),
-      getCompletedTrails(authFetch).then((list) => resolveTrails(list, 'completed_at')),
+      getSavedTrails(authFetch).then((list) => resolveTrails(list, 'created_at', authFetch)),
+      getCompletedTrails(authFetch).then((list) => resolveTrails(list, 'completed_at', authFetch)),
     ])
       .then(([saved, completed]) => {
         if (active) setState({ saved, completed, loading: false, error: false });

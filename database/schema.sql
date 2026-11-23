@@ -67,10 +67,20 @@ create table if not exists public.trails (
   external_id      text,                                    -- id in the source (e.g. demo-rende-01)
   created_by       uuid        references public.profiles (id) on delete set null,
   created_at       timestamptz not null default now(),
-  image_url        text,
-  -- Only secure links for the cover image
-  constraint trails_image_url_https check (image_url ~ '^https://')
+  image_url        text
 );
+
+-- Existing trails stay public. GPX uploads explicitly choose their visibility.
+alter table public.trails
+  add column if not exists is_public boolean not null default true;
+
+-- A cover can be a file relative to backend/data or a legacy HTTPS link.
+alter table public.trails
+  drop constraint if exists trails_image_url_https,
+  drop constraint if exists trails_image_url_format,
+  add constraint trails_image_url_format check (
+    image_url ~ '^https://' or image_url ~ '^trail-covers/(catalog|gpx)-[a-z0-9-]+[.](jpg|webp)$'
+  );
 
 -- Spatial indexes: they make the searches by area and by distance fast.
 -- (trails_nearby.sql also indexes the geometry used by nearby search.)
@@ -79,11 +89,11 @@ create index if not exists trails_route_idx on public.trails using gist (route);
 
 alter table public.trails enable row level security;
 
--- Everyone, even without login, can read the trails.
+-- Private trails (including the GPX geometry and cover) are visible to their author.
 drop policy if exists trails_select on public.trails;
 create policy trails_select
   on public.trails for select
-  using (true);
+  using (is_public or created_by = (select auth.uid()));
 
 -- A logged-in user can add a trail only as its author,
 -- and change or delete only the trails they created.

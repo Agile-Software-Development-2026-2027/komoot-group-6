@@ -266,7 +266,7 @@
 /* Tabs: the active one has the orange line; hover and tab changes are smooth */
 .profile-tabs {
   display: flex;
-  gap: 24px;
+  gap: clamp(10px, 3vw, 24px);
   margin: 8px 0 16px;
   border-bottom: 1px solid var(--profile-rule);
 }

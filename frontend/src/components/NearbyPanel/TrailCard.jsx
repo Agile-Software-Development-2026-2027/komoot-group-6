@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { POINTS_POPUP_MS, SAVE_MESSAGE_MS } from '../../config/ui.config.js';
+import { useTrailCover } from '../../hooks/useTrailCover.js';
 import {
   estimateDurationMin,
   formatDistance,
@@ -79,6 +80,7 @@ function TrailArt({ trail }) {
 // onSelect(trail) shows the trail on the map; isSelected highlights the chosen card.
 export default function TrailCard({
   trail,
+  authFetch,
   onSave,
   onUnsave,
   isSaved: isSavedInProfile = false,
@@ -100,7 +102,8 @@ export default function TrailCard({
   const [actionLoading, setActionLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [localDone, setLocalDone] = useState(null);
-  const [imageFailed, setImageFailed] = useState(false);
+  const [failedImage, setFailedImage] = useState(null);
+  const imageUrl = useTrailCover(trail, authFetch);
   // points earned popup shown next to complete button
   const [earnedPoints, setEarnedPoints] = useState(null);
   // level up dialog data shown when completing a trail triggers a promotion
@@ -200,8 +203,8 @@ export default function TrailCard({
   return (
     <article className={`${styles.card} ${isSelected ? styles.selected : ''}`}>
       <div className={styles.cover}>
-        {trail.imageUrl && !imageFailed ? (
-          <img src={trail.imageUrl} alt="" loading="lazy" onError={() => setImageFailed(true)} />
+        {imageUrl && imageUrl !== failedImage ? (
+          <img src={imageUrl} alt="" loading="lazy" onError={() => setFailedImage(imageUrl)} />
         ) : (
           <TrailArt trail={trail} />
         )}

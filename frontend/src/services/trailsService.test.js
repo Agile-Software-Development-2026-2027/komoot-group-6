@@ -12,10 +12,6 @@ import {
   unsaveTrail,
 } from './trailsService.js';
 
-vi.mock('../utils/trailImages.js', () => ({
-  trailImageUrl: (name) => (name === 'Anello del Campus UniCal' ? '/assets/anello.jpg' : null),
-}));
-
 // apiRequest uses fetch: we mock it to see the requested path
 function mockFetch(body, { ok = true, status = 200 } = {}) {
   const fetchMock = vi.fn().mockResolvedValue({ ok, status, json: async () => body });
@@ -138,17 +134,17 @@ describe('getNearbyTrails', () => {
     expect(trails.map((trail) => trail.start)).toEqual([null, null, null]);
   });
 
-  it('takes the image from the folder using the trail name', async () => {
+  it('keeps the cover flag supplied by the backend', async () => {
     const authFetch = vi.fn().mockResolvedValue(
       nearbyResponse(
-        { properties: { id: 't1', name: 'Anello del Campus UniCal' } },
+        { properties: { id: 't1', name: 'Anello del Campus UniCal', hasLocalCover: true } },
         { properties: { id: 't2', name: 'Monte Curcio da Camigliatello' } }
       )
     );
 
     const trails = await getNearbyTrails(authFetch, { lat: 0, lng: 0, radiusKm: 1 });
 
-    expect(trails.map((trail) => trail.imageUrl)).toEqual(['/assets/anello.jpg', null]);
+    expect(trails.map((trail) => trail.hasLocalCover)).toEqual([true, undefined]);
   });
 
   it('returns an empty list when the response has no trails', async () => {

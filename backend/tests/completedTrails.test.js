@@ -197,6 +197,17 @@ expect(trailEq).toHaveBeenCalledWith(
     expect(res.body).toEqual({ trailId: TRAIL_ID, pointsEarned: 60, level: 2, levelName: 'Hiker', levelUp: false });
   });
 
+  it('completes a trail without a CAI grade using T and the real distance', async () => {
+    trailSingle.mockResolvedValue({ data: { difficulty: null, length_m: 29360 }, error: null });
+    profileSingle.mockResolvedValue({ data: { level: 2 }, error: null });
+
+    const res = await complete({ trailId: TRAIL_ID });
+
+    expect(res.status).toBe(201);
+    expect(res.body.pointsEarned).toBe(136);
+    expect(insert).toHaveBeenCalledWith({ user_id: 'abc-123', trail_id: TRAIL_ID, points_earned: 136 });
+  });
+
   it('responds 500 when the level cannot be read', async () => {
     profileSingle.mockResolvedValue({ data: null, error: { code: '42501', message: 'permission denied' } });
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});

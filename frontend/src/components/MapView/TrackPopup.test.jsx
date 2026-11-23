@@ -78,6 +78,19 @@ describe('TrackPopup', () => {
     expect(screen.getByText('E')).toBeTruthy();
   });
 
+  it('loads a local cover through the authenticated API', async () => {
+    vi.stubGlobal('URL', class extends URL {
+      static createObjectURL() { return 'blob:trail-cover'; }
+      static revokeObjectURL() {}
+    });
+    const authFetch = vi.fn().mockResolvedValue(new Blob([], { type: 'image/jpeg' }));
+
+    render(<TrackPopup trail={{ ...trail, hasLocalCover: true }} lngLat={lngLat} authFetch={authFetch} onClose={() => {}} />);
+
+    expect((await screen.findByAltText('')).getAttribute('src')).toBe('blob:trail-cover');
+    expect(authFetch).toHaveBeenCalledWith(`/trails/${trail.id}/cover`, { asBlob: true });
+  });
+
   it('hides the details the trail has no data for', () => {
     render(
       <TrackPopup

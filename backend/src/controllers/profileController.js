@@ -8,6 +8,7 @@ const PROFILE_SEARCH_PAGE_SIZE = 20;
 const INSERT_ERRORS = {
   '23505': { status: 409, error: 'Trail already saved' }, // duplicate key: the user has already saved it
   '23503': { status: 404, error: 'Trail not found' }, // the trail does not exist in the trails table
+  '42501': { status: 404, error: 'Trail not found' }, // the trail is not visible to this user
   '22P02': { status: 400, error: 'Invalid trail id' }, // the id is not a uuid
 };
 
@@ -130,8 +131,9 @@ export async function completeTrail(req, res) {
   
   // Level before the insert: the points depend on it, and it tells the frontend if the user goes up a level
   const levelBefore = await readLevel(req);
-  // Calculate points based on difficulty, length and level of the user
-  const pointsEarned = calculateHikeScore(trail.difficulty, trail.length_m, levelBefore);
+  // Older catalogue trails can omit the CAI grade. Score those as T.
+  const difficulty = trail.difficulty ?? 'T';
+  const pointsEarned = calculateHikeScore(difficulty, trail.length_m, levelBefore);
   console.log("Points earned::", pointsEarned)
   const { data, error } = await supabaseAsUser(req.token)
     .from('completed_trails')

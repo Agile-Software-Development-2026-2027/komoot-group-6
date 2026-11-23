@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase.js';
+import { hasTrailCover, isManagedTrailCover } from './trailCovers.js';
 
 function toTrailProperties(row) {
   return {
@@ -13,6 +14,7 @@ function toTrailProperties(row) {
     maxElevationM: row.max_elevation_m ?? null,
     estDurationMin: row.est_duration_min ?? null,
     startPoint: [row.lng, row.lat],
+    ...(row.image_url && !isManagedTrailCover(row.image_url) ? { imageUrl: row.image_url } : {}),
   };
 }
 
@@ -41,6 +43,11 @@ export function toTrailCollection(rows) {
   return { type: 'FeatureCollection', features: rows.map(toTrailFeature) };
 }
 
+async function withLocalCover(feature, trail) {
+  if (await hasTrailCover(trail)) feature.properties.hasLocalCover = true;
+  return feature;
+}
+
 // Supabase does not throw: it returns { data, error }. We throw, so that
 // errorHandler answers with 500 and the details stay in the server log.
 function failIfError(error, what) {
@@ -49,9 +56,13 @@ function failIfError(error, what) {
   }
 }
 
+export function isMissingColumn(error) {
+  return error?.code === '42703' || error?.code === 'PGRST204';
+}
+
 // Trails whose start point is inside the area { minLng, minLat, maxLng, maxLat }
-export async function getTrailsInBounds({ minLng, minLat, maxLng, maxLat }) {
-  const { data, error } = await supabase.rpc('trails_in_bounds', {
+export async function getTrailsInBounds({ minLng, minLat, maxLng, maxLat }, db = supabase) {
+  const { data, error } = await db.rpc('trails_in_bounds', {
     min_lng: minLng,
     min_lat: minLat,
     max_lng: maxLng,
@@ -62,11 +73,28 @@ export async function getTrailsInBounds({ minLng, minLat, maxLng, maxLat }) {
 }
 
 // One trail with its route, or null if it does not exist
-export async function getTrailById(id) {
-  const { data, error } = await supabase.rpc('get_trail', { trail_id: id });
+export async function getTrailById(id, db = supabase, includeCover = false) {
+  const { data, error } = await db.rpc('get_trail', { trail_id: id });
   failIfError(error, 'load the trail');
   const [row] = data ?? [];
-  return row ? toTrailDetailFeature(row) : null;
+  if (!row) return null;
+
+  if (!includeCover) return toTrailDetailFeature(row);
+
+  const { data: visibility, error: visibilityError } = await db.from('trails')
+    .select('is_public, created_by')
+    .eq('id', id)
+    .maybeSingle();
+  // Older databases still serve the trail while the GPX migration is pending.
+  if (isMissingColumn(visibilityError)) {
+    return withLocalCover(toTrailDetailFeature(row), row);
+  }
+  failIfError(visibilityError, 'load trail visibility');
+  if (!visibility) return null;
+
+  const feature = await withLocalCover(toTrailDetailFeature(row), { ...row, created_by: visibility.created_by });
+  feature.properties.isPublic = visibility.is_public;
+  return feature;
 }
 
 // Added for nearby trails search, see validateNearbyQuery() in validateTrailQuery.js
@@ -84,13 +112,14 @@ export function toNearbyFeature(row) {
 
 // Trails passing within `radius` meters of (lat, lng), closest first.
 // The search runs in PostGIS (ST_DWithin), in the SQL function nearby_trails.
-export async function getNearbyTrails({ lat, lng, radius, limit }) {
-  const { data, error } = await supabase.rpc('nearby_trails', {
+export async function getNearbyTrails({ lat, lng, radius, limit }, db = supabase) {
+  const { data, error } = await db.rpc('nearby_trails', {
     origin_lat: lat,
     origin_lng: lng,
     radius_m: radius,
     max_results: limit,
   });
   failIfError(error, 'search the nearby trails');
-  return { type: 'FeatureCollection', features: (data ?? []).map(toNearbyFeature) };
+  const features = await Promise.all((data ?? []).map((row) => withLocalCover(toNearbyFeature(row), row)));
+  return { type: 'FeatureCollection', features };
 }

@@ -19,7 +19,7 @@ async function readLikes(db, trailId) {
 async function sendLikes(res, db, trailId, status = 200) {
   const likes = await readLikes(db, trailId);
   if (!likes) return res.status(404).json(TRAIL_NOT_FOUND);
-  return res.status(status).json(likes);
+  return res.set('Cache-Control', 'no-store').status(status).json(likes);
 }
 
 
@@ -38,8 +38,7 @@ export async function likeTrail(req, res) {
 
   const { error } = await db.from('trail_likes').insert({ user_id: req.user.id, trail_id: trailId });
 
-  // 23503: the trail does not exist in the trails table
-  if (error?.code === '23503') return res.status(404).json(TRAIL_NOT_FOUND);
+  if (error?.code === '23503' || error?.code === '42501') return res.status(404).json(TRAIL_NOT_FOUND);
   // 23505: the like was already there
   if (error && error.code !== '23505') throw error;
 

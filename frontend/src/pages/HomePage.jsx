@@ -8,11 +8,12 @@ import TrailStartsLayer from '../components/MapView/TrailStartsLayer.jsx';
 import NearbyPanel from '../components/NearbyPanel/NearbyPanel.jsx';
 import ProfileSearchDialog from '../components/ProfileSearch/ProfileSearchDialog.jsx';
 import LeaderboardDialog from '../components/Leaderboard/LeaderboardDialog.jsx';
+import GpxUploadDialog from '../components/GpxUpload/GpxUploadDialog.jsx';
 import { Link } from 'react-router-dom';
 import Avatar from '../components/Avatar.jsx';
 import { useAuth } from '../context/useAuth.js';
 import ElevationProfile from '../components/ElevationChart/ElevationChart.jsx';
-import { CloseIcon, SearchIcon, TrailsIcon, TrophyIcon } from '../components/NearbyPanel/icons.jsx';
+import { CloseIcon, PlusIcon, SearchIcon, TrailsIcon, TrophyIcon } from '../components/NearbyPanel/icons.jsx';
 import {
   BOUNDS_DEBOUNCE_MS,
   FIT_TRACK_DURATION_MS,
@@ -26,7 +27,7 @@ import { ELEVATION_CHART_LINE_COLOR } from '../config/theme.js';
 
 // Keeps the trails of the visible area up to date: it asks for them at start and after every map move.
 // It must be placed inside <MapView> so it can use useMap().
-function TrailsInView({ onLoad }) {
+function TrailsInView({ onLoad, revision, authFetch }) {
   const { current: map } = useMap();
 
   useEffect(() => {
@@ -38,7 +39,7 @@ function TrailsInView({ onLoad }) {
 
     const load = () => {
       const request = ++lastRequest;
-      getTrailsInBounds(map.getBounds().toArray().flat())
+      getTrailsInBounds(map.getBounds().toArray().flat(), authFetch)
         .then((trails) => {
           if (request === lastRequest) onLoad(trails);
         })
@@ -57,7 +58,7 @@ function TrailsInView({ onLoad }) {
       lastRequest += 1;
       map.off('moveend', schedule);
     };
-  }, [map, onLoad]);
+  }, [map, onLoad, revision, authFetch]);
 
   return null;
 }
@@ -87,12 +88,11 @@ function FitToTrack({ data, onDone }) {
     }
 
     map.once('moveend', onDone);
-    map.fitBounds([[bounds[0], bounds[1]], [bounds[2], bounds[3]]], {
-      padding: FIT_TRACK_PADDING,
-      duration: FIT_TRACK_DURATION_MS,
-    },
-    { fromNearbyPanel: true}
-  );
+    map.fitBounds(
+      [[bounds[0], bounds[1]], [bounds[2], bounds[3]]],
+      { padding: FIT_TRACK_PADDING, duration: FIT_TRACK_DURATION_MS },
+      { fromNearbyPanel: true }
+    );
     return () => map.off('moveend', onDone);
   }, [map, data, onDone]);
 
@@ -109,10 +109,11 @@ function TrailClick({ onSelect }) {
 // Components that draw on the map (trails, panels, popups)
 // are added as children of <MapView>.
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user, authFetch } = useAuth();
   const name = user?.displayName || user?.username || user?.email || '?';
   // FeatureCollection of the start points of the visible area
   const [trails, setTrails] = useState(null);
+  const [trailRevision, setTrailRevision] = useState(0);
   // { id, lngLat, properties } of the clicked trail, null if none
   const [selected, setSelected] = useState(null);
   // Feature with the full route of the selected trail
@@ -127,21 +128,19 @@ export default function HomePage() {
   // The user can hide the elevation chart; it comes back when another trail is selected
   const [elevationOpen, setElevationOpen] = useState(true);
 
-  const handleSelect = useCallback(
-    (feature) => {
-      const trail = trails?.features.find((item) => item.properties.id === feature.properties?.id);
-      if (!trail) return;
-
-      const [lng, lat] = trail.geometry.coordinates;
-      const { id } = trail.properties;
+  const selectTrail = useCallback(
+    (properties, start) => {
+      const id = properties?.id;
+      if (!id) return;
+      const lngLat = start ? { lng: start[0], lat: start[1] } : null;
       selectedIdRef.current = id;
-      setSelected({ id, lngLat: { lng, lat }, properties: trail.properties });
+      setSelected({ id, lngLat, properties });
       setRoute(null);
       setHoveredPoint(null);
       setElevationOpen(true);
       setPopupOpen(false);
 
-      getTrail(id)
+      getTrail(id, authFetch, { includeCover: true })
         .then((detail) => {
           if (selectedIdRef.current === id) setRoute(detail);
         })
@@ -150,30 +149,13 @@ export default function HomePage() {
           if (selectedIdRef.current === id) setPopupOpen(true);
         });
     },
-    [trails]
+    [authFetch]
   );
 
-  const handleSelectFromNearby = useCallback((trail) => {
-    if (!trail?.id) return;
-    const id = trail.id;
-    const lngLat = trail.start ? {lng: trail.start[0], lat: trail.start[1]} : null;
-
-    selectedIdRef.current = id;
-    setSelected({id, lngLat, properties: trail});
-    setRoute(null);
-    setHoveredPoint(null);
-    setElevationOpen(true);
-    setPopupOpen(false);
-
-    getTrail(id)
-      .then((detail) => {
-        if (selectedIdRef.current === id) setRoute(detail);
-      })
-      .catch(() => {
-        if (selectedIdRef.current === id)
-          setPopupOpen(true);
-      });
-  }, []);
+  const handleSelect = useCallback((feature) => {
+    const trail = trails?.features.find((item) => item.properties.id === feature.properties?.id);
+    if (trail) selectTrail(trail.properties, trail.geometry.coordinates);
+  }, [trails, selectTrail]);
 
   const handleClose = useCallback(() => {
     selectedIdRef.current = null;
@@ -207,7 +189,7 @@ export default function HomePage() {
       </Link>
       <section className="home-map" aria-label="Map">
         <MapView>
-          <TrailsInView onLoad={setTrails} />
+          <TrailsInView onLoad={setTrails} revision={trailRevision} authFetch={authFetch} />
           <TrailStartsLayer data={trails} />
           {trails && <TrailClick onSelect={handleSelect} />}
           <TrackLayer data={route} />
@@ -225,6 +207,7 @@ export default function HomePage() {
             key={selected?.id}
             trail={popupOpen ? (route?.properties ?? selected?.properties) : null}
             lngLat={selected?.lngLat}
+            authFetch={authFetch}
             onClose={handleClose}
           />
           <MapToolbar>
@@ -254,16 +237,37 @@ export default function HomePage() {
                 togglePanel('leaderboard');
               }}
             />
+            <ToolbarButton
+              label="Add GPX"
+              icon={<PlusIcon />}
+              isActive={openPanel === 'gpx'}
+              popup="dialog"
+              onClick={(event) => {
+                event.currentTarget.focus({ preventScroll: true });
+                togglePanel('gpx');
+              }}
+            />
           </MapToolbar>
           {/* Trails near the center of the map, with filters and saving to the profile */}
-          <NearbyPanel isOpen={openPanel === 'nearby'} 
-          onClose={closePanel} 
-          onSelectTrail={handleSelectFromNearby}
+          <NearbyPanel
+            isOpen={openPanel === 'nearby'}
+            onClose={closePanel}
+            onSelectTrail={(trail) => selectTrail(trail, trail?.start)}
           />
         </MapView>
       </section>
       {openPanel === 'profiles' && <ProfileSearchDialog onClose={closePanel} />}
       {openPanel === 'leaderboard' && <LeaderboardDialog onClose={closePanel} />}
+      {openPanel === 'gpx' && (
+        <GpxUploadDialog
+          onClose={closePanel}
+          onSaved={() => setTrailRevision((current) => current + 1)}
+          onShowTrail={(trail) => {
+            closePanel();
+            selectTrail(trail.properties, trail.geometry.coordinates);
+          }}
+        />
+      )}
       {route && (elevationOpen ? (
         // Elevation chart floating over the bottom of the full-screen map
         <div className="home-elevation">

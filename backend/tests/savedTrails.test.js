@@ -123,6 +123,7 @@ describe('POST /api/profile/saved-trails', () => {
   it.each([
     ['23505', 409, 'Trail already saved'],
     ['23503', 404, 'Trail not found'],
+    ['42501', 404, 'Trail not found'],
     ['22P02', 400, 'Invalid trail id'],
   ])('traduce l\'errore Postgres %s in %i', async (code, status, message) => {
     insert.mockResolvedValue({ error: { code, message: 'db error' } });
@@ -134,7 +135,7 @@ describe('POST /api/profile/saved-trails', () => {
   });
 
   it('risponde 500 per un errore inatteso del database', async () => {
-    insert.mockResolvedValue({ error: { code: '42501', message: 'permission denied' } });
+    insert.mockResolvedValue({ error: { code: '08006', message: 'connection failure' } });
     // errorHandler prints the error: here we silence it
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 

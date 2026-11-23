@@ -149,20 +149,43 @@ it('shows an empty message when there are no trails', async () => {
   expect(screen.getByText("You haven't completed any trails yet.")).toBeTruthy();
 });
 
-it('skips a trail whose details cannot be loaded', async () => {
+it('keeps the bookmark and date when a trail becomes private', async () => {
   getSavedTrails.mockResolvedValue([
     { trail_id: 'a', created_at: '2026-02-01T10:00:00Z' },
     { trail_id: 'gone', created_at: '2026-02-02T10:00:00Z' },
   ]);
   getTrail.mockImplementation(async (id) => {
-    if (id === 'gone') throw new Error('not found');
+    if (id === 'gone') throw Object.assign(new Error('Trail not found'), { status: 404 });
     return feature(id, `Trail ${id}`);
   });
 
   render(<ProfilePage />);
 
-  await screen.findByRole('tab', { name: 'Saved (1)' });
+  await screen.findByRole('tab', { name: 'Saved (2)' });
   expect(screen.getByText(/Trail a/)).toBeTruthy();
+  const unavailable = screen.getByText('Unavailable trail');
+  expect(within(unavailable.closest('li')).getByText('2 Feb 2026')).toBeTruthy();
+  expect(screen.queryByRole('link', { name: 'Unavailable trail' })).toBeNull();
+});
+
+it('saves a visibility change for one uploaded trail', async () => {
+  const trail = { id: 'my-gpx', name: 'My hike', is_public: false, length_m: 2000, created_at: null };
+  const authFetch = vi.fn()
+    .mockResolvedValueOnce([trail])
+    .mockResolvedValueOnce({ ...trail, is_public: true });
+  useAuth.mockReturnValue({ user: fullUser, authFetch });
+  render(<ProfilePage />);
+
+  fireEvent.click(screen.getByRole('tab', { name: 'Uploaded by you' }));
+  const toggle = await screen.findByRole('switch', { name: 'Public visibility for My hike' });
+  expect(toggle.getAttribute('aria-checked')).toBe('false');
+  fireEvent.click(toggle);
+
+  await waitFor(() => expect(toggle.getAttribute('aria-checked')).toBe('true'));
+  expect(authFetch).toHaveBeenLastCalledWith('/trails/my-gpx/visibility', {
+    method: 'PATCH',
+    body: { isPublic: true },
+  });
 });
 
 it('shows an error when the lists cannot be loaded', async () => {

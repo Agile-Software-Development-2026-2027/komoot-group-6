@@ -5,6 +5,7 @@ import LogoutButton from '../components/LogoutButton.jsx';
 import ProfileTrailList from '../components/ProfileTrails/ProfileTrailList.jsx';
 import RouteHero from '../components/ProfileTrails/RouteHero.jsx';
 import VisibilitySwitch from '../components/ProfileTrails/VisibilitySwitch.jsx';
+import UploadedTrails from '../components/ProfileTrails/UploadedTrails.jsx';
 import { ChevronLeftIcon } from '../components/TrailPage/icons.jsx';
 import { useAuth } from '../context/useAuth.js';
 import { getProfilePoints } from '../services/trailsService.js';
@@ -83,6 +84,7 @@ export default function ProfilePage() {
     { id: 'saved', label: 'Saved', trails: saved, emptyText: "You haven't saved any trails yet." },
     { id: 'completed', label: 'Completed', trails: completed, emptyText: "You haven't completed any trails yet." },
     { id: 'route', label: 'Last route' },
+    { id: 'uploaded', label: 'Uploaded by you' },
   ];
   const current = tabs.find(({ id }) => id === tab);
 
@@ -167,7 +169,7 @@ export default function ProfilePage() {
             <HikingInfo authFetch={authFetch} pointsData={pointsState} />
           </aside>
 
-          {/* Right column, wide: Saved, Completed and Last route tabs */}
+          {/* Right column: trail activity and uploaded trails */}
           <section className="profile-main" aria-labelledby="profile-trails">
             <h2 id="profile-trails" className="profile-section-title">Trails</h2>
 
@@ -191,18 +193,20 @@ export default function ProfilePage() {
             </div>
 
             <div id="trails-panel" role="tabpanel" aria-labelledby={`tab-${tab}`}>
-              {loading && <p role="status" className="profile-status">Loading…</p>}
-              {error && (
+              {tab === 'uploaded' && <UploadedTrails authFetch={authFetch} />}
+              {tab !== 'uploaded' && loading && <p role="status" className="profile-status">Loading…</p>}
+              {tab !== 'uploaded' && error && (
                 <div role="alert">
                   <p className="profile-status">Could not load your trails.</p>
                   <button type="button" className="profile-outline" onClick={retry}>Try again</button>
                 </div>
               )}
-              {ready && (tab === 'route' ? (
-                <RouteHero trail={completed[0] ?? null} />
-              ) : (
+              {ready && tab === 'route' && (
+                <RouteHero trail={completed.find((trail) => !trail.unavailable) ?? null} />
+              )}
+              {ready && current.trails && (
                 <ProfileTrailList trails={current.trails} emptyText={current.emptyText} />
-              ))}
+              )}
             </div>
           </section>
         </div>

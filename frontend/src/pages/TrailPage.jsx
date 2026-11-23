@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import TrailComments from '../components/TrailPage/TrailComments.jsx';
 import TrailDifficulty from '../components/TrailPage/TrailDifficulty.jsx';
@@ -10,6 +10,7 @@ import TrailStart from '../components/TrailPage/TrailStart.jsx';
 import TrailStats from '../components/TrailPage/TrailStats.jsx';
 import { ChevronLeftIcon } from '../components/TrailPage/icons.jsx';
 import { useAuth } from '../context/useAuth.js';
+import { useTrailCover } from '../hooks/useTrailCover.js';
 import { getTrail } from '../services/trailsService.js';
 import { estimateDurationMin } from '../utils/formatTrail.js';
 import { isLoop } from '../utils/routeShape.js';
@@ -36,14 +37,20 @@ export default function TrailPage() {
 
 // Loads the trail and shows one of four states: loading, ready, not found, error
 function TrailContent({ id, onRetry }) {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, authFetch } = useAuth();
   const [state, setState] = useState({ status: 'loading' });
+  const loadedFeature = state.feature;
+  const coverUrl = useTrailCover(loadedFeature?.properties, isAuthenticated ? authFetch : undefined);
+  const feature = useMemo(() => {
+    if (!loadedFeature || !coverUrl || coverUrl === loadedFeature.properties.imageUrl) return loadedFeature;
+    return { ...loadedFeature, properties: { ...loadedFeature.properties, imageUrl: coverUrl } };
+  }, [loadedFeature, coverUrl]);
 
   useEffect(() => {
     // True if the user leaves the page before the answer arrives: the answer is ignored
     let ignore = false;
 
-    getTrail(id)
+    getTrail(id, isAuthenticated ? authFetch : undefined, { includeCover: true })
       .then((feature) => {
         if (!ignore) setState({ status: 'ready', feature });
       })
@@ -57,7 +64,7 @@ function TrailContent({ id, onRetry }) {
     return () => {
       ignore = true;
     };
-  }, [id]);
+  }, [id, authFetch, isAuthenticated]);
 
   if (state.status === 'loading') {
     return (
@@ -71,7 +78,7 @@ function TrailContent({ id, onRetry }) {
     return (
       <section className={styles.message}>
         <h1>Trail not found</h1>
-        <p>This trail does not exist or has been removed.</p>
+        <p>This trail is currently unavailable.</p>
         <Link to="/" className={styles.messageLink}>Back to the map</Link>
       </section>
     );
@@ -91,7 +98,6 @@ function TrailContent({ id, onRetry }) {
 
   // The answer is a GeoJSON Feature: the data is in "properties",
   // the whole route is in "geometry" (the map uses the whole Feature)
-  const { feature } = state;
   const trail = feature.properties;
   // Not every trail has an estimated duration: we estimate it from length and ascent
   const durationMin = trail.estDurationMin ?? estimateDurationMin(trail.lengthM, trail.ascentM);
@@ -99,7 +105,7 @@ function TrailContent({ id, onRetry }) {
 
   return (
     <article className={styles.content}>
-      {/* "Share your hike" appears on the right only if the user has completed this trail (SCRUM-14) */}
+      {/* The share action uses the hike recap once this trail is completed. */}
       <div className={styles.topBar}>
         <Link to="/" className={styles.back}>
           <ChevronLeftIcon />
