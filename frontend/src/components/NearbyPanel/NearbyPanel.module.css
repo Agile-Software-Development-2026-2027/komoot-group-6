@@ -347,18 +347,6 @@
   }
 }
 
-/* smooth appearance animation for earned points popup */
-@keyframes pointsPopupIn {
-  from {
-    opacity: 0;
-    transform: scale(0.85);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 .cardTitle {
   margin: 6px 0 0;
   font-size: 1.05rem;

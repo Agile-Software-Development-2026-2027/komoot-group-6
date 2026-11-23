@@ -90,7 +90,9 @@ function FitToTrack({ data, onDone }) {
     map.fitBounds([[bounds[0], bounds[1]], [bounds[2], bounds[3]]], {
       padding: FIT_TRACK_PADDING,
       duration: FIT_TRACK_DURATION_MS,
-    });
+    },
+    { fromNearbyPanel: true}
+  );
     return () => map.off('moveend', onDone);
   }, [map, data, onDone]);
 

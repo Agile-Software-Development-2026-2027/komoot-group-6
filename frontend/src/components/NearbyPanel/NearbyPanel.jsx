@@ -202,8 +202,11 @@ export default function NearbyPanel({ isOpen = true, onClose, onSelectTrail }) {
     selectionRef.current = { trail, at: Date.now(), restored: false };
     
     //notify the Homepage
-    onSelectTrail?.(trail)
-    if (map) flyToTrail(map, trail);
+    if (onSelectTrail) {
+      onSelectTrail(trail);
+    } else if (map) {
+      flyToTrail(map, trail);
+    }
 
     // On narrow screens the list covers half the map: we close it to show the place
     if (window.matchMedia?.(`(max-width: ${NARROW_SCREEN_WIDTH}px)`)?.matches) onClose?.();
