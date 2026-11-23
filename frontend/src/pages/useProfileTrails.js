@@ -3,7 +3,7 @@ import { CAI_TO_DIFFICULTY, getCompletedTrails, getSavedTrails, getTrail } from 
 
 // The profile lists contain only the trail ids: here the details of each one are loaded.
 // A trail that cannot be loaded (e.g. removed) is skipped.
-async function resolveTrails(entries, dateKey) {
+export async function resolveTrails(entries, dateKey) {
   const results = await Promise.allSettled(entries.map((entry) => getTrail(entry.trail_id)));
   return results.flatMap((result, index) => {
     if (result.status !== 'fulfilled') return [];

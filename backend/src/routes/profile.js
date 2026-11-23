@@ -10,6 +10,7 @@ import {
   uncompleteTrail,
   unsaveTrail,
   getProfilePoints,
+  getPublicProfile,
 } from '../controllers/profileController.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
 import { validateCompleteTrail } from '../middlewares/validateCompleteTrail.js';
@@ -29,5 +30,6 @@ router.get('/visibility', requireAuth, getVisibility);
 router.put('/visibility', requireAuth, validateVisibility, setVisibility);
 router.get('/points', requireAuth, getProfilePoints);
 router.get('/search', requireAuth, searchPublicProfiles);
+router.get('/users/:username', requireAuth, getPublicProfile);
 
 export default router;

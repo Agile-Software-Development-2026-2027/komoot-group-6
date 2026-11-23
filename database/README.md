@@ -23,6 +23,7 @@ Run the files in the **SQL Editor** of Supabase, one at a time, in this order:
 | 12 | `public_profile_points.sql` | *optional*: public profile score totals on databases with `completed_trails.points_earned` |
 | 13 | `leaderboards.sql` | trail leaderboard (`get_trail_leaderboard`) and global leaderboard (`get_global_leaderboard`) |
 | 14 | `levels.sql` | the levels (`levels` table) and the trigger that saves the level of each user in `profiles.level` |
+| 15 | `public_profile_page.sql` | `get_public_profile_completed`: trails completed by a public profile (public profile page) |
 
 ## Good to know
 

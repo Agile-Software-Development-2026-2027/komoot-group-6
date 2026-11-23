@@ -110,3 +110,15 @@ export function projectRoute(geometry, box) {
     line.map(([lng, lat]) => [offsetX + (lng * kx - minX) * k, offsetY + (maxY - lat) * k])
   );
 }
+
+// Link to the public page of a profile (/users/:username), built like trailUrl.
+// The page requires login: whoever opens the link logs in first and then lands on the profile.
+export function profileUrl(username, siteUrl = import.meta.env.VITE_SITE_URL) {
+  const base = (siteUrl || window.location.origin).replace(/\/+$/, '');
+  return `${base}/users/${encodeURIComponent(username)}`;
+}
+
+// Text of the message shared with the profile link.
+export function profileShareText(name) {
+  return `Check out ${name}'s hiking profile! 🥾`;
+}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { LEADERBOARD_SIZE } from '../../config/leaderboard.config.js';
 import { useAuth } from '../../context/useAuth.js';
 import { getLeaderboard } from '../../services/profileService.js';
@@ -21,7 +22,10 @@ function LeaderboardRow({ entry }) {
       <Avatar name={name} size="sm" />
       <span className={styles.identity}>
         <span className={styles.profileName}>
-          <strong>{name}</strong>
+          {/* The name opens the public profile page */}
+          <Link to={`/users/${encodeURIComponent(entry.username)}`} className={styles.profileLink}>
+            <strong>{name}</strong>
+          </Link>
           {entry.isMine && <span className={styles.youBadge}>You</span>}
         </span>
         <span>@{entry.username} · Level {entry.level}</span>
