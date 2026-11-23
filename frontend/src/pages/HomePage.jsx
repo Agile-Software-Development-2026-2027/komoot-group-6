@@ -222,6 +222,7 @@ export default function HomePage() {
           )}
           <FitToTrack data={route} onDone={handleFitted} />
           <TrackPopup
+            key={selected?.id}
             trail={popupOpen ? (route?.properties ?? selected?.properties) : null}
             lngLat={selected?.lngLat}
             onClose={handleClose}

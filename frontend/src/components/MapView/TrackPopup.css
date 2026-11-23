@@ -8,6 +8,9 @@
   background: var(--color-background, #ffffff);
   color: var(--color-text);
   max-width: 290px;
+  /* Prevent the popup from overflowing off-screen on small viewports */
+  max-height: min(420px, calc(100vh - 120px));
+  overflow-y: auto;
 }
 
 .track-popup-card {
@@ -39,12 +42,13 @@
 }
 
 /* Pulsante X di chiusura posizionato sopra l'immagine */
+/* WCAG 2.5.5 richiede almeno 44×44 px di area cliccabile */
 .track-popup .maplibregl-popup-close-button {
-  top: 8px;
-  right: 8px;
+  top: 4px;
+  right: 4px;
   width: 28px;
   height: 28px;
-  font-size: 16px;
+  font-size: 20px;
   line-height: 1;
   color: #ffffff;
   background: rgba(0, 0, 0, 0.45);
@@ -62,6 +66,11 @@
 .track-popup .maplibregl-popup-close-button:hover {
   background: rgba(0, 0, 0, 0.7);
   transform: scale(1.05);
+}
+
+.track-popup .maplibregl-popup-close-button:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
 }
 
 /* Corpo della card */
@@ -163,4 +172,9 @@
 
 .track-popup-details:active {
   transform: translateY(0);
+}
+
+.track-popup-details:focus-visible {
+  outline: 3px solid var(--color-primary, #6366f1);
+  outline-offset: 2px;
 }
