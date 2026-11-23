@@ -16,6 +16,90 @@ import styles from './ElevationChart.module.css';
 const formatDistance = (value) => `${Number(value).toFixed(2)} km`;
 const formatElevation = (value) => `${Math.round(Number(value))} m`;
 
+
+function validNonNegative(value) {
+  return typeof value === 'number' &&
+    Number.isFinite(value) &&
+    value >= 0;
+}
+
+function formatDuration(minutes) {
+  if (!validNonNegative(minutes)) return '—';
+
+  const total = Math.round(minutes);
+  const hours = Math.floor(total / 60);
+  const remaining = total % 60;
+
+  if (hours === 0) return `${remaining}m`;
+  if (remaining === 0) return `${hours}h`;
+
+  return `${hours}h ${remaining}m`;
+}
+
+function formatMeters(value) {
+  if (!validNonNegative(value)) return '—';
+  return `${Math.round(value).toLocaleString()} m`;
+}
+
+function formatKilometers(value) {
+  if (!validNonNegative(value)) return '—';
+  return `${(value / 1000).toFixed(1)} km`;
+}
+
+function formatSpeed(distanceM, durationMin) {
+  if (
+    !validNonNegative(distanceM) ||
+    !validNonNegative(durationMin) ||
+    durationMin === 0
+  ) {
+    return '—';
+  }
+
+  const speed = (distanceM / 1000) / (durationMin / 60);
+
+  return `${speed.toFixed(1)} km/h`;
+}
+
+function TrailStatistics({ stats }) {
+  const distanceM = stats?.distanceM;
+  const durationMin = stats?.durationMin;
+
+  const items = [
+    {
+      label: 'Distance',
+      value: formatKilometers(distanceM),
+    },
+    {
+      label: 'Est. time',
+      value: formatDuration(durationMin),
+    },
+    {
+      label: 'Elevation gain',
+      value: formatMeters(stats?.ascentM),
+    },
+    {
+      label: 'Elevation loss',
+      value: formatMeters(stats?.descentM),
+    },
+    {
+      label: 'Avg. speed',
+      value: formatSpeed(distanceM, durationMin),
+    },
+  ];
+
+  return (
+    <div className={styles.statistics}>
+      {items.map(({ label, value }) => (
+        <div className={styles.statItem} key={label}>
+          <strong className={styles.statValue}>{value}</strong>
+          <span className={styles.statLabel}>{label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
 function ElevationTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
 
@@ -70,7 +154,7 @@ function buildColoredChartData(points) {
   return { rows, runs };
 }
 
-export default function ElevationProfile({ data = [], onHover }) {
+export default function ElevationProfile({ data = [], stats = null, onHover }) {
   const valid = useMemo(
     () =>
       Array.isArray(data)
@@ -128,7 +212,7 @@ export default function ElevationProfile({ data = [], onHover }) {
         </div>
         <span className={styles.unitBadge}>km / m</span>
       </div>
-
+    <TrailStatistics stats={stats} />
       {valid.length < 2 ? (
         <p className={styles.emptyState} role="status">
           Elevation data unavailable for this route.
@@ -136,8 +220,8 @@ export default function ElevationProfile({ data = [], onHover }) {
       ) : (
         <>
           <div className={styles.routeEndpoints} aria-hidden="true">
-            <span className={styles.startMarker}>A</span>
-            <span className={styles.endMarker}>B</span>
+            <span className={styles.startMarker}>S</span>
+            <span className={styles.endMarker}>D</span>
           </div>
 
           <div
@@ -178,7 +262,7 @@ export default function ElevationProfile({ data = [], onHover }) {
                   tick={{ fontSize: 11, fill: '#66746b' }}
                   tickLine={false}
                   axisLine={false}
-                  width={52}
+                  width={65}
                   unit=" m"
                 />
 

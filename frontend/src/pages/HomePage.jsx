@@ -122,6 +122,18 @@ export default function HomePage() {
   const selectedIdRef = useRef(null);
   const [hoveredPoint, setHoveredPoint] = useState(null);
   const elevationData = useMemo(() => buildElevationProfile(route), [route]);
+
+  const elevationStats = useMemo(() => {
+  const properties = route?.properties ?? {};
+
+  return {
+    distanceM: properties.lengthM,
+    durationMin: properties.estDurationMin,
+    ascentM: properties.ascentM,
+    descentM: properties.descentM,
+  };
+}, [route]);
+
     // Panel opened from the map toolbar: only one at a time (null = none)
   const [openPanel, setOpenPanel] = useState(null);
   // The user can hide the elevation chart; it comes back when another trail is selected
@@ -278,6 +290,7 @@ export default function HomePage() {
           <ElevationProfile
             key={selected?.id}
             data={elevationData}
+            stats={elevationStats}
             onHover={setHoveredPoint}
           />
         </div>

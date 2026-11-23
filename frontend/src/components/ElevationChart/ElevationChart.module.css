@@ -167,3 +167,57 @@
     font-size: 0.65rem;
   }
 }
+
+
+/* Step 3 — Compact hiking statistics */
+
+.statistics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 12px 10px;
+  background: #f7f9f6;
+  border: 1px solid #e8eee8;
+  border-radius: 10px;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.statValue {
+  color: #193e29;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.statLabel {
+  color: #718076;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+/* Responsive statistics for the existing floating panel */
+@media (max-width: 700px) {
+  .statistics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px 8px;
+  }
+
+  .statValue {
+    font-size: 0.82rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .statistics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
