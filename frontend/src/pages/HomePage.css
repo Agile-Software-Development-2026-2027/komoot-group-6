@@ -42,16 +42,56 @@
 
 
 /* Elevation chart floating over the bottom of the map */
+
+/* Elevation profile: full available width by default */
 .home-elevation {
   position: absolute;
   left: 16px;
-  right: 72px; /* leaves room for the zoom/location buttons */
+  right: 72px;
   bottom: 16px;
   z-index: 5;
+
+  min-width: 0;
+  box-sizing: border-box;
+
   background: var(--color-surface);
   border-radius: var(--radius);
   box-shadow: 0 4px 14px rgb(0 0 0 / 0.15);
+
+  transition: left 220ms ease;
 }
+
+/* Nearby Trails panel is open on the left */
+.home-elevation--with-trails {
+  left: 428px;
+}
+
+/* On medium screens, the trails panel becomes narrower */
+@media (min-width: 721px) and (max-width: 1000px) {
+  .home-elevation--with-trails {
+    left: calc(42% + 24px);
+  }
+}
+
+/* Mobile: use a compact floating chart above the map bottom */
+@media (max-width: 720px) {
+  .home-elevation,
+  .home-elevation--with-trails {
+    left: 8px;
+    right: 8px;
+    bottom: 12px;
+    max-height: 42dvh;
+    overflow-y: auto;
+  }
+}
+
+/* Avoid unnecessary motion for users who prefer reduced animation */
+@media (prefers-reduced-motion: reduce) {
+  .home-elevation {
+    transition: none;
+  }
+}
+
 
 
 /* Cross that hides the elevation chart, top-right corner of the card */

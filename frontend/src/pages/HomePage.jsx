@@ -278,7 +278,11 @@ export default function HomePage() {
       {openPanel === 'leaderboard' && <LeaderboardDialog onClose={closePanel} />}
       {route && (elevationOpen ? (
         // Elevation chart floating over the bottom of the full-screen map
-        <div className="home-elevation">
+        <div
+          className={`home-elevation ${
+            openPanel === 'nearby' ? 'home-elevation--with-trails' : ''
+          }`}
+        >
           <button
             type="button"
             className="home-elevation-close"

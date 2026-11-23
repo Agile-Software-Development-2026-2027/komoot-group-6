@@ -203,15 +203,7 @@ export default function ElevationProfile({ data = [], stats = null, onHover }) {
 
   return (
     <section className={styles.profile} aria-label="Elevation profile">
-      <div className={styles.header}>
-        <div>
-          <h2 className={styles.heading}>Elevation profile</h2>
-          <p className={styles.subtitle}>
-            Altitude and slope along the selected trail
-          </p>
-        </div>
-        <span className={styles.unitBadge}>km / m</span>
-      </div>
+      
     <TrailStatistics stats={stats} />
       {valid.length < 2 ? (
         <p className={styles.emptyState} role="status">
