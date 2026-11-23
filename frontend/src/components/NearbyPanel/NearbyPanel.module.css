@@ -247,104 +247,103 @@
   transform: scale(1.03);
 }
 
-/* Segnalibro sulla copertina: salva il sentiero nel profilo */
-.bookmark {
-  position: absolute;
-  top: 10px;
-  right: 10px;
+/* Pulsanti di azione nel footer della card */
+.cardActions {
+  position: relative;
   z-index: 1;
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bookmark,
+.completeBtn {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   padding: 0;
-  color: var(--color-text);
-  background: rgb(255 255 255 / 0.95);
-  border: 0;
+  color: var(--color-muted);
+  background: var(--color-card-bg, #f1f5f9);
+  border: 1px solid var(--color-border);
   border-radius: 50%;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.2);
   cursor: pointer;
-  transition: transform 0.15s, color 0.15s;
+  transition: all 0.15s ease;
 }
 
 .bookmark:hover:not(:disabled) {
   color: var(--color-primary);
-  transform: scale(1.08);
-}
-
-.bookmark:disabled {
-  cursor: default;
-}
-
-.bookmark.isSaved {
-  color: var(--color-primary);
-}
-
-/* Pulsante per segnare l'escursione completata */
-.completeBtn {
-  position: absolute;
-  top: 10px;
-  right: 58px;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  color: var(--color-text);
-  background: rgb(255 255 255 / 0.95);
-  border: 0;
-  border-radius: 50%;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.2);
-  cursor: pointer;
-  transition: transform 0.15s, color 0.15s, background-color 0.15s;
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  transform: translateY(-1px);
 }
 
 .completeBtn:hover:not(:disabled) {
   color: var(--color-green);
-  transform: scale(1.08);
+  border-color: var(--color-green);
+  background: #e6f9ed;
+  transform: translateY(-1px);
 }
 
+.bookmark:disabled,
 .completeBtn:disabled {
   cursor: default;
+  opacity: 0.6;
 }
 
+/* Quando il sentiero è salvato nel profilo */
+.bookmark.isSaved {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* Pulsante per segnare l'escursione completata */
 .completeBtn.isCompleted {
   color: #fff;
   background: var(--color-green);
+  border-color: var(--color-green);
 }
 
-/* points popup next to the checkmark without background */
+.completeWrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+/* points popup floating directly above the checkmark button */
 .pointsPopup {
   position: absolute;
-  top: 10px;
-  right: 106px;
-  z-index: 2;
+  bottom: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 40px;
-  font-size: 1.35rem;
+  padding: 2px 7px;
+  font-size: 0.75rem;
   font-weight: 800;
-  line-height: 1;
-  color: var(--color-green);
-  background: transparent;
+  line-height: 1.2;
+  color: #ffffff;
+  background: var(--color-green, #16a34a);
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   pointer-events: none;
   user-select: none;
   white-space: nowrap;
-  text-shadow: 0 1px 3px rgb(255 255 255 / 0.95), 0 0 6px rgb(255 255 255 / 0.9);
-  animation: pointsPopupIn 0.2s ease-out;
+  animation: pointsPopupIn 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
 }
 
-/* smooth appearance animation for earned points popup */
 @keyframes pointsPopupIn {
   from {
     opacity: 0;
-    transform: scale(0.85);
+    transform: translate(-50%, 4px) scale(0.7);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translate(-50%, 0) scale(1);
   }
 }
 
@@ -417,20 +416,27 @@
   z-index: 1;
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 4px 8px 4px 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  gap: 4px;
+  padding: 6px 14px;
+  font-size: 0.8125rem;
+  font-weight: 700;
   color: var(--color-primary);
+  background: var(--color-primary-light, #e0e7ff);
   text-decoration: none;
   border-radius: 999px;
-  transition: background 0.15s;
+  transition: all 0.18s ease;
 }
 
-.detailsLink:hover,
+.detailsLink:hover {
+  background: var(--color-primary);
+  color: #ffffff;
+  transform: translateX(2px);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
 .detailsLink:focus-visible {
-  background: var(--color-primary-light);
-  outline: none;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 .cardError {
   margin: 0;
