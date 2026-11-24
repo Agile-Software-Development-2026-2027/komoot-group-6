@@ -60,6 +60,23 @@ test('the bookmark saves the trail: Save → Saving... → Saved and shows "Trai
   expect(screen.getByRole('status')).toHaveTextContent('Trail saved');
 });
 
+test('while saving, the bookmark is marked busy, then it shows "Saved"', async () => {
+  let finishSave;
+  const onSave = vi.fn(() => new Promise((resolve) => { finishSave = resolve; }));
+  render(<TrailCard trail={TRAIL} onSave={onSave} />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Save Sentiero del Crati' }));
+  expect(screen.getByRole('button', { name: 'Saving... Sentiero del Crati' })).toHaveAttribute('aria-busy', 'true');
+
+  await act(async () => finishSave('saved'));
+
+  const bookmark = screen.getByRole('button', { name: 'Saved Sentiero del Crati' });
+  expect(bookmark).toHaveAttribute('aria-busy', 'false');
+  expect(bookmark).toHaveTextContent('Saved');
+  // The confirmation is only for screen readers, it is not shown on screen
+  expect(screen.getByRole('status')).toHaveClass('visually-hidden');
+});
+
 test('clicking the bookmark again removes the trail: Saved → Removing... → Save', async () => {
   const onSave = vi.fn().mockResolvedValue('saved');
   let finishUnsave;
