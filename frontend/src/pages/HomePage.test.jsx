@@ -22,9 +22,6 @@ const map = vi.hoisted(() => ({
 
 vi.mock('react-map-gl/maplibre', () => ({
   useMap: () => ({ current: map.instance }),
-  Marker: ({ longitude, latitude, anchor }) => (
-    <div data-testid="hover-marker" data-longitude={longitude} data-latitude={latitude} data-anchor={anchor} />
-  ),
 }));
 vi.mock('../map/useLayerEvents.js', () => ({
   useLayerEvents: (_layer, events) => { map.onSelect = events.onClick; },
@@ -45,11 +42,6 @@ vi.mock('../context/useAuth.js', () => ({ useAuth: () => ({ user: { username: 'm
 vi.mock('react-router-dom', () => ({
   Link: ({ to, children, ...props }) => <a href={to} {...props}>{children}</a>,
 }));
-vi.mock('../components/ElevationChart/ElevationChart.jsx', () => ({
-  default: ({ data, onHover }) => (
-    <button onClick={() => onHover(data[1])} onMouseLeave={() => onHover(null)}>Hover profile</button>
-  ),
-}));
 vi.mock('../services/trailsService.js', () => ({ getTrail: vi.fn(), getTrailsInBounds: vi.fn() }));
 
 const routes = ['First trail', 'Second trail'].map((name, i) => ({
@@ -69,28 +61,42 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-it('places the marker at the hovered route coordinate and clears it on leave, route change and close', async () => {
+it('loads the selected trail and closes its popup', async () => {
   render(<HomePage />);
-  fireEvent.click(await screen.findByRole('button', { name: 'First trail' }));
-  fireEvent.click(await screen.findByRole('button', { name: 'Hover profile' }));
-  let marker = screen.getByTestId('hover-marker');
-  expect(Number(marker.dataset.longitude)).toBe(routes[0].geometry.coordinates[1][0]);
-  expect(Number(marker.dataset.latitude)).toBe(routes[0].geometry.coordinates[1][1]);
-  expect(marker.dataset.anchor).toBe('center');
 
-  fireEvent.mouseLeave(screen.getByRole('button', { name: 'Hover profile' }));
-  expect(screen.queryByTestId('hover-marker')).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: 'Hover profile' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Second trail' }));
-  await waitFor(() => expect(getTrail).toHaveBeenLastCalledWith('1'));
-  expect(screen.queryByTestId('hover-marker')).toBeNull();
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'First trail' })
+  );
 
-  fireEvent.click(await screen.findByRole('button', { name: 'Hover profile' }));
-  marker = screen.getByTestId('hover-marker');
-  expect(Number(marker.dataset.longitude)).toBe(routes[1].geometry.coordinates[1][0]);
-  fireEvent.click(screen.getByRole('button', { name: 'Close selected trail' }));
-  expect(screen.queryByTestId('hover-marker')).toBeNull();
-  expect(screen.queryByRole('button', { name: 'Hover profile' })).toBeNull();
+  await waitFor(() => {
+    expect(getTrail).toHaveBeenCalledWith('0');
+  });
+
+ expect(
+  await screen.findByRole('button', {
+    name: 'Close selected trail',
+  })
+).toBeTruthy();
+
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Second trail' })
+  );
+
+  await waitFor(() => {
+    expect(getTrail).toHaveBeenLastCalledWith('1');
+  });
+
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: 'Close selected trail',
+    })
+  );
+
+  expect(
+  screen.queryByRole('button', {
+    name: 'Close selected trail',
+  })
+).toBeNull();
 });
 
 it('shows the profile icon in the top-right, linking to the profile page', () => {

@@ -1,15 +1,255 @@
+
 .profile {
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
-  padding: 16px;
+  padding: 14px;
   border-radius: 14px;
-  background: #fff;
-  color: #163b2a;
+  background: #ffffff;
+  color: #173b27;
+  font-family: inherit;
 }
-.heading { margin: 0 0 12px; font-size: 1.1rem; }
-.chart { width: 100%; min-width: 0; height: clamp(190px, 28vh, 280px); }
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.heading {
+  margin: 0;
+  color: #173b27;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.subtitle {
+  margin: 3px 0 0;
+  color: #758078;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.unitBadge {
+  flex-shrink: 0;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: #edf4ed;
+  color: #376a42;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.routeEndpoints {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 12px 0 48px;
+  margin-bottom: 5px;
+}
+
+.startMarker,
+.endMarker {
+  display: inline-flex;
+  width: 23px;
+  height: 23px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.startMarker {
+  background: #477323;
+}
+
+.endMarker {
+  background: #e76a1c;
+}
+
+.chart {
+  width: 100%;
+  min-width: 0;
+  height: clamp(170px, 25vh, 235px);
+}
+
+.tooltip {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 9px 12px;
+  border: 1px solid #e1e9e2;
+  border-radius: 9px;
+  background: #ffffff;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.1);
+  color: #304439;
+  font-size: 0.75rem;
+}
+
+.tooltip strong {
+  color: #236c35;
+  font-size: 0.85rem;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px 12px;
+  margin-top: 8px;
+  font-size: 0.68rem;
+  color: #647168;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend i {
+  display: inline-block;
+  width: 14px;
+  height: 4px;
+  border-radius: 4px;
+}
+
+.gentle {
+  background: #4c9e36;
+}
+
+.moderate {
+  background: #e5b83b;
+}
+
+.steep {
+  background: #ed8b27;
+}
+
+.verySteep {
+  background: #dc4038;
+}
+
+.emptyState {
+  margin: 16px 0;
+  padding: 18px 10px;
+  border-radius: 9px;
+  background: #f5f7f5;
+  color: #647168;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
 @media (max-width: 640px) {
-  .profile { padding: 12px; border-radius: 14px 14px 0 0; }
-  .chart { height: 200px; }
+  .profile {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .heading {
+    font-size: 0.95rem;
+  }
+
+  .subtitle {
+    font-size: 0.7rem;
+  }
+
+  .chart {
+    height: 190px;
+  }
+
+  .legend {
+    gap: 6px 9px;
+    font-size: 0.65rem;
+  }
+}
+
+
+/* Step 3 — Compact hiking statistics */
+
+.statistics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 12px 10px;
+  background: #f7f9f6;
+  border: 1px solid #e8eee8;
+  border-radius: 10px;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.statValue {
+  color: #193e29;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.statLabel {
+  color: #718076;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+/* Responsive statistics for the existing floating panel */
+@media (max-width: 700px) {
+  .statistics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px 8px;
+  }
+
+  .statValue {
+    font-size: 0.82rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .statistics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+/* Let the chart adapt to its own container width */
+.profile {
+  container-type: inline-size;
+}
+
+/* Medium-sized elevation panel */
+@container (max-width: 850px) {
+  .statistics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .statValue {
+    font-size: 0.82rem;
+  }
+}
+
+/* Narrow elevation panel */
+@container (max-width: 480px) {
+  .statistics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chart {
+    height: 175px;
+  }
+
+  .legend {
+    gap: 6px 9px;
+  }
 }
