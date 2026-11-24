@@ -21,6 +21,7 @@ import {
 import { useLayerEvents } from '../map/useLayerEvents.js';
 import { getTrail, getTrailsInBounds } from '../services/trailsService.js';
 import { buildElevationProfile } from '../utils/trailStats.js';
+import {estimateDurationMin} from '../utils/formatTrail.js';
 import './HomePage.css';
 import { ELEVATION_CHART_LINE_COLOR } from '../config/theme.js';
 
@@ -126,16 +127,28 @@ export default function HomePage() {
   const elevationStats = useMemo(() => {
   const properties = route?.properties ?? {};
 
-  
+  const distanceM = properties.lengthM;
+  const ascentM = properties.ascentM;
+
+  const storedDuration = properties.estDurationMin;
+
+  const durationMin =
+    Number.isFinite(storedDuration) && storedDuration > 0
+      ? storedDuration
+      : Number.isFinite(distanceM) &&
+          distanceM >= 0 &&
+          Number.isFinite(ascentM) &&
+          ascentM >= 0
+        ? estimateDurationMin(distanceM, ascentM)
+        : null;
 
   return {
-    distanceM: properties.lengthM,
-    durationMin: properties.estDurationMin,
-    ascentM: properties.ascentM,
+    distanceM,
+    durationMin,
+    ascentM,
     descentM: properties.descentM,
   };
 }, [route]);
-
     // Panel opened from the map toolbar: only one at a time (null = none)
   const [openPanel, setOpenPanel] = useState(null);
   // The user can hide the elevation chart; it comes back when another trail is selected
