@@ -247,7 +247,7 @@
 }
 
 
-/* Casella "Remember me" sotto la password */
+/* "Remember me" checkbox under the password */
 .remember-me {
   display: flex;
   align-items: center;
@@ -279,3 +279,22 @@
   text-decoration: underline;
 }
 
+/* Row under the password: "Remember me" on the left, "Forgot password?" on the right */
+.login-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.forgot-password-link {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.forgot-password-link:hover {
+  text-decoration: underline;
+}

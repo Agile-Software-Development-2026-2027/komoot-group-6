@@ -5,11 +5,11 @@ import { useAuth } from '../context/useAuth.js';
 import { validateLoginForm } from '../utils/validateLoginForm.js';
 import './AuthPages.css';
 
-// Valori iniziali (vuoti) dei campi del modulo
+// Initial (empty) values of the form fields
 const EMPTY_FORM = {
   email: '',
   password: '',
-  // "Remember me": se spuntato l'utente resta loggato (30 giorni), altrimenti la sessione scade per inattività o a fine giornata (8 ore di default)
+  // "Remember me": if checked the user stays logged in (30 days), otherwise the session expires after inactivity or at the end of the day (8 hours by default)
   rememberMe: false,
 };
 
@@ -18,37 +18,37 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Quello che l'utente ha scritto in ogni campo
+  // What the user typed in each field
   const [values, setValues] = useState(EMPTY_FORM);
-  // Messaggi sotto i campi
+  // Messages under the fields
   const [errors, setErrors] = useState({});
-  // Messaggio in cima al modulo 
+  // Message at the top of the form
   const [serverError, setServerError] = useState('');
-  // true mentre la richiesta è in corso
+  // true while the request is in progress
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // La pagina che l'utente voleva aprire prima di essere mandato qui. Se non c'è, dopo il login va alla home.
+  // The page the user wanted to open before being sent here. If there is none, after login they go to the home page.
   const { pathname = '/', search = '', hash = '' } = location.state?.from ?? {};
   const destination = { pathname, search, hash };
 
-  // Un solo gestore per tutti i campi: l'attributo "name" dice quale è cambiato.
-  // Per la casella "Remember me" conta se è spuntata (checked), non il valore.
+  // One handler for all fields: the "name" attribute tells which one changed.
+  // For the "Remember me" checkbox what matters is whether it is checked, not its value.
   function handleChange(event) {
     const { name, value, type, checked } = event.target;
     setValues((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-    // Toglie l'errore di quel campo mentre l'utente lo corregge
+    // Clears the error of that field while the user fixes it
     setErrors((prev) => ({ ...prev, [name]: undefined }));
   }
 
   async function handleSubmit(event) {
-    // Un form di default ricarica la pagina.
+    // By default a form reloads the page.
     event.preventDefault();
     setServerError('');
 
     const formErrors = validateLoginForm(values);
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
-      return; // dati non validi: la richiesta non parte.
+      return; // invalid data: the request is not sent.
     }
 
     setIsSubmitting(true);
@@ -56,9 +56,9 @@ export default function LoginPage() {
       await login(values);
       navigate(destination, { replace: true });
     } catch (error) {
-      // per esempio 401 (credenziali sbagliate), 403 (email non confermata), 0 (server spento).
+      // e.g. 401 (wrong credentials), 403 (email not confirmed), 0 (server down).
       setServerError(error.message);
-      // Svuota solo la password, l'email resta.
+      // Clears only the password, the email stays.
       setValues((prev) => ({ ...prev, password: '' }));
     } finally {
       setIsSubmitting(false);
@@ -67,7 +67,7 @@ export default function LoginPage() {
 
   return (
     <main className="auth-page">
-      {/* noValidate: mostriamo i nostri messaggi al posto di quelli del browser */}
+      {/* noValidate: we show our own messages instead of the browser's */}
       <form className="auth-card" onSubmit={handleSubmit} noValidate>
         <h1>Log in</h1>
 
@@ -75,7 +75,7 @@ export default function LoginPage() {
           <p className="form-error" role="alert">{serverError}</p>
         )}
 
-        {/* Mostrato quando l'utente è stato disconnesso perché la sessione era scaduta */}
+        {/* Shown when the user was logged out because the session had expired */}
         {sessionExpired && !serverError && (
           <p className="form-info" role="status">Your session has expired. Please log in again.</p>
         )}
@@ -99,15 +99,22 @@ export default function LoginPage() {
           autoComplete="current-password"
         />
 
-        <label className="remember-me">
-          <input
-            type="checkbox"
-            name="rememberMe"
-            checked={values.rememberMe}
-            onChange={handleChange}
-          />
-          Remember me
-        </label>
+        {/* "Remember me" and the password recovery link on the same row */}
+        <div className="login-options">
+          <label className="remember-me">
+            <input
+              type="checkbox"
+              name="rememberMe"
+              checked={values.rememberMe}
+              onChange={handleChange}
+            />
+            Remember me
+          </label>
+          {/* Passes the email already typed, so it does not have to be typed again on the recovery page */}
+          <Link className="forgot-password-link" to="/forgot-password" state={{ email: values.email }}>
+            Forgot password?
+          </Link>
+        </div>
 
         <button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Logging in...' : 'Log in'}
