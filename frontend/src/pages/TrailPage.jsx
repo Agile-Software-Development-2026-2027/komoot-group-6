@@ -16,6 +16,8 @@ import { isLoop } from '../utils/routeShape.js';
 import { trailSummary } from '../utils/trailSummary.js';
 import styles from '../components/TrailPage/TrailPage.module.css';
 
+import ElevationProfile from '../components/ElevationChart/ElevationChart.jsx';
+import { buildElevationProfile } from '../utils/trailStats.js';
 // Page of one trail (the "Hike Page"), at /trails/:id (e.g. /trails/f4ef6996-...).
 // It loads the trail from GET /api/trails/:id and shows it like a Komoot tour:
 // big photo with the name, key numbers and a one-sentence summary, the map with the
@@ -97,6 +99,15 @@ function TrailContent({ id, onRetry }) {
   const durationMin = trail.estDurationMin ?? estimateDurationMin(trail.lengthM, trail.ascentM);
   const loop = isLoop(trail.startPoint, feature.geometry);
 
+  //elevation data for the elevation chart
+  const elevationData = buildElevationProfile(feature);
+
+  const elevationStats = {
+      distanceM: trail.lengthM,
+      durationMin,
+      ascentM: trail.ascentM,
+      descentM: trail.descentM,
+    };
   return (
     <article className={styles.content}>
       {/* "Share your hike" appears on the right only if the user has completed this trail (SCRUM-14) */}
@@ -119,10 +130,23 @@ function TrailContent({ id, onRetry }) {
         <p className={styles.summary}>{trailSummary(trail, durationMin, loop)}</p>
       </div>
 
-      <section className={styles.mapSection} aria-labelledby="trail-route">
-        <h2 id="trail-route">Route</h2>
-        <TrailMap trail={feature} />
-      </section>
+     <section
+  className={styles.mapSection}
+  aria-labelledby="trail-route"
+>
+  <h2 id="trail-route">Route</h2>
+  <TrailMap trail={feature} />
+</section>
+
+{/* Elevation profile */}
+<div className={styles.elevationSection}>
+  <h2>Elevation chart</h2>
+
+  <ElevationProfile
+    data={elevationData}
+    stats={elevationStats}
+  />
+</div>
 
       <div className={styles.columns}>
         <section className={styles.section} aria-labelledby="trail-description">

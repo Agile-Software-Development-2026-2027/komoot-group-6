@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Marker, useMap } from 'react-map-gl/maplibre';
+import { useCallback, useEffect,useRef, useState } from 'react';
+import {useMap } from 'react-map-gl/maplibre';
 import MapView from '../components/MapView/MapView.jsx';
 import MapToolbar, { ToolbarButton } from '../components/MapView/MapToolbar.jsx';
 import TrackLayer from '../components/MapView/TrackLayer.jsx';
@@ -11,8 +11,7 @@ import LeaderboardDialog from '../components/Leaderboard/LeaderboardDialog.jsx';
 import { Link } from 'react-router-dom';
 import Avatar from '../components/Avatar.jsx';
 import { useAuth } from '../context/useAuth.js';
-import ElevationProfile from '../components/ElevationChart/ElevationChart.jsx';
-import { CloseIcon, SearchIcon, TrailsIcon, TrophyIcon } from '../components/NearbyPanel/icons.jsx';
+import {SearchIcon, TrailsIcon, TrophyIcon } from '../components/NearbyPanel/icons.jsx';
 import {
   BOUNDS_DEBOUNCE_MS,
   FIT_TRACK_DURATION_MS,
@@ -20,10 +19,7 @@ import {
 } from '../config/map.config.js';
 import { useLayerEvents } from '../map/useLayerEvents.js';
 import { getTrail, getTrailsInBounds } from '../services/trailsService.js';
-import { buildElevationProfile } from '../utils/trailStats.js';
-import {estimateDurationMin} from '../utils/formatTrail.js';
 import './HomePage.css';
-import { ELEVATION_CHART_LINE_COLOR } from '../config/theme.js';
 
 // Keeps the trails of the visible area up to date: it asks for them at start and after every map move.
 // It must be placed inside <MapView> so it can use useMap().
@@ -121,38 +117,9 @@ export default function HomePage() {
   // The popup opens when the map has finished framing the route
   const [popupOpen, setPopupOpen] = useState(false);
   const selectedIdRef = useRef(null);
-  const [hoveredPoint, setHoveredPoint] = useState(null);
-  const elevationData = useMemo(() => buildElevationProfile(route), [route]);
-
-  const elevationStats = useMemo(() => {
-  const properties = route?.properties ?? {};
-
-  const distanceM = properties.lengthM;
-  const ascentM = properties.ascentM;
-
-  const storedDuration = properties.estDurationMin;
-
-  const durationMin =
-    Number.isFinite(storedDuration) && storedDuration > 0
-      ? storedDuration
-      : Number.isFinite(distanceM) &&
-          distanceM >= 0 &&
-          Number.isFinite(ascentM) &&
-          ascentM >= 0
-        ? estimateDurationMin(distanceM, ascentM)
-        : null;
-
-  return {
-    distanceM,
-    durationMin,
-    ascentM,
-    descentM: properties.descentM,
-  };
-}, [route]);
+  
     // Panel opened from the map toolbar: only one at a time (null = none)
   const [openPanel, setOpenPanel] = useState(null);
-  // The user can hide the elevation chart; it comes back when another trail is selected
-  const [elevationOpen, setElevationOpen] = useState(true);
 
   const handleSelect = useCallback(
     (feature) => {
@@ -164,8 +131,6 @@ export default function HomePage() {
       selectedIdRef.current = id;
       setSelected({ id, lngLat: { lng, lat }, properties: trail.properties });
       setRoute(null);
-      setHoveredPoint(null);
-      setElevationOpen(true);
       setPopupOpen(false);
 
       getTrail(id)
@@ -188,8 +153,6 @@ export default function HomePage() {
     selectedIdRef.current = id;
     setSelected({id, lngLat, properties: trail});
     setRoute(null);
-    setHoveredPoint(null);
-    setElevationOpen(true);
     setPopupOpen(false);
 
     getTrail(id)
@@ -206,7 +169,6 @@ export default function HomePage() {
     selectedIdRef.current = null;
     setSelected(null);
     setRoute(null);
-    setHoveredPoint(null);
     setPopupOpen(false);
   }, []);
 
@@ -218,12 +180,6 @@ export default function HomePage() {
     []
   );
   const closePanel = useCallback(() => setOpenPanel(null), []);
-
-  // Closing the chart also removes its marker from the map
-  const hideElevation = useCallback(() => {
-    setElevationOpen(false);
-    setHoveredPoint(null);
-  }, []);
 
   return (
     <main className="home">
@@ -238,15 +194,6 @@ export default function HomePage() {
           <TrailStartsLayer data={trails} />
           {trails && <TrailClick onSelect={handleSelect} />}
           <TrackLayer data={route} />
-          {hoveredPoint && (
-            <Marker
-              longitude={hoveredPoint.coordinates[0]}
-              latitude={hoveredPoint.coordinates[1]}
-              anchor="center"
-              color={ELEVATION_CHART_LINE_COLOR}
-              style={{ pointerEvents: 'none' }}
-            />
-          )}
           <FitToTrack data={route} onDone={handleFitted} />
           <TrackPopup
             key={selected?.id}
@@ -291,38 +238,6 @@ export default function HomePage() {
       </section>
       {openPanel === 'profiles' && <ProfileSearchDialog onClose={closePanel} />}
       {openPanel === 'leaderboard' && <LeaderboardDialog onClose={closePanel} />}
-      {route && (elevationOpen ? (
-        // Elevation chart floating over the bottom of the full-screen map
-        <div
-          className={`home-elevation ${
-            openPanel === 'nearby' ? 'home-elevation--with-trails' : ''
-          }`}
-        >
-          <button
-            type="button"
-            className="home-elevation-close"
-            aria-label="Hide elevation profile"
-            onClick={hideElevation}
-          >
-            <CloseIcon />
-          </button>
-          <ElevationProfile
-            key={selected?.id}
-            data={elevationData}
-            stats={elevationStats}
-            onHover={setHoveredPoint}
-          />
-        </div>
-      ) : (
-        <button
-          type="button"
-          className="home-elevation-show"
-          aria-label="Show elevation profile"
-          onClick={() => setElevationOpen(true)}
-        >
-          Elevation profile
-        </button>
-      ))}
     </main>
   );
 }
