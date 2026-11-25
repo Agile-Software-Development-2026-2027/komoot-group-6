@@ -5,7 +5,7 @@ import Avatar from '../Avatar.jsx';
 import { CloseIcon, SearchIcon } from '../NearbyPanel/icons.jsx';
 import { ChevronRightIcon } from '../TrailPage/icons.jsx';
 import styles from './ProfileSearchDialog.module.css';
-
+import FriendButton from '../Friends/FriendButton.jsx';
 const SEARCH_DEBOUNCE_MS = 250;
 const EMPTY_RESULTS = { profiles: [], nextCursor: null, loading: false, failed: false };
 
@@ -46,6 +46,9 @@ function ProfileResult({ profile }) {
       ) : (
         <div className={styles.row}>{row}</div>
       )}
+      {!profile.isMine && profile.id && (
+  <FriendButton userId={profile.id} />
+)}
     </li>
   );
 }
