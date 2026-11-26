@@ -10,10 +10,10 @@
 --    (the policy profiles_update_own decides WHICH row: only their own).
 --    Anonymous users cannot read it.
 --
--- NOTE: for now the flag is only stored and shown, but the app has no page yet
--- to view another user's profile. When it arrives, reading the profile columns
--- (currently granted to anon and authenticated in profiles_birth_date_level.sql)
--- will have to be restricted to public profiles or to one's own.
+-- NOTE: the public profile page (/users/:username) reads the profile columns granted
+-- in profiles_birth_date_level.sql and checks is_public in the backend; the trails
+-- completed by others are read only through get_public_profile_completed
+-- (public_profile_page.sql).
 -- =====================================================================
 
 begin;

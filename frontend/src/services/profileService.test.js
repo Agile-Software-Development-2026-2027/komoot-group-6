@@ -1,6 +1,13 @@
 import { expect, it, vi } from 'vitest';
 import { LEADERBOARD_SIZE } from '../config/leaderboard.config.js';
-import { getLeaderboard, getProfileVisibility, setProfileVisibility } from './profileService.js';
+import { getLeaderboard, getProfileVisibility, getPublicProfile, setProfileVisibility } from './profileService.js';
+
+it('reads the public profile of a username, encoding it in the path', async () => {
+  const authFetch = vi.fn().mockResolvedValue({ username: 'a/b' });
+
+  expect(await getPublicProfile(authFetch, 'a/b')).toEqual({ username: 'a/b' });
+  expect(authFetch).toHaveBeenCalledWith('/profile/users/a%2Fb');
+});
 
 it('reads the visibility of the profile', async () => {
   const authFetch = vi.fn().mockResolvedValue({ isPublic: true });

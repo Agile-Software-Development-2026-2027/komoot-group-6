@@ -268,14 +268,6 @@ it('goes back to the previous value and shows an error when saving fails', async
   expect(visibilitySwitch().getAttribute('aria-checked')).toBe('false');
 });
 
-it('shows the hike score (total points) under the account card', async () => {
-  getProfilePoints.mockResolvedValue({ totalPoints: 120, completedRoutes: 3 });
-
-  render(<ProfilePage />);
-
-  expect(await screen.findByText('120')).toBeTruthy();
-  expect(screen.getByText('Hiking Progress')).toBeTruthy();
-});
 it('shows the level and how far the next one is', async () => {
   getProfilePoints.mockResolvedValue({
     totalPoints: 150,
@@ -312,6 +304,18 @@ it('does not show the level card when the backend sends no level', async () => {
 
   render(<ProfilePage />);
 
-  expect(await screen.findByText('120')).toBeTruthy();
+  await waitFor(() => expect(getProfilePoints).toHaveBeenCalled());
   expect(screen.queryByRole('progressbar')).toBeNull();
+});
+
+it('shows "Share profile" only when the profile is public', async () => {
+  getProfileVisibility.mockResolvedValue(true);
+  render(<ProfilePage />);
+  expect(await screen.findByRole('button', { name: 'Share profile' })).toBeTruthy();
+  cleanup();
+
+  getProfileVisibility.mockResolvedValue(false);
+  render(<ProfilePage />);
+  await screen.findByRole('tab', { name: 'Saved (0)' });
+  expect(screen.queryByRole('button', { name: 'Share profile' })).toBeNull();
 });

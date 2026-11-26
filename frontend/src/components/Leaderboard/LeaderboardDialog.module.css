@@ -136,6 +136,19 @@
   gap: 0.15rem 0.4rem;
 }
 
+/* Name: link to the public profile page */
+.profileLink {
+  text-decoration: none;
+}
+
+.profileLink strong {
+  color: var(--color-primary);
+}
+
+.profileLink:hover strong {
+  text-decoration: underline;
+}
+
 .youBadge {
   padding: 0.1rem 0.45rem;
   color: white;

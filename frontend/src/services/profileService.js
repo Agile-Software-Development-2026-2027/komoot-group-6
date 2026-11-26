@@ -21,6 +21,13 @@ export function searchPublicProfiles(authFetch, username, after = null) {
   return authFetch(`/profile/search?${query}`);
 }
 
+// Public page of a profile, found by username. Answers { username, displayName, bio, createdAt, isMine,
+// totalPoints, completedTrails: [{ trailId, completedAt }], level }. Throws ApiError: 404 = no such
+// profile, 403 = the profile is private.
+export function getPublicProfile(authFetch, username) {
+  return authFetch(`/profile/users/${encodeURIComponent(username)}`);
+}
+
 // Global leaderboard: the public profiles with the most points, first place first.
 // Each entry: { rank, username, displayName, level, totalPoints, completedTrails, isMine }.
 export async function getLeaderboard(authFetch, limit = LEADERBOARD_SIZE) {

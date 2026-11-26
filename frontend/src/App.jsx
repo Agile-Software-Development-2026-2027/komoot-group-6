@@ -6,6 +6,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
 import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 import HomePage from './pages/HomePage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
+import PublicProfilePage from './pages/PublicProfilePage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import TrailPage from './pages/TrailPage.jsx';
 
@@ -22,6 +23,7 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/users/:username" element={<PublicProfilePage />} />
         <Route path="/trails/:id" element={<TrailPage />} />
         <Route path="/map" element={<Navigate to="/" replace />} />
       </Route>

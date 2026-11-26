@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Avatar from '../components/Avatar.jsx';
 import LogoutButton from '../components/LogoutButton.jsx';
+import ShareProfile from '../components/ProfileShare/ShareProfile.jsx';
 import ProfileTrailList from '../components/ProfileTrails/ProfileTrailList.jsx';
 import RouteHero from '../components/ProfileTrails/RouteHero.jsx';
 import VisibilitySwitch from '../components/ProfileTrails/VisibilitySwitch.jsx';
@@ -14,7 +15,7 @@ import { completedTotals } from '../utils/profileStats.js';
 import { useProfileTrails } from './useProfileTrails.js';
 import { useProfileVisibility } from './useProfileVisibility.js';
 import './ProfilePage.css';
-import HikingInfo, { ProfileLevel } from '../components/HikeInfo.jsx';
+import { ProfileLevel } from '../components/HikeInfo.jsx';
 
 const EMPTY = '—';
 
@@ -111,6 +112,12 @@ export default function ProfilePage() {
             <div className="profile-heading-text">
               <h1>{name}</h1>
               {user.username && <p className="profile-username">@{user.username}</p>}
+              {/* Only a public profile can be opened by others, so only then there is a link to share */}
+              {user.username && !visibility.loading && visibility.isPublic && (
+                <div className="profile-share">
+                  <ShareProfile username={user.username} name={name} />
+                </div>
+              )}
             </div>
           </div>
 
@@ -162,9 +169,6 @@ export default function ProfilePage() {
 
               <LogoutButton className="profile-logout" />
             </section>
-
-            {/* Total points and completed routes (hike score) */}
-            <HikingInfo authFetch={authFetch} pointsData={pointsState} />
           </aside>
 
           {/* Right column, wide: Saved, Completed and Last route tabs */}
