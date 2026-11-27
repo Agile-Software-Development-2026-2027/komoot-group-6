@@ -10,29 +10,12 @@ import {
   shareText,
   trailUrl,
 } from '../../utils/shareRecap.js';
+import { keepFocusInside } from '../../utils/keepFocusInside.js';
 import { trailImageUrl } from '../../utils/trailImages.js';
 import { DIFFICULTY_LABELS } from '../NearbyPanel/difficulty.js';
 import { ChatIcon, CloseIcon, CopyIcon, DownloadIcon, GlobeIcon, PostIcon, SendIcon, ShareIcon } from './shareIcons.jsx';
 import styles from './ShareHike.module.css';
 
-// Elements of the window that the Tab key can reach
-const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-function keepFocusInside(container, event) {
-  const elements = [...container.querySelectorAll(FOCUSABLE)];
-  if (elements.length === 0) return;
-  const first = elements[0];
-  const last = elements.at(-1);
-  const outside = !container.contains(document.activeElement);
-
-  if (event.shiftKey && (outside || document.activeElement === first)) {
-    event.preventDefault();
-    last.focus();
-  } else if (!event.shiftKey && (outside || document.activeElement === last)) {
-    event.preventDefault();
-    first.focus();
-  }
-}
 
 function formatType(type) {
   if (!type) return 'Hike';

@@ -300,3 +300,8 @@
   padding: 16px 0;
   color: var(--profile-muted);
 }
+
+/* "Share profile" button under the username */
+.profile-share {
+  margin-top: 16px;
+}

@@ -129,6 +129,9 @@ it('waits for a username and shows the current public profiles', async () => {
   await waitFor(() => expect(authFetch).toHaveBeenCalledWith('/profile/search?q=older'));
   fireEvent.change(input, { target: { value: ' Alba ' } });
   const result = await screen.findByText('@alba_trek');
+  // The name (not the @username) opens the public profile page
+  expect(result.closest('a')).toBeNull();
+  expect(screen.getByRole('link', { name: 'Alba' }).getAttribute('href')).toBe('/users/alba_trek');
   expect(within(result.closest('li')).getByText('You')).toBeTruthy();
   const details = result.closest('details');
   fireEvent.click(result.closest('summary'));

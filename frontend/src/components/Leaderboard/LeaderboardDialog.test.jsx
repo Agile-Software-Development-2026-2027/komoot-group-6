@@ -13,6 +13,9 @@ if (!HTMLDialogElement.prototype.showModal) {
 const authFetch = vi.fn();
 vi.mock('../../context/useAuth.js', () => ({ useAuth: () => ({ authFetch }) }));
 vi.mock('../../services/profileService.js', () => ({ getLeaderboard: vi.fn() }));
+vi.mock('react-router-dom', () => ({
+  Link: ({ to, children, ...props }) => <a href={to} {...props}>{children}</a>,
+}));
 
 const ELENA = {
   rank: 1,
@@ -51,6 +54,8 @@ it('shows rank, name, level, points and trails of each public profile', async ()
   const [first, second] = rows();
   expect(first.textContent).toContain('Rank 1');
   expect(within(first).getByText('Elena')).toBeTruthy();
+  // The name opens the public profile page
+  expect(within(first).getByRole('link', { name: 'Elena' }).getAttribute('href')).toBe('/users/elena_b');
   expect(within(first).getByText('@elena_b · Level 5')).toBeTruthy();
   expect(within(first).getByText('450')).toBeTruthy();
   expect(within(first).getByText('8 trails')).toBeTruthy();

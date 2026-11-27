@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth.js';
 import { searchPublicProfiles } from '../../services/profileService.js';
 import Avatar from '../Avatar.jsx';
@@ -17,7 +18,10 @@ function ProfileResult({ profile }) {
       <Avatar name={name} size="sm" />
       <span className={styles.identity}>
         <span className={styles.profileName}>
-          <strong>{name}</strong>
+          {/* The name opens the public profile page */}
+          <Link to={`/users/${encodeURIComponent(profile.username)}`} className={styles.profileLink}>
+            <strong>{name}</strong>
+          </Link>
           {profile.isMine && <span className={styles.youBadge}>You</span>}
         </span>
         <span>@{profile.username}</span>

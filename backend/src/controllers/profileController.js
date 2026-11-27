@@ -223,6 +223,54 @@ export async function searchPublicProfiles(req, res) {
   return res.set('Cache-Control', 'no-store').json({ profiles, nextCursor });
 }
 
+// Returns the public page of a profile, found by username: level, points and completed trails.
+// A private profile answers 403 (only its owner can open it), an unknown username 404.
+export async function getPublicProfile(req, res) {
+  const { username } = req.params;
+  if (!username.trim() || username.includes('\0')) {
+    return res.status(400).json({ error: 'Invalid username.' });
+  }
+
+  const db = supabaseAsUser(req.token);
+  const { data: profile, error } = await db
+    .from('profiles')
+    .select('id, username, display_name, bio, level, created_at, is_public')
+    .eq('username', username)
+    .maybeSingle();
+  if (error) throw error;
+
+  if (!profile) return res.status(404).json({ error: 'Profile not found' });
+  const isMine = profile.id === req.user.id;
+  if (!profile.is_public && !isMine) return res.status(403).json({ error: 'Profile is private' });
+
+  const [points, completed, levels] = await Promise.all([
+    db.rpc('get_public_profile_points', { p_profile_ids: [profile.id] }),
+    db.rpc('get_public_profile_completed', { p_profile_id: profile.id }),
+    db.from('levels').select('level, min_points, name'),
+  ]);
+  const failure = completed.error ?? levels.error;
+  if (failure) throw failure;
+  // The points function is optional (see profile search): without it the total is unknown
+  if (points.error && points.error.code !== 'PGRST202') {
+    console.error('Could not load public profile points', points.error);
+  }
+
+  const totalPoints = points.data?.[0]?.total_points ?? 0;
+  return res.set('Cache-Control', 'no-store').json({
+    username: profile.username,
+    displayName: profile.display_name,
+    bio: profile.bio,
+    createdAt: profile.created_at,
+    isMine,
+    totalPoints,
+    completedTrails: (completed.data ?? []).map((row) => ({
+      trailId: row.trail_id,
+      completedAt: row.completed_at,
+    })),
+    level: describeLevel(profile.level, totalPoints, levels.data ?? []),
+  });
+}
+
 // PostgREST answers PGRST116 when .single() finds no row:
 // the profile does not exist, or the RLS policies do not let the user touch it.
 const NO_ROWS = 'PGRST116';

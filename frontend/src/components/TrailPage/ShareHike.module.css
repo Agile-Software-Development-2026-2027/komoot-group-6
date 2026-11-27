@@ -273,3 +273,13 @@
     transition: none;
   }
 }
+
+/* Window without the image preview (share profile): a single column */
+.dialogNarrow {
+  grid-template-columns: minmax(0, 1fr);
+  width: min(440px, 100%);
+}
+
+.toolsOne {
+  grid-template-columns: minmax(0, 1fr);
+}
