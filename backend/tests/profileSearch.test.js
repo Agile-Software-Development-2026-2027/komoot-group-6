@@ -67,7 +67,7 @@ it('looks up public profiles and requests points for the current page in one cal
 
   expect(res.body.profiles).toHaveLength(20);
   expect(res.body.profiles[0]).toEqual({
-    username: 'al.ba_*01', displayName: 'Alba', bio: 'Weekend hiker', level: 2, isMine: true, totalPoints: 205,
+   id: rows[0].id, username: 'al.ba_*01', displayName: 'Alba', bio: 'Weekend hiker', level: 2, isMine: true, totalPoints: 205,
   });
   expect(res.body.profiles[1]).toMatchObject({ isMine: false, totalPoints: 0 });
   expect(res.body.profiles[2].totalPoints).toBeNull();
@@ -85,7 +85,7 @@ it('serves search results with the You marker when the points function is unavai
 
   expect(res.status).toBe(200);
   expect(res.body).toEqual({
-    profiles: [{ username: 'alba', displayName: 'Alba', bio: null, level: 2, isMine: true, totalPoints: null }],
+    profiles: [{ id: '0ccf0000-0000-4000-8000-000000000001',username: 'alba', displayName: 'Alba', bio: null, level: 2, isMine: true, totalPoints: null }],
     nextCursor: null,
   });
 });

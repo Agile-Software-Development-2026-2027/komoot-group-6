@@ -211,6 +211,7 @@ export async function searchPublicProfiles(req, res) {
   }
 
   const profiles = page.map((row) => ({
+    id: row.id,
     username: row.username,
     displayName: row.display_name,
     bio: row.bio,
